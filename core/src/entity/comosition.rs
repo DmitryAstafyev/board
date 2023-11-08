@@ -1,5 +1,5 @@
 use crate::{
-    entity::{Component, Signature},
+    entity::{Component, Connection, Signature},
     representation::{
         self,
         form::{self, rectangle::Rectangle, Form},
@@ -11,7 +11,8 @@ use crate::{
 #[derive(Debug)]
 pub struct Composition<'a> {
     pub sig: Signature,
-    pub components: &'a [Component<'a>],
+    pub components: &'a [Component],
+    pub connections: &'a [Connection<'a>],
     pub repr: Representation,
 }
 

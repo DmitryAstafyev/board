@@ -13,3 +13,7 @@ pub struct Representation {
 pub trait Default {
     fn init() -> Representation;
 }
+
+pub trait Virtualization {
+    fn calc(&mut self);
+}

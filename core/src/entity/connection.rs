@@ -11,7 +11,7 @@ use crate::{
 #[derive(Debug)]
 pub struct Joint<'a> {
     pub port: &'a Port,
-    pub component: &'a Component<'a>,
+    pub component: &'a Component,
 }
 
 #[derive(Debug)]
