@@ -1,0 +1,9 @@
+**/node_modules
+**/pkg
+**/target
+**/build/*.js
+**/build/*.js.map
+**/build/*.d.ts
+**/build/*.wasm
+**/test_output
+**/yarn-error.log

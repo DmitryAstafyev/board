@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "outDir": "./build/",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "target": "ESNext",
+    "module": "CommonJS",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "paths": {
+      "@wasm/*": ["../core/pkg/*"],
+      "tslib": ["./node_modules/tslib"]
+    },
+    "strict": true,
+    "experimentalDecorators": true
+  },
+  "files": [
+    "src/main.ts"
+  ]
+}
