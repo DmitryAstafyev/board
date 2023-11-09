@@ -44,6 +44,6 @@ pub fn dummy(canvas_el_id: &str, components: usize, ports: usize) {
             RangeInclusive::new(ports, ports + ports),
         ),
     );
-    composition.calc();
+    composition.calc(&mut context, &Relative::new(50, 50));
     composition.render(&mut context, &Relative::new(50, 50));
 }

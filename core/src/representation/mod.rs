@@ -17,7 +17,11 @@ pub trait Default {
 }
 
 pub trait Virtualization {
-    fn calc(&mut self);
+    fn calc(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &crate::elements::relative::Relative,
+    );
 }
 
 pub trait Rendering {

@@ -89,9 +89,15 @@ impl representation::Default for Composition {
 }
 
 impl representation::Virtualization for Composition {
-    fn calc(&mut self) {
+    fn calc(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &crate::elements::relative::Relative,
+    ) {
         console_log!("Calc of composition");
-        self.components.iter_mut().for_each(|comp| comp.calc());
+        self.components
+            .iter_mut()
+            .for_each(|comp| comp.calc(context, relative));
         // let mut cursor: i32 = 0;
         // self.components.iter_mut().for_each(|comp| {
         //     comp.repr.form.set_coors(None, Some(cursor));
@@ -164,8 +170,9 @@ impl representation::Virtualization for Composition {
                 continue;
             }
             // Looking for a best place considering already ordered components
-            let ordered_box = Form::box_data(
-                self.components
+            let ordered_box = Form::box_size(
+                &self
+                    .components
                     .iter()
                     .filter_map(|c| {
                         if calculated.contains(&c.sig.id) {
@@ -176,8 +183,9 @@ impl representation::Virtualization for Composition {
                     })
                     .collect::<Vec<&Form>>(),
             );
-            let current_box = Form::box_data(
-                self.components
+            let current_box = Form::box_size(
+                &self
+                    .components
                     .iter()
                     .filter_map(|c| {
                         if in_box.contains(&c.sig.id) {
@@ -214,6 +222,22 @@ impl representation::Virtualization for Composition {
                 }
             }
             calculated = [calculated, in_box].concat();
+            let box_map = Form::box_map(
+                &self
+                    .components
+                    .iter()
+                    .filter_map(|c| {
+                        if calculated.contains(&c.sig.id) {
+                            Some(&c.repr.form)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<&Form>>(),
+                context,
+                relative,
+            );
+            console_log!("BOX: {box_map:?}");
         }
         console_log!("Link ports");
         self.connections.iter_mut().for_each(|conn| {

@@ -113,7 +113,11 @@ impl Ports {
 }
 
 impl representation::Virtualization for Ports {
-    fn calc(&mut self) {
+    fn calc(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &crate::elements::relative::Relative,
+    ) {
         // Order ports on a left side
         let mut cursor: i32 = PORTS_VERTICAL_OFFSET;
         self.ports

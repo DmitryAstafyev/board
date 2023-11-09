@@ -1,5 +1,5 @@
 use crate::{
-    elements::relative::Relative,
+    elements::relative::{self, Relative},
     entity::{port::PortType, Ports, Signature},
     representation::{
         self,
@@ -63,7 +63,11 @@ impl representation::Default for Component {
 }
 
 impl representation::Virtualization for Component {
-    fn calc(&mut self) {
+    fn calc(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &crate::elements::relative::Relative,
+    ) {
         // In/Out ports are located on a left/right sides. We are taking
         // a space, which is required by each type of ports and select
         // max of it. It will be minimal required height of box.
@@ -82,7 +86,7 @@ impl representation::Virtualization for Component {
         self.ports.border.set_height(self.repr.form.box_height());
         self.ports.border.set_width(self.repr.form.box_width());
         // Order ports
-        self.ports.calc();
+        self.ports.calc(context, relative);
     }
 }
 
