@@ -7,7 +7,10 @@ mod error;
 mod representation;
 
 use elements::relative::Relative;
-use entity::{Composition, SignatureProducer};
+use entity::{
+    dummy::{Dummy, SignatureProducer},
+    Composition,
+};
 use representation::{Rendering, Virtualization};
 use std::{ops::RangeInclusive, panic};
 use wasm_bindgen::prelude::*;
@@ -36,8 +39,10 @@ pub fn dummy(canvas_el_id: &str, components: usize, ports: usize) {
     let mut producer = SignatureProducer::new();
     let mut composition = Composition::dummy(
         &mut producer,
-        RangeInclusive::new(components, components + components / 5),
-        RangeInclusive::new(ports, ports + ports),
+        (
+            RangeInclusive::new(components, components + components / 5),
+            RangeInclusive::new(ports, ports + ports),
+        ),
     );
     composition.calc();
     composition.render(&mut context, &Relative::new(50, 50));

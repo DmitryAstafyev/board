@@ -1,8 +1,6 @@
-use std::ops::RangeInclusive;
-
 use crate::{
     elements::relative::Relative,
-    entity::{port::PortType, Ports, Signature, SignatureProducer},
+    entity::{port::PortType, Ports, Signature},
     representation::{
         self,
         form::{self, rectangle::Rectangle, Form},
@@ -26,14 +24,6 @@ impl Component {
         Self {
             sig,
             ports: Ports::new(),
-            repr: Component::init(),
-        }
-    }
-
-    pub fn dummy(producer: &mut SignatureProducer, ports: RangeInclusive<usize>) -> Self {
-        Self {
-            sig: producer.next(),
-            ports: Ports::dummy(producer, ports),
             repr: Component::init(),
         }
     }

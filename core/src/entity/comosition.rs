@@ -1,7 +1,5 @@
-use std::{collections::HashMap, ops::RangeInclusive};
-
 use crate::{
-    entity::{port::PortType, Component, Connection, Joint, Signature, SignatureProducer},
+    entity::{Component, Connection, Signature},
     representation::{
         self,
         form::{self, rectangle::Rectangle, Form},
@@ -9,7 +7,6 @@ use crate::{
         Default, Representation,
     },
 };
-use rand::Rng;
 
 const VERTICAL_OFFSET_BETWEEN_COMPS: i32 = 24;
 
@@ -29,42 +26,6 @@ impl Composition {
             connections: vec![],
             repr: Composition::init(),
         }
-    }
-
-    pub fn dummy(
-        producer: &mut SignatureProducer,
-        components: RangeInclusive<usize>,
-        ports: RangeInclusive<usize>,
-    ) -> Self {
-        let mut instance = Self::new(producer.next());
-        let count = rand::thread_rng().gen_range(components);
-        for _ in 0..count {
-            instance
-                .components
-                .push(Component::dummy(producer, ports.clone()));
-        }
-        for comp in instance.components.chunks(2) {
-            if comp.is_empty() || comp.len() != 2 {
-                break;
-            }
-            let left = &comp[0];
-            let right = &comp[1];
-            let min = [left.ports.len(), right.ports.len()]
-                .iter()
-                .cloned()
-                .min()
-                .unwrap_or(0);
-            let count = rand::thread_rng().gen_range(0..min);
-            for _ in 0..count {
-                let selected: usize = rand::thread_rng().gen_range(0..min);
-                instance.connections.push(Connection::new(
-                    producer.next(),
-                    Joint::new(left.ports.get(selected).sig.id, left.sig.id),
-                    Joint::new(right.ports.get(selected).sig.id, right.sig.id),
-                ))
-            }
-        }
-        instance
     }
 
     // pub fn find_most_linked_component(&self, sig: &Signature) -> Option<&'a Component> {

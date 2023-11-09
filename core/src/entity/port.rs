@@ -1,16 +1,13 @@
-use std::ops::RangeInclusive;
-
 use crate::{
     elements::border::Border,
-    entity::{Signature, SignatureProducer},
+    entity::Signature,
     representation::{
         self,
         form::{self, rectangle::Rectangle, Form},
         style::{self, Style},
-        Default, Representation,
+        Representation,
     },
 };
-use rand::Rng;
 
 const PORTS_VERTICAL_OFFSET: i32 = 8;
 
@@ -25,20 +22,6 @@ pub struct Port {
     pub sig: Signature,
     pub port_type: PortType,
     pub repr: Representation,
-}
-
-impl Port {
-    fn dummy(producer: &mut SignatureProducer) -> Port {
-        Port {
-            sig: producer.next(),
-            port_type: if rand::random() {
-                PortType::In
-            } else {
-                PortType::Out
-            },
-            repr: Port::init(),
-        }
-    }
 }
 
 impl form::Default for Port {
@@ -82,15 +65,6 @@ impl Ports {
             ports: vec![],
             border: std::default::Default::default(),
         }
-    }
-
-    pub fn dummy(producer: &mut SignatureProducer, ports: RangeInclusive<usize>) -> Self {
-        let count = rand::thread_rng().gen_range(ports);
-        let mut instance = Self::new();
-        for _ in 0..count {
-            instance.ports.push(Port::dummy(producer));
-        }
-        instance
     }
 
     pub fn link(&mut self, ports: Vec<Port>) {
