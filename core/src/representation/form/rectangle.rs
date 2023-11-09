@@ -1,3 +1,8 @@
+use crate::{
+    elements::relative::{self, Relative},
+    error::E,
+};
+
 #[derive(Debug)]
 pub struct Rectangle {
     pub x: i32,
@@ -27,5 +32,19 @@ impl Rectangle {
         if let Some(y) = y {
             self.y = y;
         }
+    }
+
+    pub fn relative(&self) -> Relative {
+        Relative::new(self.x, self.y)
+    }
+
+    pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+        context.fill_rect(
+            relative.x(self.x) as f64,
+            relative.y(self.y) as f64,
+            self.w as f64,
+            self.h as f64,
+        );
+        // context.stroke();
     }
 }

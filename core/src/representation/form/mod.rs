@@ -4,6 +4,8 @@ pub mod rectangle;
 pub use path::Path;
 pub use rectangle::Rectangle;
 
+use crate::elements::relative::Relative;
+
 pub trait Default {
     fn init() -> Form;
 }
@@ -37,6 +39,23 @@ impl Form {
         match self {
             Self::Rectangle(figure) => figure.set_coors(x, y),
             Self::Path(_) => { /* Ignore */ }
+        }
+    }
+    pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+        match self {
+            Self::Rectangle(figure) => figure.render(context, relative),
+            Self::Path(_) => {
+                todo!("Implement render for path")
+            }
+        }
+    }
+
+    pub fn relative(&self) -> Relative {
+        match self {
+            Self::Rectangle(figure) => figure.relative(),
+            Self::Path(_) => {
+                todo!("Implement render for path")
+            }
         }
     }
 }

@@ -1,15 +1,18 @@
+use std::ops::RangeInclusive;
+
 use crate::{
     elements::border::Border,
-    entity::Signature,
+    entity::{Signature, SignatureProducer},
     representation::{
         self,
         form::{self, rectangle::Rectangle, Form},
         style::{self, Style},
-        Representation,
+        Default, Representation,
     },
 };
+use rand::Rng;
 
-const PORTS_VERTICAL_OFFSET: i32 = 10;
+const PORTS_VERTICAL_OFFSET: i32 = 8;
 
 #[derive(Debug, PartialEq)]
 pub enum PortType {
@@ -24,13 +27,27 @@ pub struct Port {
     pub repr: Representation,
 }
 
+impl Port {
+    fn dummy(producer: &mut SignatureProducer) -> Port {
+        Port {
+            sig: producer.next(),
+            port_type: if rand::random() {
+                PortType::In
+            } else {
+                PortType::Out
+            },
+            repr: Port::init(),
+        }
+    }
+}
+
 impl form::Default for Port {
     fn init() -> Form {
         Form::Rectangle(Rectangle {
             x: 0,
             y: 0,
-            w: 25,
-            h: 25,
+            w: 8,
+            h: 8,
         })
     }
 }
@@ -38,8 +55,8 @@ impl form::Default for Port {
 impl style::Default for Port {
     fn init() -> Style {
         Style {
-            stroke_color: String::from("#000000"),
-            fill_color: String::from("#66CCFF"),
+            stroke_style: String::from("rgb(0,0,0)"),
+            fill_style: String::from("rgb(50,50,50)"),
         }
     }
 }
@@ -63,8 +80,21 @@ impl Ports {
     pub fn new() -> Self {
         Self {
             ports: vec![],
-            border: Default::default(),
+            border: std::default::Default::default(),
         }
+    }
+
+    pub fn dummy(producer: &mut SignatureProducer, ports: RangeInclusive<usize>) -> Self {
+        let count = rand::thread_rng().gen_range(ports);
+        let mut instance = Self::new();
+        for _ in 0..count {
+            instance.ports.push(Port::dummy(producer));
+        }
+        instance
+    }
+
+    pub fn link(&mut self, ports: Vec<Port>) {
+        self.ports = ports;
     }
 
     pub fn required_height(&self, port_type: PortType) -> i32 {
@@ -77,6 +107,14 @@ impl Ports {
             .filter(|p| p.port_type == port_type)
             .for_each(|p| required += p.repr.form.box_height() + PORTS_VERTICAL_OFFSET);
         required
+    }
+
+    pub fn len(&self) -> usize {
+        self.ports.len()
+    }
+
+    pub fn get(&self, index: usize) -> &Port {
+        &self.ports[index]
     }
 }
 
@@ -103,8 +141,29 @@ impl representation::Virtualization for Ports {
                 let w = p.repr.form.box_width();
                 p.repr
                     .form
-                    .set_coors(Some(self.border.width + (w / 2)), Some(cursor));
+                    .set_coors(Some(self.border.width - (w / 2)), Some(cursor));
                 cursor += h + PORTS_VERTICAL_OFFSET;
             });
+    }
+}
+
+impl representation::Rendering for Port {
+    fn render(
+        &self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &crate::elements::relative::Relative,
+    ) {
+        self.repr.style.apply(context);
+        self.repr.form.render(context, relative);
+    }
+}
+
+impl representation::Rendering for Ports {
+    fn render(
+        &self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &crate::elements::relative::Relative,
+    ) {
+        self.ports.iter().for_each(|p| p.render(context, relative));
     }
 }

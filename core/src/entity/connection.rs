@@ -1,47 +1,77 @@
 use crate::{
-    entity::{Component, Port, Signature},
+    entity::{port::PortType, Component, Port, Signature},
     representation::{
         self,
         form::{self, path::Path, Form},
         style::{self, Style},
-        Representation,
+        Default, Representation,
     },
 };
 
 #[derive(Debug)]
-pub struct Joint<'a> {
-    pub port: &'a Port,
-    pub component: &'a Component,
+pub struct Joint {
+    pub port: usize,
+    pub component: usize,
+}
+
+impl Joint {
+    pub fn new(port_id: usize, component_id: usize) -> Self {
+        Self {
+            port: port_id,
+            component: component_id,
+        }
+    }
 }
 
 #[derive(Debug)]
-pub struct Connection<'a> {
+pub struct Connection {
     pub sig: Signature,
-    pub joint_in: Joint<'a>,
-    pub joint_out: Joint<'a>,
+    pub joint_in: Joint,
+    pub joint_out: Joint,
     pub repr: Representation,
 }
 
-impl form::Default for Connection<'_> {
+impl Connection {
+    pub fn new(sig: Signature, joint_in: Joint, joint_out: Joint) -> Self {
+        Self {
+            sig,
+            repr: Connection::init(),
+            joint_in,
+            joint_out,
+        }
+    }
+
+    pub fn get_linked_to(&self, sig: &Signature) -> Option<(PortType, usize)> {
+        if self.joint_in.component == sig.id {
+            Some((PortType::Out, self.joint_out.component))
+        } else if self.joint_out.component == sig.id {
+            Some((PortType::In, self.joint_in.component))
+        } else {
+            None
+        }
+    }
+}
+
+impl form::Default for Connection {
     fn init() -> Form {
         Form::Path(Path { points: vec![] })
     }
 }
 
-impl style::Default for Connection<'_> {
+impl style::Default for Connection {
     fn init() -> Style {
         Style {
-            stroke_color: String::from("#222222"),
-            fill_color: String::from("#FFFFFF"),
+            stroke_style: String::from("#222222"),
+            fill_style: String::from("#FFFFFF"),
         }
     }
 }
 
-impl representation::Default for Connection<'_> {
+impl representation::Default for Connection {
     fn init() -> Representation {
         Representation {
-            form: <Connection<'_> as form::Default>::init(),
-            style: <Connection<'_> as style::Default>::init(),
+            form: <Connection as form::Default>::init(),
+            style: <Connection as style::Default>::init(),
         }
     }
 }

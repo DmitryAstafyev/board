@@ -1,23 +1,46 @@
+use std::ops::RangeInclusive;
+
 use crate::{
-    entity::{Ports, Signature},
+    elements::relative::Relative,
+    entity::{port::PortType, Ports, Signature, SignatureProducer},
     representation::{
         self,
         form::{self, rectangle::Rectangle, Form},
         style::{self, Style},
-        Representation,
+        Default, Representation,
     },
 };
 
-use super::port::PortType;
-
-const MIN_HEIGHT: i32 = 50;
-const MIN_WIDTH: i32 = 50;
+const MIN_HEIGHT: i32 = 64;
+const MIN_WIDTH: i32 = 64;
 
 #[derive(Debug)]
 pub struct Component {
     pub sig: Signature,
     pub ports: Ports,
     pub repr: Representation,
+}
+
+impl Component {
+    pub fn new(sig: Signature) -> Self {
+        Self {
+            sig,
+            ports: Ports::new(),
+            repr: Component::init(),
+        }
+    }
+
+    pub fn dummy(producer: &mut SignatureProducer, ports: RangeInclusive<usize>) -> Self {
+        Self {
+            sig: producer.next(),
+            ports: Ports::dummy(producer, ports),
+            repr: Component::init(),
+        }
+    }
+
+    pub fn relative(&self) -> Relative {
+        self.repr.form.relative()
+    }
 }
 
 impl form::Default for Component {
@@ -34,8 +57,8 @@ impl form::Default for Component {
 impl style::Default for Component {
     fn init() -> Style {
         Style {
-            stroke_color: String::from("#000000"),
-            fill_color: String::from("#DCDCDC"),
+            stroke_style: String::from("rgb(0,0,0)"),
+            fill_style: String::from("rgb(200,200,200)"),
         }
     }
 }
@@ -70,5 +93,18 @@ impl representation::Virtualization for Component {
         self.ports.border.set_width(self.repr.form.box_width());
         // Order ports
         self.ports.calc();
+    }
+}
+
+impl representation::Rendering for Component {
+    fn render(
+        &self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &crate::elements::relative::Relative,
+    ) {
+        let self_relative = self.relative();
+        self.repr.style.apply(context);
+        self.repr.form.render(context, relative);
+        self.ports.render(context, &relative.merge(&self_relative));
     }
 }

@@ -8,7 +8,11 @@
     "build:watch": "./node_modules/.bin/webpack --watch",
     "build-ts": "tsc -p ./tsconfig.json",
     "build-ts:watch": "tsc -p ./tsconfig.json -w",
-    "serve": "./node_modules/.bin/webpack serve"
+    "build-wasm": "cd ../core && wasm-pack build --target bundler",
+    "drop": "rm -rf ./node_modules",
+    "reinstall": "yarn install",
+    "serve": "./node_modules/.bin/webpack serve",
+    "fresh": "yarn run build-wasm && yarn run drop && yarn run reinstall && yarn run build && yarn run serve"
   },
   "author": "Dmitry Astafyev",
   "license": "MIT",

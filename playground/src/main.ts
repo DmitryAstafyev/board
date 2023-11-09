@@ -1,6 +1,14 @@
 require("core")
     .then((core: any) => {
-        console.log(core.hello("Hello From Wasm"));
+        const COMPS = 10;
+        const PORTS = 5;
+        const started = Date.now();
+        core.dummy("playground", COMPS, PORTS);
+        console.log(
+            `Done for ${COMPS} and ${PORTS * COMPS} ports in: ${
+                Date.now() - started
+            }ms`
+        );
     })
     .catch((err: Error) => {
         console.error(err.message);
