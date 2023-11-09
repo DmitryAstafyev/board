@@ -17,6 +17,19 @@ pub enum Form {
 }
 
 impl Form {
+    // Returns box data: (x,y,w,h)
+    pub fn box_data(forms: Vec<&Form>) -> Option<(i32, i32, i32, i32)> {
+        // TODO: needs to be optimized
+        let x0 = forms.iter().map(|f| f.get_coors().0).min();
+        let y0 = forms.iter().map(|f| f.get_coors().1).min();
+        let x1 = forms.iter().map(|f| f.box_width() + f.get_coors().0).max();
+        let y1 = forms.iter().map(|f| f.box_height() + f.get_coors().1).max();
+        if let (Some(x), Some(y), Some(x1), Some(y1)) = (x0, y0, x1, y1) {
+            Some((x, y, x1 - x, y1 - y))
+        } else {
+            None
+        }
+    }
     pub fn box_height(&self) -> i32 {
         match self {
             Self::Rectangle(figure) => figure.box_height(),

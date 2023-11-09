@@ -114,10 +114,11 @@ impl representation::Virtualization for Composition {
             })
             .collect::<Vec<(usize, (i32, i32), (i32, i32))>>();
         for (current_id, (current_x, current_y), (current_w, current_h)) in data.iter() {
-            // if calculated.contains(current_id) {
-            //     console_log!("Next: skip");
-            //     continue;
-            // }
+            let initial = calculated.is_empty();
+            if calculated.contains(current_id) {
+                console_log!("Next: skip");
+                continue;
+            }
             let mut in_box: Vec<usize> = vec![*current_id];
             console_log!("Next: {}", current_id);
             let (linked_in, linked_out) = Connection::linked(connections, *current_id, &calculated);
@@ -137,10 +138,10 @@ impl representation::Virtualization for Composition {
                         Some(y),
                     );
                     y += comp.repr.form.box_height() + VERTICAL_OFFSET_BETWEEN_COMPS;
-                    calculated.push(comp.sig.id);
                     in_box.push(comp.sig.id);
                 }
-            }); // Order of a left side
+            });
+            // Order of a left side
             let mut total_height = 0;
             self.components.iter().for_each(|c| {
                 if linked_out.contains(&c.sig.id) {
@@ -155,11 +156,64 @@ impl representation::Virtualization for Composition {
                         Some(y),
                     );
                     y += comp.repr.form.box_height() + VERTICAL_OFFSET_BETWEEN_COMPS;
-                    calculated.push(comp.sig.id);
                     in_box.push(comp.sig.id);
                 }
             });
-            calculated.push(*current_id);
+            if initial {
+                calculated = [calculated, in_box].concat();
+                continue;
+            }
+            // Looking for a best place considering already ordered components
+            let ordered_box = Form::box_data(
+                self.components
+                    .iter()
+                    .filter_map(|c| {
+                        if calculated.contains(&c.sig.id) {
+                            Some(&c.repr.form)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<&Form>>(),
+            );
+            let current_box = Form::box_data(
+                self.components
+                    .iter()
+                    .filter_map(|c| {
+                        if in_box.contains(&c.sig.id) {
+                            Some(&c.repr.form)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<&Form>>(),
+            );
+            console_log!("ordered box {calculated:?}: {ordered_box:?}");
+            console_log!("current box {in_box:?}: {current_box:?}");
+            if let (Some((o_x, o_y, o_w, o_h)), Some((c_x, c_y, c_w, c_h))) =
+                (ordered_box, current_box)
+            {
+                if o_w + c_w < o_h + c_h {
+                    // Locate horizontally
+                    let shift = o_x - c_x + o_w + HORIZONTAL_OFFSET_BETWEEN_COMPS;
+                    self.components.iter_mut().for_each(|comp| {
+                        if in_box.contains(&comp.sig.id) {
+                            let prev_x = comp.repr.form.get_coors().0;
+                            comp.repr.form.set_coors(Some(prev_x + shift), None);
+                        }
+                    });
+                } else {
+                    // Locate verticaly
+                    let shift = o_y - c_y + o_h + VERTICAL_OFFSET_BETWEEN_COMPS;
+                    self.components.iter_mut().for_each(|comp| {
+                        if in_box.contains(&comp.sig.id) {
+                            let prev_y = comp.repr.form.get_coors().1;
+                            comp.repr.form.set_coors(None, Some(prev_y + shift));
+                        }
+                    });
+                }
+            }
+            calculated = [calculated, in_box].concat();
         }
         console_log!("Link ports");
         self.connections.iter_mut().for_each(|conn| {
