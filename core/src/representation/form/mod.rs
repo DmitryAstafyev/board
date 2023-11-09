@@ -41,12 +41,20 @@ impl Form {
             Self::Path(_) => { /* Ignore */ }
         }
     }
+
+    pub fn get_coors(&self) -> (i32, i32) {
+        match self {
+            Self::Rectangle(figure) => figure.get_coors(),
+            Self::Path(_) => {
+                /* Ignore */
+                (0, 0)
+            }
+        }
+    }
     pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         match self {
             Self::Rectangle(figure) => figure.render(context, relative),
-            Self::Path(_) => {
-                todo!("Implement render for path")
-            }
+            Self::Path(figure) => figure.render(context, relative),
         }
     }
 

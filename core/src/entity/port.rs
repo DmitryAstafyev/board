@@ -24,6 +24,16 @@ pub struct Port {
     pub repr: Representation,
 }
 
+impl Port {
+    pub fn set_type(&mut self, port_type: PortType) {
+        self.port_type = port_type;
+        self.repr.style.fill_style = match self.port_type {
+            PortType::In => String::from("rgb(0,200,0)"),
+            PortType::Out => String::from("rgb(0,0,200)"),
+        };
+    }
+}
+
 impl form::Default for Port {
     fn init() -> Form {
         Form::Rectangle(Rectangle {
@@ -88,7 +98,17 @@ impl Ports {
     }
 
     pub fn get(&self, index: usize) -> &Port {
+        // TODO: not safe!
         &self.ports[index]
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> &mut Port {
+        // TODO: not safe!
+        &mut self.ports[index]
+    }
+
+    pub fn find(&self, port_id: usize) -> Option<&Port> {
+        self.ports.iter().find(|p| p.sig.id == port_id)
     }
 }
 

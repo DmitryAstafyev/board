@@ -1,7 +1,7 @@
 require("core")
     .then((core: any) => {
-        const COMPS = 10;
-        const PORTS = 5;
+        const COMPS = 16;
+        const PORTS = 8;
         const started = Date.now();
         core.dummy("playground", COMPS, PORTS);
         console.log(

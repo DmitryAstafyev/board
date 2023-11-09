@@ -1,3 +1,5 @@
+use crate::elements::relative::Relative;
+
 #[derive(Debug)]
 pub struct Point {
     pub x: i32,
@@ -38,5 +40,20 @@ impl Path {
         } else {
             0
         }
+    }
+
+    pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+        if self.points.is_empty() {
+            return;
+        }
+        context.begin_path();
+        context.move_to(
+            relative.x(self.points[0].x) as f64,
+            relative.y(self.points[0].y) as f64,
+        );
+        self.points.iter().for_each(|p| {
+            context.line_to(relative.x(p.x) as f64, relative.y(p.y) as f64);
+        });
+        context.stroke();
     }
 }

@@ -36,8 +36,8 @@ impl Component {
 impl form::Default for Component {
     fn init() -> Form {
         Form::Rectangle(Rectangle {
-            x: 0,
-            y: 0,
+            x: 200,
+            y: 20,
             w: MIN_WIDTH,
             h: MIN_HEIGHT,
         })
@@ -96,5 +96,10 @@ impl representation::Rendering for Component {
         self.repr.style.apply(context);
         self.repr.form.render(context, relative);
         self.ports.render(context, &relative.merge(&self_relative));
+        let _ = context.stroke_text(
+            &self.sig.id.to_string(),
+            relative.x(self.repr.form.get_coors().0 + 4) as f64,
+            relative.y(self.repr.form.get_coors().1 + 4) as f64,
+        );
     }
 }

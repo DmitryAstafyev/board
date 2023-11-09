@@ -34,6 +34,10 @@ impl Rectangle {
         }
     }
 
+    pub fn get_coors(&self) -> (i32, i32) {
+        (self.x, self.y)
+    }
+
     pub fn relative(&self) -> Relative {
         Relative::new(self.x, self.y)
     }
