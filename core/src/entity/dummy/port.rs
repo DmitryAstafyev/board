@@ -1,12 +1,9 @@
 use std::ops::RangeInclusive;
 
-use crate::{
-    entity::{
-        dummy::{Dummy, SignatureProducer},
-        port::PortType,
-        Port, Ports,
-    },
-    representation::Default,
+use crate::entity::{
+    dummy::{Dummy, SignatureProducer},
+    port::PortType,
+    Port, Ports,
 };
 use rand::Rng;
 
@@ -19,7 +16,6 @@ impl Dummy<Port, ()> for Port {
             } else {
                 PortType::Out
             },
-            repr: Port::init(),
         }
     }
 }
@@ -29,7 +25,7 @@ impl Dummy<Ports, RangeInclusive<usize>> for Ports {
         let count = rand::thread_rng().gen_range(ports);
         let mut instance = Self::new();
         for _ in 0..count {
-            instance.ports.push(Port::dummy(producer, ()));
+            instance.push(Port::dummy(producer, ()));
         }
         instance
     }

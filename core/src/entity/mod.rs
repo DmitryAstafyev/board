@@ -7,7 +7,7 @@ mod port;
 pub use comosition::Composition;
 pub use component::Component;
 pub use connection::{Connection, Joint};
-pub use port::{Port, Ports};
+pub use port::{Port, PortType, Ports};
 
 #[derive(Debug, Clone)]
 pub struct Signature {

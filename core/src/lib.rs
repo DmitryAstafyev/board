@@ -1,17 +1,15 @@
 extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 
-mod elements;
 mod entity;
 mod error;
-mod representation;
+mod render;
 
-use elements::relative::Relative;
 use entity::{
     dummy::{Dummy, SignatureProducer},
     Composition,
 };
-use representation::{Rendering, Virtualization};
+use render::{Relative, Render};
 use std::{ops::RangeInclusive, panic};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
@@ -44,6 +42,13 @@ pub fn dummy(canvas_el_id: &str, components: usize, ports: usize) {
             RangeInclusive::new(ports, ports + ports),
         ),
     );
-    composition.calc(&mut context, &Relative::new(50, 50));
-    composition.render(&mut context, &Relative::new(50, 50));
+    let mut render = Render::<Composition>::new(composition);
+    if let Err(err) = render.calc() {
+        console_log!("Opps, error: {err}");
+    }
+    if let Err(err) = render.draw(&mut context, &Relative::new(50, 50)) {
+        console_log!("Opps, error: {err}");
+    }
+    // composition.calc(&mut context, &Relative::new(50, 50));
+    // composition.render(&mut context, &Relative::new(50, 50));
 }

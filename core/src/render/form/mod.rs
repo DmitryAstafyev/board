@@ -8,7 +8,7 @@ pub use rectangle::Rectangle;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::console_log;
 
-use crate::elements::relative::Relative;
+use crate::render::Relative;
 
 pub trait Default {
     fn init() -> Form;
@@ -68,7 +68,7 @@ impl Form {
     pub fn box_map(
         forms: &[&Form],
         context: &mut web_sys::CanvasRenderingContext2d,
-        relative: &crate::elements::relative::Relative,
+        relative: &Relative,
     ) -> Option<(StartPoint, i32, (i32, i32, i32, i32))> {
         if let Some((x, y, w, h)) = Form::box_size(forms) {
             let cell = 10;

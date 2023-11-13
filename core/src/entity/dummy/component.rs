@@ -1,9 +1,6 @@
-use crate::{
-    entity::{
-        dummy::{Dummy, SignatureProducer},
-        Component, Ports,
-    },
-    representation::Default,
+use crate::entity::{
+    dummy::{Dummy, SignatureProducer},
+    Component, Ports,
 };
 use std::ops::RangeInclusive;
 
@@ -12,7 +9,6 @@ impl Dummy<Component, RangeInclusive<usize>> for Component {
         Self {
             sig: producer.next(),
             ports: Ports::dummy(producer, ports),
-            repr: Component::init(),
         }
     }
 }
