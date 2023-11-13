@@ -2,7 +2,7 @@ use crate::{
     entity::{Component, Connection, Signature},
     representation::{
         self,
-        form::{self, path::Point, rectangle::Rectangle, Form},
+        form::{self, path::Point, rectangle::Rectangle, Form, StartPoint},
         style::{self, Style},
         Default, Representation,
     },

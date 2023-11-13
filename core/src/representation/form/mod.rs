@@ -43,22 +43,22 @@ impl Form {
         }
     }
 
+    fn is_point_in(point: (i32, i32), area: (i32, i32, i32, i32)) -> bool {
+        let (x, y) = point;
+        let (a_x, a_y, a_x1, a_y1) = area;
+        !(x < a_x || x > a_x1 || y < a_y || y > a_y1)
+    }
+
     // Area (x,y,x1,y1)
     pub fn is_area_busy(area: (i32, i32, i32, i32), forms: &[&Form]) -> bool {
         for form in forms.iter() {
-            let (x, y, x1, y1) = area;
             let (f_x, f_y) = form.get_coors();
             let (f_x1, f_y1) = (form.box_width() + f_x, form.box_height() + f_y);
-            if (f_x..f_x1).contains(&x) && (f_y..f_y1).contains(&y) {
-                return true;
-            }
-            if (f_x..f_x1).contains(&x1) && (f_y..f_y1).contains(&y1) {
-                return true;
-            }
-            if (x..x1).contains(&f_x) && (y..y1).contains(&f_y) {
-                return true;
-            }
-            if (x..x1).contains(&f_x1) && (y..y1).contains(&f_y1) {
+            if Form::is_point_in((f_x, f_y), area)
+                || Form::is_point_in((f_x, f_y1), area)
+                || Form::is_point_in((f_x1, f_y), area)
+                || Form::is_point_in((f_x1, f_y1), area)
+            {
                 return true;
             }
         }
@@ -69,7 +69,7 @@ impl Form {
         forms: &[&Form],
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &crate::elements::relative::Relative,
-    ) {
+    ) -> Option<(StartPoint, i32, (i32, i32, i32, i32))> {
         if let Some((x, y, w, h)) = Form::box_size(forms) {
             let cell = 10;
             let cells_x_count = w / cell;
@@ -90,7 +90,7 @@ impl Form {
             } else {
                 cells_y_count
             };
-            let mut areas: Vec<(StartPoint, i32, (i32, i32, i32, i32))> = vec![];
+            let mut area: Option<(StartPoint, i32, (i32, i32, i32, i32))> = None;
             // Check from point (x,y)
             if cells.contains(&(0, 0)) {
                 let mut busy = false;
@@ -118,7 +118,7 @@ impl Form {
                     x + steps * cell,
                     y + steps * cell
                 );
-                context.set_stroke_style(&JsValue::from_str("rgb(255,200,0)"));
+                context.set_stroke_style(&JsValue::from_str("rgb(0,255,0)"));
                 context.stroke_rect(
                     relative.x(x) as f64,
                     relative.y(y) as f64,
@@ -126,11 +126,18 @@ impl Form {
                     (steps * cell) as f64,
                 );
                 context.stroke();
-                areas.push((
-                    StartPoint::TL,
-                    steps * cell * steps * cell,
-                    (x, y, x + steps * cell, y + steps * cell),
-                ));
+                let sq = steps * cell * steps * cell;
+                if if let Some((_, a_sq, _)) = area.as_ref() {
+                    sq > *a_sq
+                } else {
+                    true
+                } {
+                    let _ = area.insert((
+                        StartPoint::TL,
+                        sq,
+                        (x, y, x + steps * cell, y + steps * cell),
+                    ));
+                }
             }
             // Check from point (x,y1)
             if cells.contains(&(0, cells_y_count - 1)) {
@@ -160,7 +167,7 @@ impl Form {
                     x + steps * cell,
                     y + h - steps * cell
                 );
-                context.set_stroke_style(&JsValue::from_str("rgb(255,150,0)"));
+                context.set_stroke_style(&JsValue::from_str("rgb(0,0,255)"));
                 context.stroke_rect(
                     relative.x(x) as f64,
                     relative.y(y + h - steps * cell) as f64,
@@ -168,18 +175,25 @@ impl Form {
                     (steps * cell) as f64,
                 );
                 context.stroke();
-                areas.push((
-                    StartPoint::BL,
-                    steps * cell * steps * cell,
-                    (x, y + h - steps * cell, x + steps * cell, y + h),
-                ));
+                let sq = steps * cell * steps * cell;
+                if if let Some((_, a_sq, _)) = area.as_ref() {
+                    sq > *a_sq
+                } else {
+                    true
+                } {
+                    let _ = area.insert((
+                        StartPoint::BL,
+                        sq,
+                        (x, y + h - steps * cell, x + steps * cell, y + h),
+                    ));
+                }
             }
             // Check from point (x1,y)
             if cells.contains(&(cells_x_count - 1, 0)) {
                 let mut busy = false;
                 let mut steps = 0;
                 for s in 0..max_size {
-                    for cur_x in cells_x_count - s..s {
+                    for cur_x in cells_x_count - s..cells_x_count {
                         for cur_y in 0..s {
                             if !cells.contains(&(cur_x, cur_y)) {
                                 busy = true;
@@ -202,7 +216,7 @@ impl Form {
                     x + w - steps * cell,
                     y + steps * cell
                 );
-                context.set_stroke_style(&JsValue::from_str("rgb(255,100,0)"));
+                context.set_stroke_style(&JsValue::from_str("rgb(100,255,50)"));
                 context.stroke_rect(
                     relative.x(x + w - steps * cell) as f64,
                     relative.y(y) as f64,
@@ -210,19 +224,26 @@ impl Form {
                     (steps * cell) as f64,
                 );
                 context.stroke();
-                areas.push((
-                    StartPoint::TR,
-                    steps * cell * steps * cell,
-                    (x + w - steps * cell, y, x + w, y + steps * cell),
-                ));
+                let sq = steps * cell * steps * cell;
+                if if let Some((_, a_sq, _)) = area.as_ref() {
+                    sq > *a_sq
+                } else {
+                    true
+                } {
+                    let _ = area.insert((
+                        StartPoint::TR,
+                        sq,
+                        (x + w - steps * cell, y, x + w, y + steps * cell),
+                    ));
+                }
             }
             // Check from point (x1,y1)
             if cells.contains(&(cells_x_count - 1, cells_y_count - 1)) {
                 let mut busy = false;
                 let mut steps = 0;
                 for s in 0..max_size {
-                    for cur_x in cells_x_count - s..s {
-                        for cur_y in cells_y_count - s..s {
+                    for cur_x in cells_x_count - s..cells_x_count {
+                        for cur_y in cells_y_count - s..cells_y_count {
                             if !cells.contains(&(cur_x, cur_y)) {
                                 busy = true;
                                 break;
@@ -253,14 +274,22 @@ impl Form {
                     (steps * cell) as f64,
                 );
                 context.stroke();
-                areas.push((
-                    StartPoint::BR,
-                    steps * cell * steps * cell,
-                    (x + w - steps * cell, y + h - steps * cell, x + w, y + h),
-                ));
+                let sq = steps * cell * steps * cell;
+                if if let Some((_, a_sq, _)) = area.as_ref() {
+                    sq > *a_sq
+                } else {
+                    true
+                } {
+                    let _ = area.insert((
+                        StartPoint::BR,
+                        sq,
+                        (x + w - steps * cell, y + h - steps * cell, x + w, y + h),
+                    ));
+                }
             }
-            console_log!("MAP ({cells_x_count}, {cells_y_count}): {cells:?}");
+            return area;
         }
+        None
     }
     pub fn box_height(&self) -> i32 {
         match self {
