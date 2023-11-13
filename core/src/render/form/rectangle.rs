@@ -1,7 +1,4 @@
-use crate::{
-    elements::relative::{self, Relative},
-    error::E,
-};
+use crate::{error::E, render::Relative};
 
 #[derive(Debug)]
 pub struct Rectangle {
@@ -49,6 +46,5 @@ impl Rectangle {
             self.w as f64,
             self.h as f64,
         );
-        // context.stroke();
     }
 }

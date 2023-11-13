@@ -1,0 +1,39 @@
+use crate::{
+    entity::Port,
+    error::E,
+    render::{form::Rectangle, Form, Relative, Render, Style},
+};
+
+pub const PORT_SIDE: i32 = 8;
+
+impl Render<Port> {
+    pub fn new(entity: Port) -> Self {
+        Self {
+            entity,
+            form: Form::Rectangle(Rectangle {
+                x: 0,
+                y: 0,
+                w: PORT_SIDE,
+                h: PORT_SIDE,
+            }),
+            style: Style {
+                stroke_style: String::from("rgb(0,0,0)"),
+                fill_style: String::from("rgb(50,50,50)"),
+            },
+        }
+    }
+
+    pub fn calc(&mut self) -> Result<(), E> {
+        Ok(())
+    }
+
+    pub fn draw(
+        &self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
+    ) -> Result<(), E> {
+        self.style.apply(context);
+        self.form.render(context, relative);
+        Ok(())
+    }
+}

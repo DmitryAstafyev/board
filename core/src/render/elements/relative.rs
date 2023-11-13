@@ -14,7 +14,7 @@ impl Relative {
     pub fn y(&self, y: i32) -> i32 {
         self.y_ + y
     }
-    pub fn merge(&self, relative: &Relative) -> Relative {
-        Relative::new(relative.x(self.x_), relative.y(self.y_))
+    pub fn from_coors(&self, x: i32, y: i32) -> Relative {
+        Relative::new(self.x(x), self.y(y))
     }
 }

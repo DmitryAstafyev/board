@@ -1,14 +1,5 @@
+use crate::{entity::Signature, render::Representation};
 use std::collections::HashMap;
-
-use crate::{
-    entity::{port::PortType, Component, Port, Signature},
-    representation::{
-        self,
-        form::{self, path::Path, Form},
-        style::{self, Style},
-        Default, Representation,
-    },
-};
 use wasm_bindgen_test::console_log;
 
 #[derive(Debug)]
@@ -47,33 +38,34 @@ pub struct Connection {
     pub sig: Signature,
     pub joint_in: Joint,
     pub joint_out: Joint,
-    pub repr: Representation,
 }
 
 impl Connection {
-    pub fn count(connections: &[Connection], component_id: usize) -> usize {
+    pub fn count(connections: &[Representation<Connection>], component_id: usize) -> usize {
         connections
             .iter()
             .filter(|c| {
-                c.joint_in.component == component_id || c.joint_out.component == component_id
+                c.origin().joint_in.component == component_id
+                    || c.origin().joint_out.component == component_id
             })
             .count()
     }
 
     // Returns all linked components to host as (linked IN, linked OUT)
     pub fn linked(
-        connections: &[Connection],
+        connections: &[Representation<Connection>],
         host_id: usize,
         ignore: &[usize],
     ) -> (Vec<usize>, Vec<usize>) {
         let mut map: HashMap<usize, (usize, usize)> = HashMap::new();
         connections.iter().for_each(|c| {
-            if c.joint_in.component == host_id || c.joint_out.component == host_id {
-                let in_connection = c.joint_in.component != host_id;
+            if c.origin().joint_in.component == host_id || c.origin().joint_out.component == host_id
+            {
+                let in_connection = c.origin().joint_in.component != host_id;
                 let connected_comp_id = if in_connection {
-                    c.joint_in.component
+                    c.origin().joint_in.component
                 } else {
-                    c.joint_out.component
+                    c.origin().joint_out.component
                 };
                 let entry = map.entry(connected_comp_id);
                 entry
@@ -110,44 +102,8 @@ impl Connection {
     pub fn new(sig: Signature, joint_in: Joint, joint_out: Joint) -> Self {
         Self {
             sig,
-            repr: Connection::init(),
             joint_in,
             joint_out,
         }
-    }
-}
-
-impl form::Default for Connection {
-    fn init() -> Form {
-        Form::Path(Path { points: vec![] })
-    }
-}
-
-impl style::Default for Connection {
-    fn init() -> Style {
-        Style {
-            stroke_style: String::from("#222222"),
-            fill_style: String::from("#FFFFFF"),
-        }
-    }
-}
-
-impl representation::Default for Connection {
-    fn init() -> Representation {
-        Representation {
-            form: <Connection as form::Default>::init(),
-            style: <Connection as style::Default>::init(),
-        }
-    }
-}
-
-impl representation::Rendering for Connection {
-    fn render(
-        &self,
-        context: &mut web_sys::CanvasRenderingContext2d,
-        relative: &crate::elements::relative::Relative,
-    ) {
-        self.repr.style.apply(context);
-        self.repr.form.render(context, relative);
     }
 }

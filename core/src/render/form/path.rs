@@ -1,4 +1,4 @@
-use crate::elements::relative::Relative;
+use crate::render::Relative;
 
 #[derive(Debug)]
 pub struct Point {

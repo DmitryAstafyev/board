@@ -14,11 +14,10 @@ impl Dummy<Composition, (RangeInclusive<usize>, RangeInclusive<usize>)> for Comp
     ) -> Self {
         let (components, ports) = options;
         let mut instance = Self::new(producer.next());
+        let mut connections: Vec<Connection> = vec![];
         let count = rand::thread_rng().gen_range(components);
         for _ in 0..count {
-            instance
-                .components
-                .push(Component::dummy(producer, ports.clone()));
+            instance.push_component(Component::dummy(producer, ports.clone()));
         }
         for comp in instance.components.chunks_mut(2) {
             if comp.is_empty() || comp.len() != 2 {
@@ -26,26 +25,42 @@ impl Dummy<Composition, (RangeInclusive<usize>, RangeInclusive<usize>)> for Comp
             }
             let left = &comp[0];
             let right = &comp[1];
-            let min = [left.ports.len(), right.ports.len()]
+            let min = [left.origin().ports.len(), right.origin().ports.len()]
                 .iter()
                 .cloned()
                 .min()
                 .unwrap_or(0);
-
             // let count = rand::thread_rng().gen_range(0..min);
             for _ in 0..min {
                 let selected: usize = rand::thread_rng().gen_range(0..min);
-                comp[0].ports.get_mut(selected).set_type(PortType::In);
-                comp[1].ports.get_mut(selected).set_type(PortType::Out);
+                comp[0]
+                    .origin_mut()
+                    .ports
+                    .get_mut(selected)
+                    .set_type(PortType::In);
+                comp[1]
+                    .origin_mut()
+                    .ports
+                    .get_mut(selected)
+                    .set_type(PortType::Out);
                 let left = &comp[0];
                 let right = &comp[1];
-                instance.connections.push(Connection::new(
+                connections.push(Connection::new(
                     producer.next(),
-                    Joint::new(left.ports.get(selected).sig.id, left.sig.id),
-                    Joint::new(right.ports.get(selected).sig.id, right.sig.id),
+                    Joint::new(
+                        left.origin().ports.get(selected).sig.id,
+                        left.origin().sig.id,
+                    ),
+                    Joint::new(
+                        right.origin().ports.get(selected).sig.id,
+                        right.origin().sig.id,
+                    ),
                 ))
             }
         }
+        connections
+            .drain(..)
+            .for_each(|c| instance.push_connection(c));
         instance
     }
 }

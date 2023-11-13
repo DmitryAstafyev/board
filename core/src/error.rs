@@ -10,6 +10,8 @@ pub enum E {
     // InvalidConfiguration(String),
     // #[error("Toml error")]
     // PasringToml(#[from] toml::de::Error),
+    #[error("Render isn't inited")]
+    RenderNotInited,
     #[error("Static error message")]
     NotSupported,
     #[error("{0}")]
