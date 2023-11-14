@@ -13,10 +13,12 @@ pub const SPACE_IN_HORIZONT: u32 = 3;
 
 #[derive(Debug)]
 pub enum Layout<'a> {
-    // forms in center and forms on left and right sides
+    // Forms in center and forms on left and right sides
     WithFormsBySides((Vec<&'a Form>, Vec<&'a Form>, Vec<&'a Form>)),
-    // from other grids into row
+    // From other grids into row
     GridsRow(&'a [Grid]),
+    // Order grids into one box
+    GridsBox(&'a mut [Grid]),
 }
 
 #[derive(Debug)]
@@ -41,6 +43,7 @@ impl Grid {
                 with_forms_by_sides(left, center, right)?
             }
             Layout::GridsRow(grids) => from_grids_into_row(grids),
+            Layout::GridsBox(grids) => from_grids_into_box(grids),
         })
     }
 
@@ -55,6 +58,102 @@ impl Grid {
             Relative::new((x * CELL) as i32, (y * CELL) as i32)
         } else {
             Relative::new(0, 0)
+        }
+    }
+
+    fn is_block_free(&self, start: &(u32, u32), end: &(u32, u32)) -> bool {
+        console_log!("IS_BLOCK_FREE: start ({start:?}); end ({end:?})");
+        // Check space
+        if self.size.0 < end.0 || self.size.1 < end.1 {
+            return false;
+        }
+        // Check direct crossing first
+        for x in start.0..=end.0 {
+            for y in start.1..=end.1 {
+                if self.map.contains_key(&(x, y)) {
+                    return false;
+                }
+            }
+        }
+        console_log!("IS_BLOCK_FREE (after): start ({start:?}); end ({end:?})");
+        // Check borders
+        let borders: Vec<((u32, u32), (u32, u32))> = vec![
+            // Bottom
+            ((start.0, end.1), (end.0 + 1, end.1 + SPACE_IN_VERTICAL)),
+            // Right
+            ((start.0, end.1), (end.0 + SPACE_IN_HORIZONT, end.1)),
+            // Left
+            (
+                (
+                    if start.0 >= SPACE_IN_HORIZONT {
+                        start.0 - SPACE_IN_HORIZONT
+                    } else {
+                        0
+                    },
+                    start.1,
+                ),
+                (start.0, end.1 + 1),
+            ),
+            // Top
+            (
+                (
+                    if start.0 > 0 { start.0 - 1 } else { 0 },
+                    if start.1 >= SPACE_IN_VERTICAL {
+                        start.1 - SPACE_IN_VERTICAL
+                    } else {
+                        0
+                    },
+                ),
+                (end.0 + 1, start.1),
+            ),
+        ];
+        console_log!("BORDERS: {borders:?}");
+        for (start, end) in borders.iter() {
+            for x in start.0..=end.0 {
+                for y in start.1..=end.1 {
+                    if self.map.contains_key(&(x, y)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
+    }
+
+    pub fn insert(&mut self, grid: &Grid) {
+        // TODO: conside if size == (0,0)
+        if self.map.is_empty() {
+            self.map = grid.map.clone();
+        } else {
+            // Looking for point to insert grid
+            let mut point: Option<(u32, u32)> = None;
+            while point.is_none() {
+                for x in 0..self.size.0 {
+                    for y in 0..self.size.1 {
+                        if self.map.contains_key(&(x, y)) {
+                            continue;
+                        }
+                        if self.is_block_free(&(x, y), &(x + grid.size.0, y + grid.size.1)) {
+                            point = Some((x, y));
+                            break;
+                        }
+                    }
+                    if point.is_some() {
+                        break;
+                    }
+                }
+                if point.is_none() {
+                    // Point isn't found. Grid doesn't have enought space. Increase space
+                    self.size.0 += 1;
+                    self.size.1 += 1;
+                }
+            }
+            // Merge grid
+            if let Some((p_x, p_y)) = point {
+                grid.map.iter().for_each(|((x, y), id)| {
+                    self.map.insert((x + p_x, y + p_y), *id);
+                });
+            }
         }
     }
 
@@ -179,4 +278,36 @@ fn from_grids_into_row(grids: &[Grid]) -> Grid {
         size.0 -= SPACE_IN_HORIZONT;
     }
     Grid { size, map }
+}
+
+fn from_grids_into_box(grids: &mut [Grid]) -> Grid {
+    // Sort from biggest to smallest
+    // grids.sort_by(|a, b| a.size.0.max(a.size.1).cmp(&b.size.0.max(b.size.1)));
+    // Estimate size of final grid
+    let max_total_width: u32 = grids.iter().map(|grid| grid.size.0).sum::<u32>()
+        + (grids.len() - 1) as u32 * SPACE_IN_HORIZONT;
+    let max_total_height: u32 = grids.iter().map(|grid| grid.size.1).sum::<u32>()
+        + (grids.len() - 1) as u32 * SPACE_IN_HORIZONT;
+    let max_grid_width = grids.iter().map(|grid| grid.size.0).max().unwrap_or(0);
+    let max_grid_height = grids.iter().map(|grid| grid.size.1).max().unwrap_or(0);
+    let packed_width = max_total_width / 2;
+    let packed_height = max_total_height / 2;
+    let mut packed = Grid::new();
+    packed.size = (
+        if packed_width < max_grid_width {
+            max_grid_width
+        } else {
+            packed_width
+        },
+        if packed_height < max_grid_height {
+            max_grid_height
+        } else {
+            packed_height
+        },
+    );
+    // Merge grids
+    grids.iter().for_each(|grid| {
+        packed.insert(grid);
+    });
+    packed
 }

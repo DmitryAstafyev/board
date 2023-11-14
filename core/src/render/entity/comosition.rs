@@ -83,7 +83,8 @@ impl Render<Composition> {
             grids.push(grid);
         }
         // Create common grid
-        let grid = Grid::from(Layout::GridsRow(&grids))?;
+        // let grid = Grid::from(Layout::GridsRow(&grids))?;
+        let grid = Grid::from(Layout::GridsBox(&mut grids))?;
         // Update possitions on components
         for comp in self.entity.components.iter_mut() {
             let relative = grid.relative(comp.origin().sig.id);
