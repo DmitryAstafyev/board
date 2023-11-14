@@ -32,6 +32,11 @@ impl<T> Render<T> {
         let (x, y) = self.form.get_coors();
         base.from_coors(x, y)
     }
+
+    pub fn own_relative(&self) -> Relative {
+        let (x, y) = self.form.get_coors();
+        Relative::new(x, y)
+    }
 }
 
 // pub trait Render {
