@@ -12,6 +12,8 @@ pub enum E {
     // PasringToml(#[from] toml::de::Error),
     #[error("Render isn't inited")]
     RenderNotInited,
+    #[error("Form isn't belong to grid")]
+    NotGridForm,
     #[error("Static error message")]
     NotSupported,
     #[error("{0}")]

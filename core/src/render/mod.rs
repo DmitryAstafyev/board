@@ -1,11 +1,13 @@
 pub mod elements;
 pub mod entity;
 pub mod form;
+pub mod grid;
 pub mod representation;
 pub mod style;
 
 pub use elements::{border::Border, relative::Relative};
 pub use form::Form;
+pub use grid::Grid;
 pub use representation::Representation;
 pub use style::Style;
 
@@ -14,6 +16,7 @@ pub struct Render<T> {
     entity: T,
     form: Form,
     style: Style,
+    grid: Option<Grid>,
 }
 
 impl<T> Render<T> {

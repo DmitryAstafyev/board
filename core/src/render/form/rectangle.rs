@@ -1,4 +1,4 @@
-use crate::{error::E, render::Relative};
+use crate::render::Relative;
 
 #[derive(Debug)]
 pub struct Rectangle {
@@ -6,22 +6,21 @@ pub struct Rectangle {
     pub y: i32,
     pub w: i32,
     pub h: i32,
+    pub id: usize,
 }
 
 impl Rectangle {
-    pub fn box_height(&self) -> i32 {
-        self.h
+    pub fn get_box_size(&self) -> (i32, i32) {
+        (self.w, self.h)
     }
-    pub fn box_width(&self) -> i32 {
-        self.w
+    pub fn set_box_size(&mut self, w: Option<i32>, h: Option<i32>) {
+        if let Some(w) = w {
+            self.w = w;
+        }
+        if let Some(h) = h {
+            self.h = h;
+        }
     }
-    pub fn set_box_height(&mut self, h: i32) {
-        self.h = h;
-    }
-    pub fn set_box_width(&mut self, w: i32) {
-        self.w = w;
-    }
-
     pub fn set_coors(&mut self, x: Option<i32>, y: Option<i32>) {
         if let Some(x) = x {
             self.x = x;
@@ -33,10 +32,6 @@ impl Rectangle {
 
     pub fn get_coors(&self) -> (i32, i32) {
         (self.x, self.y)
-    }
-
-    pub fn relative(&self) -> Relative {
-        Relative::new(self.x, self.y)
     }
 
     pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {

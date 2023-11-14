@@ -9,39 +9,32 @@ pub struct Point {
 #[derive(Debug)]
 pub struct Path {
     pub points: Vec<Point>,
+    pub id: usize,
 }
 
 impl Path {
-    pub fn box_height(&self) -> i32 {
-        if let (Some(min), Some(max)) = (
-            self.points.iter().map(|p| p.y).min(),
-            self.points.iter().map(|p| p.y).max(),
-        ) {
-            if max > min {
-                max - min
-            } else {
-                0
-            }
-        } else {
-            0
-        }
+    pub fn get_box_size(&self) -> (i32, i32) {
+        (
+            {
+                let w = self.points.iter().map(|p| p.x).max().unwrap_or(0)
+                    - self.points.iter().map(|p| p.x).min().unwrap_or(0);
+                if w < 0 {
+                    0
+                } else {
+                    w
+                }
+            },
+            {
+                let h = self.points.iter().map(|p| p.y).max().unwrap_or(0)
+                    - self.points.iter().map(|p| p.y).min().unwrap_or(0);
+                if h < 0 {
+                    0
+                } else {
+                    h
+                }
+            },
+        )
     }
-
-    pub fn box_width(&self) -> i32 {
-        if let (Some(min), Some(max)) = (
-            self.points.iter().map(|p| p.x).min(),
-            self.points.iter().map(|p| p.x).max(),
-        ) {
-            if max > min {
-                max - min
-            } else {
-                0
-            }
-        } else {
-            0
-        }
-    }
-
     pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         if self.points.is_empty() {
             return;

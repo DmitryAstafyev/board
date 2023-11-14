@@ -2,7 +2,8 @@ use crate::{
     entity::{Component, Port, PortType},
     error::E,
     render::{
-        entity::port::PORT_SIDE, form::Rectangle, Form, Relative, Render, Representation, Style,
+        entity::port::PORT_SIDE, form::GridRectangle, Form, Grid, Relative, Render, Representation,
+        Style,
     },
 };
 
@@ -24,18 +25,15 @@ impl Render<Component> {
                 }
             })
             .collect::<Vec<Representation<Port>>>();
+        let id = entity.sig.id;
         Self {
             entity,
-            form: Form::Rectangle(Rectangle {
-                x: 200,
-                y: 20,
-                w: MIN_WIDTH,
-                h: MIN_HEIGHT,
-            }),
+            form: Form::GridRectangle(GridRectangle::new(id, 0, 0, MIN_WIDTH, MIN_HEIGHT)),
             style: Style {
                 stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(200,250,200)"),
             },
+            grid: Some(Grid::new()),
         }
     }
 
@@ -57,12 +55,15 @@ impl Render<Component> {
 
     pub fn calc(&mut self) -> Result<(), E> {
         // Set self size
-        self.form.set_box_height(
-            [MIN_HEIGHT, self.ports_height()]
-                .iter()
-                .max()
-                .copied()
-                .unwrap_or(MIN_HEIGHT),
+        self.form.set_box_size(
+            None,
+            Some(
+                [MIN_HEIGHT, self.ports_height()]
+                    .iter()
+                    .max()
+                    .copied()
+                    .unwrap_or(MIN_HEIGHT),
+            ),
         );
         // Calc ports
         for port in self.entity.ports.ports.iter_mut() {
@@ -72,18 +73,16 @@ impl Render<Component> {
         let mut cursor: i32 = PORTS_VERTICAL_OFFSET;
         for port in self.entity.ports.filter_mut(PortType::In) {
             let render = port.render_mut()?;
-            let h = render.form.box_height();
-            let w = render.form.box_width();
+            let (w, h) = render.form.get_box_size();
             render.form.set_coors(Some(-(w / 2)), Some(cursor));
             cursor += h + PORTS_VERTICAL_OFFSET;
         }
         // Order ports on a right side
         cursor = PORTS_VERTICAL_OFFSET;
-        let self_width = self.form.box_width();
+        let (self_width, _) = self.form.get_box_size();
         for port in self.entity.ports.filter_mut(PortType::Out) {
             let render = port.render_mut()?;
-            let h = render.form.box_height();
-            let w = render.form.box_width();
+            let (w, h) = render.form.get_box_size();
             render
                 .form
                 .set_coors(Some(self_width - (w / 2)), Some(cursor));

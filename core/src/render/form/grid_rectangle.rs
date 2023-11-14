@@ -1,0 +1,75 @@
+use crate::render::{grid, Relative};
+
+#[derive(Debug)]
+pub struct GridRectangle {
+    pub x: i32,
+    pub y: i32,
+    pub w: i32,
+    pub h: i32,
+    pub cells: (u32, u32),
+    pub id: usize,
+}
+
+impl GridRectangle {
+    fn sync(&mut self) {
+        let mut cells: (u32, u32) = (self.w as u32 / grid::CELL, self.h as u32 / grid::CELL);
+        if cells.0 == 0 {
+            cells.0 = 1
+        }
+        if cells.1 == 0 {
+            cells.1 = 1
+        }
+        if cells.0 * grid::CELL < self.w as u32 {
+            cells.0 += 1;
+        }
+        if cells.1 * grid::CELL < self.h as u32 {
+            cells.1 += 1
+        }
+        self.w = (cells.0 * grid::CELL) as i32;
+        self.h = (cells.1 * grid::CELL) as i32;
+        self.cells = cells;
+    }
+    pub fn new(id: usize, x: i32, y: i32, w: i32, h: i32) -> Self {
+        let mut instance = Self {
+            x,
+            y,
+            w,
+            h,
+            cells: (1, 1),
+            id,
+        };
+        instance.sync();
+        instance
+    }
+    pub fn get_box_size(&self) -> (i32, i32) {
+        (self.w, self.h)
+    }
+    pub fn set_box_size(&mut self, w: Option<i32>, h: Option<i32>) {
+        if let Some(w) = w {
+            self.w = w;
+        }
+        if let Some(h) = h {
+            self.h = h;
+        }
+        self.sync();
+    }
+    pub fn set_coors(&mut self, x: Option<i32>, y: Option<i32>) {
+        if let Some(x) = x {
+            self.x = x;
+        }
+        if let Some(y) = y {
+            self.y = y;
+        }
+    }
+    pub fn get_coors(&self) -> (i32, i32) {
+        (self.x, self.y)
+    }
+    pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+        context.fill_rect(
+            relative.x(self.x) as f64,
+            relative.y(self.y) as f64,
+            self.w as f64,
+            self.h as f64,
+        );
+    }
+}

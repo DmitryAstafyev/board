@@ -17,4 +17,7 @@ impl Relative {
     pub fn from_coors(&self, x: i32, y: i32) -> Relative {
         Relative::new(self.x(x), self.y(y))
     }
+    pub fn from_base(&self, base: &Relative) -> Relative {
+        Relative::new(base.x(self.x_), base.y(self.y_))
+    }
 }
