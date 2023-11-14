@@ -8,6 +8,7 @@ pub const PORT_SIDE: i32 = 8;
 
 impl Render<Port> {
     pub fn new(entity: Port) -> Self {
+        let id = entity.sig.id;
         Self {
             entity,
             form: Form::Rectangle(Rectangle {
@@ -15,11 +16,13 @@ impl Render<Port> {
                 y: 0,
                 w: PORT_SIDE,
                 h: PORT_SIDE,
+                id,
             }),
             style: Style {
                 stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(50,50,50)"),
             },
+            grid: None,
         }
     }
 

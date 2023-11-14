@@ -51,7 +51,7 @@ impl Connection {
             .count()
     }
 
-    // Returns all linked components to host as (linked IN, linked OUT)
+    // Returns ids of all linked components to host as (linked IN, linked OUT)
     pub fn linked(
         connections: &[Representation<Connection>],
         host_id: usize,
