@@ -13,6 +13,9 @@ pub struct Path {
 }
 
 impl Path {
+    pub fn new(id: usize, points: Vec<Point>) -> Self {
+        Self { id, points }
+    }
     pub fn get_box_size(&self) -> (i32, i32) {
         (
             {

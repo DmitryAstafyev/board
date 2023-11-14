@@ -1,9 +1,14 @@
 use wasm_bindgen_test::console_log;
 
 use crate::{
-    entity::{Component, Composition, Connection, Port, PortType},
+    entity::{Component, Composition, Connection},
     error::E,
-    render::{form::Rectangle, grid::Layout, Form, Grid, Relative, Render, Representation, Style},
+    render::{
+        entity::port,
+        form::{Path, Point, Rectangle},
+        grid::Layout,
+        Form, Grid, Relative, Render, Representation, Style,
+    },
 };
 
 impl Render<Composition> {
@@ -79,7 +84,57 @@ impl Render<Composition> {
         }
         // Create common grid
         let grid = Grid::from(Layout::GridsRow(&grids))?;
+        // Update possitions on components
+        for comp in self.entity.components.iter_mut() {
+            let relative = grid.relative(comp.origin().sig.id);
+            let render = comp.render_mut()?;
+            let (x, y) = render.form.get_coors();
+            render
+                .form
+                .set_coors(Some(relative.x(x)), Some(relative.y(y)));
+        }
+        // Save grid
         self.grid = Some(grid);
+        // Setup connections
+        for conn in self.entity.connections.iter_mut() {
+            if let (Some(ins), Some(outs)) = (
+                self.entity
+                    .components
+                    .iter()
+                    .find(|comp| comp.origin().sig.id == conn.origin().joint_in.component),
+                self.entity
+                    .components
+                    .iter()
+                    .find(|comp| comp.origin().sig.id == conn.origin().joint_out.component),
+            ) {
+                if let (Some(port_in), Some(port_out)) = (
+                    ins.origin().ports.find(conn.origin().joint_in.port),
+                    outs.origin().ports.find(conn.origin().joint_out.port),
+                ) {
+                    let port_in = port_in.render()?.form.get_coors();
+                    let port_out = port_out.render()?.form.get_coors();
+                    let relative_inns = ins.render()?.own_relative();
+                    let relative_outs = outs.render()?.own_relative();
+                    let offset = port::PORT_SIDE / 2;
+                    let path = Path::new(
+                        conn.origin().sig.id,
+                        vec![
+                            Point {
+                                x: relative_inns.x(port_in.0) + offset,
+                                y: relative_inns.y(port_in.1) + offset,
+                            },
+                            Point {
+                                x: relative_outs.x(port_out.0) + offset,
+                                y: relative_outs.y(port_out.1) + offset,
+                            },
+                        ],
+                    );
+                    conn.render_mut()?.form = Form::Path(path);
+                } else {
+                    console_log!("No ports has been found :/");
+                }
+            }
+        }
         Ok(())
     }
 
@@ -91,19 +146,10 @@ impl Render<Composition> {
         self.style.apply(context);
         self.form.render(context, relative);
         for component in self.entity.components.iter() {
-            let component_relative: Option<Relative> = self
-                .grid
-                .as_ref()
-                .map(|grid| relative.from_base(&grid.relative(component.origin().sig.id)));
-            component.render()?.draw(
-                context,
-                if let Some(relative) = component_relative.as_ref() {
-                    console_log!("comp relative is used: {relative:?}");
-                    relative
-                } else {
-                    relative
-                },
-            )?;
+            component.render()?.draw(context, relative)?;
+        }
+        for connection in self.entity.connections.iter() {
+            connection.render()?.draw(context, relative)?;
         }
         if let Some(grid) = self.grid.as_ref() {
             console_log!(">>>> RELATIVE: {relative:?}");

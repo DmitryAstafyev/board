@@ -64,10 +64,10 @@ impl Ports {
             .collect::<Vec<&mut Representation<Port>>>()
     }
 
-    pub fn find(&self, port_id: usize) -> Option<&Port> {
+    pub fn find(&self, port_id: usize) -> Option<&Representation<Port>> {
         self.ports.iter().find_map(|p| {
             if p.origin().sig.id == port_id {
-                Some(p.origin())
+                Some(p)
             } else {
                 None
             }

@@ -4,7 +4,7 @@ pub mod rectangle;
 
 use crate::{error::E, render::Relative};
 pub use grid_rectangle::GridRectangle;
-pub use path::Path;
+pub use path::{Path, Point};
 pub use rectangle::Rectangle;
 
 #[derive(Debug)]

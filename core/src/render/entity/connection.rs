@@ -1,7 +1,7 @@
 use crate::{
     entity::Connection,
     error::E,
-    render::{form::Path, Form, Render, Style},
+    render::{form::Path, Form, Relative, Render, Style},
 };
 
 impl Render<Connection> {
@@ -16,5 +16,14 @@ impl Render<Connection> {
             },
             grid: None,
         }
+    }
+    pub fn draw(
+        &self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
+    ) -> Result<(), E> {
+        self.style.apply(context);
+        self.form.render(context, relative);
+        Ok(())
     }
 }
