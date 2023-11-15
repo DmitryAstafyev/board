@@ -4,7 +4,7 @@ use wasm_bindgen_test::console_log;
 
 use crate::{
     error::E,
-    render::{Form, Relative},
+    render::{elements, Form, Relative},
 };
 
 pub const CELL: u32 = 25;
@@ -25,8 +25,8 @@ pub enum Layout<'a> {
 pub struct Grid {
     // Total grid size
     pub size: (u32, u32),
-    // Cells map
-    pub map: HashMap<(u32, u32), usize>,
+    // Cells map <EntityID, Occupied area <(x, y, x1, y1)>>
+    pub map: HashMap<usize, (u32, u32, u32, u32)>,
 }
 
 impl Grid {
@@ -48,11 +48,16 @@ impl Grid {
     }
 
     pub fn relative(&self, target: usize) -> Relative {
-        if let Some((x, y)) = self
-            .map
-            .iter()
-            .filter_map(|((x, y), id)| if id == &target { Some((x, y)) } else { None })
-            .min()
+        if let Some((x, y)) =
+            self.map.iter().find_map(
+                |(id, (x, y, _, _))| {
+                    if id == &target {
+                        Some((x, y))
+                    } else {
+                        None
+                    }
+                },
+            )
         {
             Relative::new((x * CELL) as i32, (y * CELL) as i32)
         } else {
@@ -60,57 +65,39 @@ impl Grid {
         }
     }
 
-    fn is_block_free(&self, start: &(u32, u32), end: &(u32, u32)) -> bool {
+    fn is_block_free(&self, target: (u32, u32, u32, u32)) -> bool {
+        let (mut x, mut y, mut x1, mut y1) = target;
         // Check space
-        if self.size.0 < end.0 || self.size.1 < end.1 {
+        if self.size.0 < x1 || self.size.1 < y1 {
             return false;
         }
-        // Check direct crossing first
-        for x in start.0..=end.0 {
-            for y in start.1..=end.1 {
-                if self.map.contains_key(&(x, y)) {
-                    return false;
-                }
+        // Extend box to consider necessary spaces
+        x = if x > SPACE_IN_HORIZONT - 1 {
+            x - (SPACE_IN_HORIZONT - 1)
+        } else {
+            0
+        };
+        y = if y > SPACE_IN_VERTICAL - 1 {
+            y - (SPACE_IN_VERTICAL - 1)
+        } else {
+            0
+        };
+        x1 += SPACE_IN_HORIZONT;
+        y1 += SPACE_IN_VERTICAL;
+        let extd_target = (x, y, x1, y1);
+        // Check crossing
+        for (_, (ax, ay, ax1, ay1)) in self.map.iter() {
+            if elements::is_area_cross(&extd_target, &(*ax, *ay, *ax1, *ay1)) {
+                return false;
             }
         }
-        // Check borders
-        let borders: Vec<((u32, u32), (u32, u32))> = vec![
-            // Bottom
-            ((start.0, end.1), (end.0 + 1, end.1 + SPACE_IN_VERTICAL)),
-            // Right
-            ((start.0, end.1), (end.0 + SPACE_IN_HORIZONT, end.1)),
-            // Left
-            (
-                (
-                    if start.0 >= SPACE_IN_HORIZONT {
-                        start.0 - SPACE_IN_HORIZONT
-                    } else {
-                        0
-                    },
-                    start.1,
-                ),
-                (start.0, end.1 + 1),
-            ),
-            // Top
-            (
-                (
-                    if start.0 > 0 { start.0 - 1 } else { 0 },
-                    if start.1 >= SPACE_IN_VERTICAL {
-                        start.1 - SPACE_IN_VERTICAL
-                    } else {
-                        0
-                    },
-                ),
-                (end.0 + 1, start.1),
-            ),
-        ];
-        for (start, end) in borders.iter() {
-            for x in start.0..=end.0 {
-                for y in start.1..=end.1 {
-                    if self.map.contains_key(&(x, y)) {
-                        return false;
-                    }
-                }
+        true
+    }
+
+    fn is_point_free(&self, point: &(u32, u32)) -> bool {
+        for (_, (ax, ay, ax1, ay1)) in self.map.iter() {
+            if elements::is_point_in(point, &(*ax, *ay, *ax1, *ay1)) {
+                return false;
             }
         }
         true
@@ -120,16 +107,17 @@ impl Grid {
         // TODO: conside if size == (0,0)
         if self.map.is_empty() {
             self.map = grid.map.clone();
+            console_log!(">>>>>>>>>>>>>>> MAP INIT: {:?}", self.map);
         } else {
             // Looking for point to insert grid
             let mut point: Option<(u32, u32)> = None;
             while point.is_none() {
                 for x in 0..self.size.0 {
                     for y in 0..self.size.1 {
-                        if self.map.contains_key(&(x, y)) {
+                        if !self.is_point_free(&(x, y)) {
                             continue;
                         }
-                        if self.is_block_free(&(x, y), &(x + grid.size.0, y + grid.size.1)) {
+                        if self.is_block_free((x, y, x + grid.size.0, y + grid.size.1)) {
                             point = Some((x, y));
                             break;
                         }
@@ -146,9 +134,10 @@ impl Grid {
             }
             // Merge grid
             if let Some((p_x, p_y)) = point {
-                grid.map.iter().for_each(|((x, y), id)| {
-                    self.map.insert((x + p_x, y + p_y), *id);
+                grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
+                    self.map.insert(*id, (x + p_x, y + p_y, x1 + p_x, y1 + p_y));
                 });
+                console_log!(">>>>>>>>>>>>>>> MAP AFTER: {:?}", self.map);
             }
         }
     }
@@ -187,16 +176,12 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     let on_left = get_sizes(left)?;
     let on_center = get_sizes(center)?;
     let on_right = get_sizes(right)?;
-    let mut map: HashMap<(u32, u32), usize> = HashMap::new();
+    let mut map: HashMap<usize, (u32, u32, u32, u32)> = HashMap::new();
     let mut size: (u32, u32) = (0, 0);
     // Put left side
     let mut cursor_by_y: u32 = 0;
     on_left.iter().for_each(|(id, (w, h))| {
-        for x in 0..*w {
-            for y in 0..*h {
-                map.insert((x, y + cursor_by_y), *id);
-            }
-        }
+        map.insert(*id, (0, cursor_by_y, *w, cursor_by_y + h));
         cursor_by_y += h + SPACE_IN_VERTICAL;
     });
     if cursor_by_y > 0 {
@@ -210,11 +195,10 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     }
     cursor_by_y = 0;
     on_center.iter().for_each(|(id, (w, h))| {
-        for x in 0..*w {
-            for y in 0..*h {
-                map.insert((x + cursor_by_x, y + cursor_by_y), *id);
-            }
-        }
+        map.insert(
+            *id,
+            (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
+        );
         cursor_by_y += h + SPACE_IN_VERTICAL;
     });
     if cursor_by_y > 0 && cursor_by_y - SPACE_IN_VERTICAL > size.1 {
@@ -228,11 +212,10 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     }
     cursor_by_y = 0;
     on_right.iter().for_each(|(id, (w, h))| {
-        for x in 0..*w {
-            for y in 0..*h {
-                map.insert((x + cursor_by_x, y + cursor_by_y), *id);
-            }
-        }
+        map.insert(
+            *id,
+            (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
+        );
         cursor_by_y += h + SPACE_IN_VERTICAL;
     });
     if cursor_by_y > 0 && cursor_by_y - SPACE_IN_VERTICAL > size.1 {
@@ -251,11 +234,11 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
 }
 
 fn from_grids_into_row(grids: &[Grid]) -> Grid {
-    let mut map: HashMap<(u32, u32), usize> = HashMap::new();
+    let mut map: HashMap<usize, (u32, u32, u32, u32)> = HashMap::new();
     let mut size: (u32, u32) = (0, 0);
     grids.iter().for_each(|grid| {
-        grid.map.iter().for_each(|((x, y), id)| {
-            map.insert((x + size.0, *y), *id);
+        grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
+            map.insert(*id, (x + size.0, *y, x1 + size.0, *y1));
         });
         size.0 += grid.size.0
             + if grid.size.0 > 0 {
