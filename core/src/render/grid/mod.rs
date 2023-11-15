@@ -275,7 +275,7 @@ fn from_grids_into_row(grids: &[Grid]) -> Grid {
 
 fn from_grids_into_box(grids: &mut [Grid]) -> Grid {
     // Sort from biggest to smallest
-    // grids.sort_by(|a, b| a.size.0.max(a.size.1).cmp(&b.size.0.max(b.size.1)));
+    grids.sort_by(|a, b| (b.size.0 * b.size.1).cmp(&(a.size.0 * a.size.1)));
     // Estimate size of final grid
     let max_total_width: u32 = grids.iter().map(|grid| grid.size.0).sum::<u32>()
         + (grids.len() - 1) as u32 * SPACE_IN_HORIZONT;
