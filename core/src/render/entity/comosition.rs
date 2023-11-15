@@ -74,12 +74,10 @@ impl Render<Composition> {
         }
         let mut grids: Vec<Grid> = vec![];
         for (host_id, linked_in, linked_out) in dependencies {
-            console_log!("host: {host_id}; in: {linked_in:?}; out: {linked_out:?}");
             let on_right = get_forms_by_ids(&self.entity.components, &linked_in)?;
             let on_left = get_forms_by_ids(&self.entity.components, &linked_out)?;
             let on_center = get_forms_by_ids(&self.entity.components, &[host_id])?;
             let grid = Grid::from(Layout::WithFormsBySides((on_left, on_center, on_right)))?;
-            console_log!("{grid:?}");
             grids.push(grid);
         }
         // Create common grid
@@ -153,7 +151,6 @@ impl Render<Composition> {
             connection.render()?.draw(context, relative)?;
         }
         if let Some(grid) = self.grid.as_ref() {
-            console_log!(">>>> RELATIVE: {relative:?}");
             grid.draw(context, relative)?;
         }
         Ok(())

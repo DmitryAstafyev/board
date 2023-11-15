@@ -54,7 +54,6 @@ impl Grid {
             .filter_map(|((x, y), id)| if id == &target { Some((x, y)) } else { None })
             .min()
         {
-            console_log!("{x} - {y}");
             Relative::new((x * CELL) as i32, (y * CELL) as i32)
         } else {
             Relative::new(0, 0)
@@ -62,7 +61,6 @@ impl Grid {
     }
 
     fn is_block_free(&self, start: &(u32, u32), end: &(u32, u32)) -> bool {
-        console_log!("IS_BLOCK_FREE: start ({start:?}); end ({end:?})");
         // Check space
         if self.size.0 < end.0 || self.size.1 < end.1 {
             return false;
@@ -75,7 +73,6 @@ impl Grid {
                 }
             }
         }
-        console_log!("IS_BLOCK_FREE (after): start ({start:?}); end ({end:?})");
         // Check borders
         let borders: Vec<((u32, u32), (u32, u32))> = vec![
             // Bottom
@@ -107,7 +104,6 @@ impl Grid {
                 (end.0 + 1, start.1),
             ),
         ];
-        console_log!("BORDERS: {borders:?}");
         for (start, end) in borders.iter() {
             for x in start.0..=end.0 {
                 for y in start.1..=end.1 {
@@ -191,9 +187,6 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     let on_left = get_sizes(left)?;
     let on_center = get_sizes(center)?;
     let on_right = get_sizes(right)?;
-    console_log!("on left: {on_left:?}");
-    console_log!("on center: {on_center:?}");
-    console_log!("on right: {on_right:?}");
     let mut map: HashMap<(u32, u32), usize> = HashMap::new();
     let mut size: (u32, u32) = (0, 0);
     // Put left side

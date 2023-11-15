@@ -49,6 +49,4 @@ pub fn dummy(canvas_el_id: &str, components: usize, ports: usize) {
     if let Err(err) = render.draw(&mut context, &Relative::new(50, 50)) {
         console_log!("Opps, error: {err}");
     }
-    // composition.calc(&mut context, &Relative::new(50, 50));
-    // composition.render(&mut context, &Relative::new(50, 50));
 }
