@@ -79,12 +79,10 @@ impl Connection {
                     .or_insert(if in_connection { (1, 0) } else { (0, 1) });
             }
         });
-        console_log!("Found: {} linked components", map.len());
         let mut connected_in: Vec<(usize, usize)> = vec![];
         let mut connected_out: Vec<(usize, usize)> = vec![];
         map.iter().for_each(|(k, (ins, outs))| {
             if ignore.contains(k) {
-                console_log!("Key: {k} ignored ({ignore:?})");
                 return;
             }
             if ins > outs {
