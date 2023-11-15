@@ -107,7 +107,6 @@ impl Grid {
         // TODO: conside if size == (0,0)
         if self.map.is_empty() {
             self.map = grid.map.clone();
-            console_log!(">>>>>>>>>>>>>>> MAP INIT: {:?}", self.map);
         } else {
             // Looking for point to insert grid
             let mut point: Option<(u32, u32)> = None;
@@ -137,7 +136,6 @@ impl Grid {
                 grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
                     self.map.insert(*id, (x + p_x, y + p_y, x1 + p_x, y1 + p_y));
                 });
-                console_log!(">>>>>>>>>>>>>>> MAP AFTER: {:?}", self.map);
             }
         }
     }
