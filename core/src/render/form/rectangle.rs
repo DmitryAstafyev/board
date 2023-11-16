@@ -35,11 +35,29 @@ impl Rectangle {
     }
 
     pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
-        context.fill_rect(
-            relative.x(self.x) as f64,
-            relative.y(self.y) as f64,
-            relative.zoom(self.w) as f64,
-            relative.zoom(self.h) as f64,
-        );
+        let w = relative.zoom(self.w);
+        let h = relative.zoom(self.h);
+        if w <= 1 && h <= 1 {
+            let x = relative.x(self.x) as f64;
+            let y = relative.y(self.y) as f64;
+            context.begin_path();
+            context.move_to(x, y);
+            context.line_to(x, y);
+            context.stroke();
+        } else if w <= 2 && h <= 2 {
+            context.stroke_rect(
+                relative.x(self.x) as f64,
+                relative.y(self.y) as f64,
+                w as f64,
+                h as f64,
+            );
+        } else {
+            context.fill_rect(
+                relative.x(self.x) as f64,
+                relative.y(self.y) as f64,
+                w as f64,
+                h as f64,
+            );
+        }
     }
 }
