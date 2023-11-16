@@ -13,40 +13,116 @@ use render::{Relative, Render};
 use std::{ops::RangeInclusive, panic};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
+use web_sys::CanvasRenderingContext2d;
 
 #[wasm_bindgen]
-pub fn hello(input: &str) -> Result<String, String> {
-    Ok(format!("{input}{input}"))
+pub struct Board {
+    render: Render<Composition>,
+    context: Option<CanvasRenderingContext2d>,
+    width: u32,
+    height: u32,
 }
 
 #[wasm_bindgen]
-pub fn dummy(canvas_el_id: &str, components: usize, ports: usize) {
-    panic::set_hook(Box::new(console_error_panic_hook::hook));
-    let document = web_sys::window().unwrap().document().unwrap();
-    let canvas = document.get_element_by_id(canvas_el_id).unwrap();
-    let canvas: web_sys::HtmlCanvasElement = canvas
-        .dyn_into::<web_sys::HtmlCanvasElement>()
-        .map_err(|_| ())
-        .unwrap();
-    let mut context = canvas
-        .get_context("2d")
-        .unwrap()
-        .unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()
-        .unwrap();
-    let mut producer = SignatureProducer::new();
-    let mut composition = Composition::dummy(
-        &mut producer,
-        (
-            RangeInclusive::new(components, components + components / 5),
-            RangeInclusive::new(ports, ports + ports),
-        ),
-    );
-    let mut render = Render::<Composition>::new(composition);
-    if let Err(err) = render.calc() {
-        console_log!("Opps, error: {err}");
+impl Board {
+    #[wasm_bindgen]
+    pub fn dummy(components: usize, ports: usize) -> Self {
+        let mut producer = SignatureProducer::new();
+        let composition = Composition::dummy(
+            &mut producer,
+            (
+                RangeInclusive::new(components, components + components / 5),
+                RangeInclusive::new(ports, ports + ports),
+            ),
+        );
+        Self {
+            render: Render::<Composition>::new(composition),
+            context: None,
+            width: 0,
+            height: 0,
+        }
     }
-    if let Err(err) = render.draw(&mut context, &Relative::new(50, 50)) {
-        console_log!("Opps, error: {err}");
+
+    #[wasm_bindgen]
+    pub fn bind(&mut self, canvas_el_id: &str, w: u32, h: u32) -> Result<(), String> {
+        let document = web_sys::window()
+            .ok_or("Window object isn't found".to_string())?
+            .document()
+            .ok_or("Document object isn't found".to_string())?;
+        let canvas = document
+            .get_element_by_id(canvas_el_id)
+            .ok_or(format!("Fail to find canvas with id[{canvas_el_id}]"))?;
+        let canvas: web_sys::HtmlCanvasElement = canvas
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .map_err(|e| e.to_string())?;
+        self.width = canvas.width();
+        self.height = canvas.height();
+        let _ = self.context.insert(
+            canvas
+                .get_context("2d")
+                .map_err(|_| "Fail to get context from canvas".to_string())?
+                .ok_or(String::from("Document isn't found"))?
+                .dyn_into::<web_sys::CanvasRenderingContext2d>()
+                .map_err(|e| e.to_string())?,
+        );
+        Ok(())
+    }
+
+    #[wasm_bindgen]
+    pub fn init(&mut self) -> Result<(), String> {
+        self.render.calc().map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn render(&mut self, x: i32, y: i32) -> Result<(), String> {
+        if let Some(mut context) = self.context.take() {
+            context.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
+            console_log!("POINT: {x}, {y}");
+            if let Err(e) = self.render.draw(
+                &mut context,
+                &Relative::new(x, y),
+                (self.width, self.height),
+            ) {
+                self.context = Some(context);
+                Err(e.to_string())
+            } else {
+                self.context = Some(context);
+                Ok(())
+            }
+        } else {
+            Err("Context isn't setup".to_string())
+        }
     }
 }
+
+// #[wasm_bindgen]
+// pub fn dummy(canvas_el_id: &str, components: usize, ports: usize) {
+//     panic::set_hook(Box::new(console_error_panic_hook::hook));
+//     let document = web_sys::window().unwrap().document().unwrap();
+//     let canvas = document.get_element_by_id(canvas_el_id).unwrap();
+//     let canvas: web_sys::HtmlCanvasElement = canvas
+//         .dyn_into::<web_sys::HtmlCanvasElement>()
+//         .map_err(|_| ())
+//         .unwrap();
+//     let mut context = canvas
+//         .get_context("2d")
+//         .unwrap()
+//         .unwrap()
+//         .dyn_into::<web_sys::CanvasRenderingContext2d>()
+//         .unwrap();
+//     let mut producer = SignatureProducer::new();
+//     let mut composition = Composition::dummy(
+//         &mut producer,
+//         (
+//             RangeInclusive::new(components, components + components / 5),
+//             RangeInclusive::new(ports, ports + ports),
+//         ),
+//     );
+//     let mut render = Render::<Composition>::new(composition);
+//     if let Err(err) = render.calc() {
+//         console_log!("Opps, error: {err}");
+//     }
+//     if let Err(err) = render.draw(&mut context, &Relative::new(50, 50)) {
+//         console_log!("Opps, error: {err}");
+//     }
+// }

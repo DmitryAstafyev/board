@@ -65,6 +65,28 @@ impl Grid {
         }
     }
 
+    pub fn in_area(&self, area_px: (u32, u32, u32, u32)) -> Vec<usize> {
+        let (ax, ay, ax1, ay1) = area_px;
+        let (mut ax, mut ay, ax1, ay1) = (ax / CELL, ay / CELL, (ax1 / CELL) + 1, (ay1 / CELL) + 1);
+        if ax > 0 {
+            ax -= 1;
+        }
+        if ay > 0 {
+            ay -= 1;
+        }
+        console_log!("AREA CELLS: {ax}, {ay}, {ax1}, {ay1}");
+        self.map
+            .iter()
+            .filter_map(|(id, block)| {
+                if elements::is_area_cross(&(ax, ay, ax1, ay1), block) {
+                    Some(*id)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
     fn is_block_free(&self, target: (u32, u32, u32, u32)) -> bool {
         let (mut x, mut y, mut x1, mut y1) = target;
         // Check space

@@ -38,13 +38,3 @@ impl<T> Render<T> {
         Relative::new(x, y)
     }
 }
-
-// pub trait Render {
-//     fn defaults();
-//     fn calc(
-//         &mut self,
-//         context: &mut web_sys::CanvasRenderingContext2d,
-//         relative: &crate::elements::relative::Relative,
-//     );
-//     fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative);
-// }

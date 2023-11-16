@@ -14,6 +14,12 @@ impl Relative {
     pub fn y(&self, y: i32) -> i32 {
         self.y_ + y
     }
+    pub fn set_x(&mut self, x: i32) {
+        self.x_ = x;
+    }
+    pub fn set_y(&mut self, y: i32) {
+        self.y_ = y;
+    }
     pub fn from_coors(&self, x: i32, y: i32) -> Relative {
         Relative::new(self.x(x), self.y(y))
     }

@@ -102,6 +102,11 @@ impl Render<Component> {
         for port in self.entity.ports.ports.iter() {
             port.render()?.draw(context, &self_relative)?;
         }
+        let _ = context.stroke_text(
+            &self.origin().sig.id.to_string(),
+            relative.x(self.form.get_coors().0 + 4) as f64,
+            relative.y(self.form.get_coors().1 + 4) as f64,
+        );
         Ok(())
     }
 }

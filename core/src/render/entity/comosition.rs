@@ -4,6 +4,7 @@ use crate::{
     entity::{Component, Composition, Connection},
     error::E,
     render::{
+        elements::relative,
         entity::port,
         form::{Path, Point, Rectangle},
         grid::Layout,
@@ -40,8 +41,8 @@ impl Render<Composition> {
             entity,
             form: Form::Rectangle(Rectangle {
                 id,
-                x: 200,
-                y: 20,
+                x: 0,
+                y: 0,
                 w: 100,
                 h: 100,
             }),
@@ -141,19 +142,68 @@ impl Render<Composition> {
         &self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
+        area: (u32, u32),
     ) -> Result<(), E> {
         self.style.apply(context);
         self.form.render(context, relative);
-        for component in self.entity.components.iter() {
-            component.render()?.draw(context, relative)?;
+        let mut x = relative.x(0);
+        let mut y = relative.y(0);
+        let mut x1 = x + area.0 as i32;
+        let mut y1 = y + area.1 as i32;
+        console_log!("AREA ORIGIN: {x}, {y}, {x1}, {y1}");
+        // let mut relative = relative.from_base(relative);
+        // if x > 0 {
+        //     x = 0;
+        //     x1 = area.0 as i32;
+        //     relative.set_x(0);
+        // }
+        // if y > 0 {
+        //     y = 0;
+        //     y1 = area.0 as i32;
+        //     relative.set_y(0);
+        // }
+        if x < 0 {
+            x = -x;
+            x1 = x + area.0 as i32;
         }
-        for connection in self.entity.connections.iter() {
-            connection.render()?.draw(context, relative)?;
+        if y < 0 {
+            y = -y;
+            y1 = y + area.1 as i32;
         }
+        console_log!("AREA: {x}, {y}, {x1}, {y1}");
         if let Some(grid) = self.grid.as_ref() {
-            grid.draw(context, relative)?;
+            // console_log!("{:?}", grid.map);
+            let targets = grid.in_area((x as u32, y as u32, x1 as u32, y1 as u32));
+            console_log!(
+                "TARGETS: {}/ {}",
+                targets.len(),
+                self.entity.components.len()
+            );
+            for component in self
+                .entity
+                .components
+                .iter()
+                .filter(|comp| targets.contains(&comp.origin().sig.id))
+            {
+                component.render()?.draw(context, &relative)?;
+            }
+            for connection in self.entity.connections.iter().filter(|conn| {
+                targets.contains(&conn.origin().joint_in.component)
+                    || targets.contains(&conn.origin().joint_out.component)
+            }) {
+                connection.render()?.draw(context, &relative)?;
+            }
+            // for component in self.entity.components.iter() {
+            //     component.render()?.draw(context, &relative)?;
+            // }
+            // for connection in self.entity.connections.iter() {
+            //     connection.render()?.draw(context, &relative)?;
+            // }
+            grid.draw(context, &Relative::new(0, 0))?;
+            Ok(())
+        } else {
+            Err(E::RenderNotInited)
         }
-        Ok(())
     }
 }
 
