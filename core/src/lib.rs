@@ -74,13 +74,13 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn render(&mut self, x: i32, y: i32) -> Result<(), String> {
+    pub fn render(&mut self, x: i32, y: i32, zoom: f64) -> Result<(), String> {
         if let Some(mut context) = self.context.take() {
             context.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
             console_log!("POINT: {x}, {y}");
             if let Err(e) = self.render.draw(
                 &mut context,
-                &Relative::new(x, y),
+                &Relative::new(x, y, Some(zoom)),
                 (self.width, self.height),
             ) {
                 self.context = Some(context);

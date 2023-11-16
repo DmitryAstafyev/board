@@ -30,11 +30,11 @@ impl<T> Render<T> {
 
     pub fn relative(&self, base: &Relative) -> Relative {
         let (x, y) = self.form.get_coors();
-        base.from_coors(x, y)
+        base.from_origin_coors(x, y)
     }
 
     pub fn own_relative(&self) -> Relative {
         let (x, y) = self.form.get_coors();
-        Relative::new(x, y)
+        Relative::new(x, y, None)
     }
 }

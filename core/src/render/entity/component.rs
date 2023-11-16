@@ -1,3 +1,5 @@
+use wasm_bindgen_test::console_log;
+
 use crate::{
     entity::{Component, Port, PortType},
     error::E,

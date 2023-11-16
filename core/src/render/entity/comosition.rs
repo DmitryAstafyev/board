@@ -151,17 +151,6 @@ impl Render<Composition> {
         let mut x1 = x + area.0 as i32;
         let mut y1 = y + area.1 as i32;
         console_log!("AREA ORIGIN: {x}, {y}, {x1}, {y1}");
-        // let mut relative = relative.from_base(relative);
-        // if x > 0 {
-        //     x = 0;
-        //     x1 = area.0 as i32;
-        //     relative.set_x(0);
-        // }
-        // if y > 0 {
-        //     y = 0;
-        //     y1 = area.0 as i32;
-        //     relative.set_y(0);
-        // }
         if x < 0 {
             x = -x;
             x1 = x + area.0 as i32;
@@ -173,7 +162,10 @@ impl Render<Composition> {
         console_log!("AREA: {x}, {y}, {x1}, {y1}");
         if let Some(grid) = self.grid.as_ref() {
             // console_log!("{:?}", grid.map);
-            let targets = grid.in_area((x as u32, y as u32, x1 as u32, y1 as u32));
+            let targets = grid.in_area(
+                (x as u32, y as u32, x1 as u32, y1 as u32),
+                relative.get_zoom(),
+            );
             console_log!(
                 "TARGETS: {}/ {}",
                 targets.len(),
@@ -185,13 +177,13 @@ impl Render<Composition> {
                 .iter()
                 .filter(|comp| targets.contains(&comp.origin().sig.id))
             {
-                component.render()?.draw(context, &relative)?;
+                component.render()?.draw(context, relative)?;
             }
             for connection in self.entity.connections.iter().filter(|conn| {
                 targets.contains(&conn.origin().joint_in.component)
                     || targets.contains(&conn.origin().joint_out.component)
             }) {
-                connection.render()?.draw(context, &relative)?;
+                connection.render()?.draw(context, relative)?;
             }
             // for component in self.entity.components.iter() {
             //     component.render()?.draw(context, &relative)?;
@@ -199,7 +191,7 @@ impl Render<Composition> {
             // for connection in self.entity.connections.iter() {
             //     connection.render()?.draw(context, &relative)?;
             // }
-            grid.draw(context, &Relative::new(0, 0))?;
+            grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
             Ok(())
         } else {
             Err(E::RenderNotInited)

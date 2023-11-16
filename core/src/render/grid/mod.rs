@@ -59,15 +59,16 @@ impl Grid {
                 },
             )
         {
-            Relative::new((x * CELL) as i32, (y * CELL) as i32)
+            Relative::new((x * CELL) as i32, (y * CELL) as i32, None)
         } else {
-            Relative::new(0, 0)
+            Relative::new(0, 0, None)
         }
     }
 
-    pub fn in_area(&self, area_px: (u32, u32, u32, u32)) -> Vec<usize> {
+    pub fn in_area(&self, area_px: (u32, u32, u32, u32), zoom: f64) -> Vec<usize> {
+        let cell = (CELL as f64 * zoom) as u32;
         let (ax, ay, ax1, ay1) = area_px;
-        let (mut ax, mut ay, ax1, ay1) = (ax / CELL, ay / CELL, (ax1 / CELL) + 1, (ay1 / CELL) + 1);
+        let (mut ax, mut ay, ax1, ay1) = (ax / cell, ay / cell, (ax1 / cell) + 1, (ay1 / cell) + 1);
         if ax > 0 {
             ax -= 1;
         }

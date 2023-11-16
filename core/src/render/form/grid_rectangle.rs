@@ -68,8 +68,8 @@ impl GridRectangle {
         context.fill_rect(
             relative.x(self.x) as f64,
             relative.y(self.y) as f64,
-            self.w as f64,
-            self.h as f64,
+            relative.zoom(self.w) as f64,
+            relative.zoom(self.h) as f64,
         );
     }
 }
