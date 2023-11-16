@@ -1,6 +1,6 @@
 require("core")
     .then((core: any) => {
-        const COMPS = 250;
+        const COMPS = 200;
         const PORTS = 8;
         let started = Date.now();
         const board = core.Board.dummy(COMPS, PORTS);
@@ -23,6 +23,18 @@ require("core")
             prev_x: 0,
             prev_y: 0,
             zoom: 1,
+            max: 0,
+        };
+        const update = (ms: number) => {
+            if (state.max < ms) {
+                state.max = ms;
+                (
+                    document.querySelector("#max") as HTMLElement
+                ).innerHTML = `${ms}ms`;
+            }
+            (
+                document.querySelector("#last") as HTMLElement
+            ).innerHTML = `${ms}ms`;
         };
         window.addEventListener("mousedown", (event: MouseEvent) => {
             state.progress = true;
@@ -44,7 +56,7 @@ require("core")
             state.prev_y = event.screenY;
             let started = Date.now();
             board.render(state.x, state.y, state.zoom);
-            console.log(`Board rendered in: ${Date.now() - started}ms`);
+            update(Date.now() - started);
         });
         window.addEventListener("mouseup", (event: MouseEvent) => {
             state.progress = false;
@@ -53,8 +65,9 @@ require("core")
             state.zoom += event.deltaY > 0 ? 0.05 : -0.05;
             state.zoom = state.zoom < 0.1 ? 0.1 : state.zoom;
             state.zoom = state.zoom > 2 ? 2 : state.zoom;
-            console.log(`Zooming: ${state.zoom}`);
+            let started = Date.now();
             board.render(state.x, state.y, state.zoom);
+            update(Date.now() - started);
         });
     })
     .catch((err: Error) => {

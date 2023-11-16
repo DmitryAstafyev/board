@@ -69,13 +69,8 @@ impl Grid {
         let cell = (CELL as f64 * zoom) as u32;
         let (ax, ay, ax1, ay1) = area_px;
         let (mut ax, mut ay, ax1, ay1) = (ax / cell, ay / cell, (ax1 / cell) + 1, (ay1 / cell) + 1);
-        if ax > 0 {
-            ax -= 1;
-        }
-        if ay > 0 {
-            ay -= 1;
-        }
-        console_log!("AREA CELLS: {ax}, {ay}, {ax1}, {ay1}");
+        ax = ax.saturating_sub(1);
+        ay = ay.saturating_sub(1);
         self.map
             .iter()
             .filter_map(|(id, block)| {
@@ -280,28 +275,7 @@ fn from_grids_into_row(grids: &[Grid]) -> Grid {
 fn from_grids_into_box(grids: &mut [Grid]) -> Grid {
     // Sort from biggest to smallest
     grids.sort_by(|a, b| (b.size.0 * b.size.1).cmp(&(a.size.0 * a.size.1)));
-    // Estimate size of final grid
-    let max_total_width: u32 = grids.iter().map(|grid| grid.size.0).sum::<u32>()
-        + (grids.len() - 1) as u32 * SPACE_IN_HORIZONT;
-    let max_total_height: u32 = grids.iter().map(|grid| grid.size.1).sum::<u32>()
-        + (grids.len() - 1) as u32 * SPACE_IN_HORIZONT;
-    let max_grid_width = grids.iter().map(|grid| grid.size.0).max().unwrap_or(0);
-    let max_grid_height = grids.iter().map(|grid| grid.size.1).max().unwrap_or(0);
-    let packed_width = max_total_width / 2;
-    let packed_height = max_total_height / 2;
     let mut packed = Grid::new();
-    packed.size = (
-        if packed_width < max_grid_width {
-            max_grid_width
-        } else {
-            packed_width
-        },
-        if packed_height < max_grid_height {
-            max_grid_height
-        } else {
-            packed_height
-        },
-    );
     // Merge grids
     grids.iter().for_each(|grid| {
         packed.insert(grid);

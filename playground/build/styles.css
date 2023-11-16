@@ -24,3 +24,10 @@ body div#container {
     overflow: hidden;
 }
 
+body div#info {
+    position: absolute;
+    top:8px;
+    right: 8px;
+    background: rgb(90, 222, 215);
+}
+

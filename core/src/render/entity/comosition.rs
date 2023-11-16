@@ -150,7 +150,6 @@ impl Render<Composition> {
         let mut y = relative.y(0);
         let mut x1 = x + area.0 as i32;
         let mut y1 = y + area.1 as i32;
-        console_log!("AREA ORIGIN: {x}, {y}, {x1}, {y1}");
         if x < 0 {
             x = -x;
             x1 = x + area.0 as i32;
@@ -159,18 +158,12 @@ impl Render<Composition> {
             y = -y;
             y1 = y + area.1 as i32;
         }
-        console_log!("AREA: {x}, {y}, {x1}, {y1}");
         if let Some(grid) = self.grid.as_ref() {
-            // console_log!("{:?}", grid.map);
             let targets = grid.in_area(
                 (x as u32, y as u32, x1 as u32, y1 as u32),
                 relative.get_zoom(),
             );
-            console_log!(
-                "TARGETS: {}/ {}",
-                targets.len(),
-                self.entity.components.len()
-            );
+
             for component in self
                 .entity
                 .components

@@ -10,20 +10,9 @@ pub fn is_point_in(point: &(u32, u32), area: &(u32, u32, u32, u32)) -> bool {
 // Target: (x,y,x1,y1), areas &[(x,y,x1,y1)]
 pub fn is_area_cross(target: &(u32, u32, u32, u32), area: &(u32, u32, u32, u32)) -> bool {
     let (ax, ay, ax1, ay1) = area;
-    if is_point_in(&(*ax, *ay), target)
-        || is_point_in(&(*ax, *ay1), target)
-        || is_point_in(&(*ax1, *ay), target)
-        || is_point_in(&(*ax1, *ay1), target)
-    {
-        return true;
+    let (tx, ty, tx1, ty1) = target;
+    if ty1 < ay || ty > ay1 || tx1 < ax || tx > ax1 {
+        return false;
     }
-    let (ax, ay, ax1, ay1) = target;
-    if is_point_in(&(*ax, *ay), area)
-        || is_point_in(&(*ax, *ay1), area)
-        || is_point_in(&(*ax1, *ay), area)
-        || is_point_in(&(*ax1, *ay1), area)
-    {
-        return true;
-    }
-    false
+    true
 }
