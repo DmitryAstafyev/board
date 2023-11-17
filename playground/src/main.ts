@@ -24,6 +24,7 @@ require("core")
             prev_y: 0,
             zoom: 1,
             max: 0,
+            hover: -1,
         };
         const update = (ms: number) => {
             if (state.max < ms) {
@@ -44,6 +45,38 @@ require("core")
         });
         window.addEventListener("mousemove", (event: MouseEvent) => {
             if (!state.progress) {
+                const ids = board.who(
+                    event.clientX,
+                    event.clientY,
+                    state.x,
+                    state.y,
+                    state.zoom
+                );
+                if (state.hover !== -1) {
+                    board.draw_by_id(
+                        state.hover,
+                        undefined,
+                        undefined,
+                        state.x,
+                        state.y,
+                        state.zoom
+                    );
+                    state.hover = -1;
+                }
+                if (ids.length === 1) {
+                    // console.log(
+                    //     `(${event.clientX}, ${event.clientY}): ${ids[0]}`
+                    // );
+                    state.hover = ids[0];
+                    board.draw_by_id(
+                        state.hover,
+                        "rgb(0,250,0)",
+                        "rgb(0,250,0)",
+                        state.x,
+                        state.y,
+                        state.zoom
+                    );
+                }
                 return;
             }
             state.x -=

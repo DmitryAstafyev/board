@@ -16,6 +16,7 @@ pub struct Render<T> {
     entity: T,
     form: Form,
     style: Style,
+    over_style: Option<Style>,
     grid: Option<Grid>,
 }
 
@@ -36,5 +37,9 @@ impl<T> Render<T> {
     pub fn own_relative(&self) -> Relative {
         let (x, y) = self.form.get_coors();
         Relative::new(x, y, None)
+    }
+
+    pub fn set_over_style(&mut self, style: Option<Style>) {
+        self.over_style = style;
     }
 }

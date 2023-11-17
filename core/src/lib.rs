@@ -9,7 +9,7 @@ use entity::{
     dummy::{Dummy, SignatureProducer},
     Composition,
 };
-use render::{Relative, Render};
+use render::{Relative, Render, Style};
 use std::{ops::RangeInclusive, panic};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
@@ -81,6 +81,54 @@ impl Board {
                 &mut context,
                 &Relative::new(x, y, Some(zoom)),
                 (self.width, self.height),
+            ) {
+                self.context = Some(context);
+                Err(e.to_string())
+            } else {
+                self.context = Some(context);
+                Ok(())
+            }
+        } else {
+            Err("Context isn't setup".to_string())
+        }
+    }
+    #[wasm_bindgen]
+    pub fn who(
+        &self,
+        target_x: i32,
+        target_y: i32,
+        x: i32,
+        y: i32,
+        zoom: f64,
+    ) -> Result<Vec<usize>, String> {
+        self.render
+            .who(target_x, target_y, x, y, zoom)
+            .map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn draw_by_id(
+        &mut self,
+        id: usize,
+        stroke_style: Option<String>,
+        fill_style: Option<String>,
+        x: i32,
+        y: i32,
+        zoom: f64,
+    ) -> Result<(), String> {
+        if let Some(mut context) = self.context.take() {
+            if let Err(e) = self.render.draw_by_id(
+                &mut context,
+                &Relative::new(x, y, Some(zoom)),
+                if let (Some(stroke_style), Some(fill_style)) = (stroke_style, fill_style) {
+                    Some(Style {
+                        stroke_style,
+                        fill_style,
+                    })
+                } else {
+                    None
+                },
+                id,
             ) {
                 self.context = Some(context);
                 Err(e.to_string())

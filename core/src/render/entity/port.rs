@@ -22,6 +22,8 @@ impl Render<Port> {
                 stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(50,50,50)"),
             },
+            over_style: None,
+
             grid: None,
         }
     }
@@ -35,7 +37,11 @@ impl Render<Port> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
-        self.style.apply(context);
+        if let Some(over) = self.over_style.as_ref() {
+            over.apply(context);
+        } else {
+            self.style.apply(context);
+        }
         self.form.render(context, relative);
         Ok(())
     }

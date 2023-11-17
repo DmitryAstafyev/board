@@ -50,6 +50,7 @@ impl Render<Composition> {
                 stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(230,230,230)"),
             },
+            over_style: None,
             grid: Some(Grid::new()),
         }
     }
@@ -186,6 +187,49 @@ impl Render<Composition> {
             // }
             grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
             Ok(())
+        } else {
+            Err(E::RenderNotInited)
+        }
+    }
+
+    pub fn draw_by_id(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
+        style: Option<Style>,
+        id: usize,
+    ) -> Result<(), E> {
+        if let Some(grid) = self.grid.as_ref() {
+            if let Some(component) = self
+                .entity
+                .components
+                .iter_mut()
+                .find(|comp| comp.origin().sig.id == id)
+            {
+                component.render_mut()?.set_over_style(style);
+                component.render()?.draw(context, relative)?;
+            }
+            grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
+            Ok(())
+        } else {
+            Err(E::RenderNotInited)
+        }
+    }
+
+    pub fn who(
+        &self,
+        target_x: i32,
+        target_y: i32,
+        x: i32,
+        y: i32,
+        zoom: f64,
+    ) -> Result<Vec<usize>, E> {
+        let x = (target_x as f64 - (x as f64 * zoom)) as u32;
+        let y = (target_y as f64 - (y as f64 * zoom)) as u32;
+        let x1 = x + 2;
+        let y1 = y + 2;
+        if let Some(grid) = self.grid.as_ref() {
+            Ok(grid.in_area((x, y, x1, y1), zoom))
         } else {
             Err(E::RenderNotInited)
         }
