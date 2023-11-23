@@ -7,8 +7,9 @@ mod render;
 
 use entity::{
     dummy::{Dummy, SignatureProducer},
-    Composition,
+    Composition, Signature,
 };
+use error::E;
 use render::{Relative, Render, Style};
 use std::{ops::RangeInclusive, panic};
 use wasm_bindgen::prelude::*;
@@ -43,34 +44,60 @@ impl Board {
         }
     }
 
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self {
+            render: Render::<Composition>::new(Composition::new(Signature::fake())),
+            context: None,
+            width: 0,
+            height: 0,
+        }
+    }
+
     #[wasm_bindgen]
-    pub fn bind(&mut self, canvas_el_id: &str, w: u32, h: u32) -> Result<(), String> {
+    pub fn init(&mut self, composition: JsValue) -> Result<(), String> {
+        self.render = Render::<Composition>::new(
+            serde_wasm_bindgen::from_value::<Composition>(composition)
+                .map_err(|e| E::Serde(e.to_string()))?,
+        );
+        Ok(self.render.calc()?)
+    }
+
+    #[wasm_bindgen]
+    pub fn bind(&mut self, canvas_el_id: &str) -> Result<(), String> {
         let document = web_sys::window()
-            .ok_or("Window object isn't found".to_string())?
+            .ok_or(E::DOM("Window object isn't found".to_string()))?
             .document()
-            .ok_or("Document object isn't found".to_string())?;
+            .ok_or(E::DOM("Document object isn't found".to_string()))?;
         let canvas = document
             .get_element_by_id(canvas_el_id)
-            .ok_or(format!("Fail to find canvas with id[{canvas_el_id}]"))?;
+            .ok_or(E::DOM(format!(
+                "Fail to find canvas with id[{canvas_el_id}]"
+            )))?;
         let canvas: web_sys::HtmlCanvasElement = canvas
             .dyn_into::<web_sys::HtmlCanvasElement>()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                E::DOM(format!(
+                    "Fail to convert into HtmlCanvasElement: {}",
+                    e.to_string()
+                ))
+            })?;
         self.width = canvas.width();
         self.height = canvas.height();
         let _ = self.context.insert(
             canvas
                 .get_context("2d")
-                .map_err(|_| "Fail to get context from canvas".to_string())?
-                .ok_or(String::from("Document isn't found"))?
+                .map_err(|_| E::DOM("Fail to get context from canvas".to_string()))?
+                .ok_or(E::DOM("Document isn't found".to_string()))?
                 .dyn_into::<web_sys::CanvasRenderingContext2d>()
-                .map_err(|e| e.to_string())?,
+                .map_err(|e| {
+                    E::DOM(format!(
+                        "Fail to convert into 2d context; error: {}",
+                        e.to_string()
+                    ))
+                })?,
         );
         Ok(())
-    }
-
-    #[wasm_bindgen]
-    pub fn init(&mut self) -> Result<(), String> {
-        self.render.calc().map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
@@ -83,13 +110,13 @@ impl Board {
                 (self.width, self.height),
             ) {
                 self.context = Some(context);
-                Err(e.to_string())
+                Err(e)?
             } else {
                 self.context = Some(context);
                 Ok(())
             }
         } else {
-            Err("Context isn't setup".to_string())
+            Err(E::NoCanvasContext)?
         }
     }
     #[wasm_bindgen]
@@ -101,9 +128,7 @@ impl Board {
         y: i32,
         zoom: f64,
     ) -> Result<Vec<usize>, String> {
-        self.render
-            .who(target_x, target_y, x, y, zoom)
-            .map_err(|e| e.to_string())
+        Ok(self.render.who(target_x, target_y, x, y, zoom)?)
     }
 
     #[wasm_bindgen]
@@ -131,13 +156,13 @@ impl Board {
                 id,
             ) {
                 self.context = Some(context);
-                Err(e.to_string())
+                Err(e)?
             } else {
                 self.context = Some(context);
                 Ok(())
             }
         } else {
-            Err("Context isn't setup".to_string())
+            Err(E::NoCanvasContext)?
         }
     }
 }

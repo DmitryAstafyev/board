@@ -1,8 +1,10 @@
 use crate::{error::E, render::Render};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Representation<T> {
     Origin(T),
+    #[serde(skip_serializing, skip_deserializing)]
     Render(Render<T>),
 }
 

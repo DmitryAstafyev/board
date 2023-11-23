@@ -1,5 +1,20 @@
-require("core")
-    .then((core: any) => {
+import * as Core from "core";
+
+const wasm: {
+    core: typeof Core | undefined;
+} = {
+    core: undefined,
+};
+
+import("core")
+    .then((core: typeof Core) => {
+        wasm.core = core;
+    })
+    .catch((err: Error) => {
+        console.error(`Fail to core load wasm module`);
+    });
+import("core")
+    .then((core: typeof Core) => {
         const COMPS = 200;
         const PORTS = 8;
         let started = Date.now();

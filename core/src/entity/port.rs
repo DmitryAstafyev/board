@@ -1,12 +1,13 @@
 use crate::{entity::Signature, render::Representation};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum PortType {
     In,
     Out,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Port {
     pub sig: Signature,
     pub port_type: PortType,
@@ -18,7 +19,7 @@ impl Port {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Ports {
     pub ports: Vec<Representation<Port>>,
 }

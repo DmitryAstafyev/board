@@ -1,15 +1,16 @@
+use std::convert::From;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum E {
+    #[error("DOM error: {0}")]
+    DOM(String),
+    #[error("Serde parsing error: {0}")]
+    Serde(String),
+    #[error("Canvas context ins't setup")]
+    NoCanvasContext,
     #[error("Entity {0} doesn't have parent")]
     NoParent(String),
-    // #[error("Access error: {0}")]
-    // AccessError(String),
-    // #[error("Invalid configuration: {0}")]
-    // InvalidConfiguration(String),
-    // #[error("Toml error")]
-    // PasringToml(#[from] toml::de::Error),
     #[error("Render isn't inited")]
     RenderNotInited,
     #[error("Form isn't belong to grid")]
@@ -18,4 +19,10 @@ pub enum E {
     NotSupported,
     #[error("{0}")]
     Other(String),
+}
+
+impl From<E> for std::string::String {
+    fn from(value: E) -> Self {
+        value.to_string()
+    }
 }

@@ -1,6 +1,7 @@
 use crate::entity::{Ports, Signature};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Component {
     pub sig: Signature,
     pub ports: Ports,

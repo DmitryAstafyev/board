@@ -1,8 +1,9 @@
 use crate::{entity::Signature, render::Representation};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use wasm_bindgen_test::console_log;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Joint {
     pub port: usize,
     pub component: usize,
@@ -33,7 +34,7 @@ fn order_connections(src: &mut [(usize, usize)]) -> Vec<usize> {
     });
     ordered
 }
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Connection {
     pub sig: Signature,
     pub joint_in: Joint,

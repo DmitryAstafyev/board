@@ -1,0 +1,27 @@
+{
+  "name": "board",
+  "version": "0.0.1",
+  "description": "Board library",
+  "main": "./build/lib.js",
+  "types": "./build/lib.d.ts",
+  "scripts": {
+    "build": "./node_modules/.bin/webpack",
+    "build-ts": "tsc -p ./tsconfig.json",
+    "build-wasm": "cd ../core && wasm-pack build --target bundler",
+    "drop": "rm -rf ./node_modules",
+    "reinstall": "yarn install"
+  },
+  "author": "Dmitry Astafyev",
+  "license": "MIT",
+  "devDependencies": {
+    "source-map-loader": "^4.0.1",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.2.2",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "tslib": "^2.6.2"
+  },
+  "dependencies": {
+    "core": "file:../core/pkg"
+  }
+}

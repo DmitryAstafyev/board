@@ -2,8 +2,9 @@ use crate::{
     entity::{Component, Connection, Signature},
     render::Representation,
 };
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Composition {
     pub sig: Signature,
     pub components: Vec<Representation<Component>>,
