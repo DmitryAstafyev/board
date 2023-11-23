@@ -56,10 +56,9 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn init(&mut self, composition: JsValue) -> Result<(), String> {
-        self.render = Render::<Composition>::new(
-            serde_wasm_bindgen::from_value::<Composition>(composition)
-                .map_err(|e| E::Serde(e.to_string()))?,
-        );
+        let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
+            .map_err(|e| E::Serde(e.to_string()))?;
+        self.render = Render::<Composition>::new(composition);
         Ok(self.render.calc()?)
     }
 

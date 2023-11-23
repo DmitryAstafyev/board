@@ -1,6 +1,8 @@
 import * as Core from "core";
 import * as Types from "./types";
 
+export * from "./types";
+
 export const wasm: {
     core: typeof Core | undefined;
 } = {
@@ -27,7 +29,7 @@ import("core")
         console.error(`Fail to core load wasm module: ${err.message}`);
     });
 
-export class BoardWrapped {
+export class Board {
     protected readonly board: Core.Board;
     protected readonly canvas: HTMLCanvasElement;
     protected readonly parent: HTMLElement;
@@ -82,6 +84,7 @@ export class BoardWrapped {
         this.id = getId();
         this.canvas = document.createElement("canvas");
         this.canvas.setAttribute("id", this.id);
+        this.parent.appendChild(this.canvas);
         this.setSize();
         this.board = new wasm.core.Board();
         this.board.bind(this.id);
