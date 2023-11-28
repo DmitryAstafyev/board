@@ -1,3 +1,5 @@
+use std::ops::IndexMut;
+
 use wasm_bindgen_test::console_log;
 
 use crate::{
@@ -24,6 +26,17 @@ impl Render<Composition> {
                 }
             })
             .collect::<Vec<Representation<Component>>>();
+        entity.compositions = entity
+            .compositions
+            .drain(..)
+            .map(|r| {
+                if let Representation::Origin(composition) = r {
+                    Representation::Render(Render::<Composition>::new(composition))
+                } else {
+                    r
+                }
+            })
+            .collect::<Vec<Representation<Composition>>>();
         entity.connections = entity
             .connections
             .drain(..)
@@ -55,69 +68,21 @@ impl Render<Composition> {
                 fill_style: String::from("rgb(200,200,230)"),
             },
             over_style: None,
-            grid: Some(Grid::new()),
+            grid: Some(Grid::new(1)),
         }
     }
 
-    pub fn calc(&mut self) -> Result<(), E> {
-        // Order components by connections number
-        self.entity.order();
-        for component in self.entity.components.iter_mut() {
-            component.render_mut()?.calc()?;
-        }
-        // Get dependencies data (list of components with IN / OUT connections)
-        let mut dependencies: Vec<(usize, Vec<usize>, Vec<usize>)> = vec![];
-        let mut located: Vec<usize> = vec![];
-        for component in self.entity.components.iter() {
-            let host_id = component.origin().sig.id;
-            if located.contains(&host_id) {
-                continue;
-            }
-            let (linked_in, linked_out) =
-                Connection::linked(&self.entity.connections, host_id, &located);
-            dependencies.push((host_id, linked_in.to_vec(), linked_out.to_vec()));
-            located = [located, linked_in, linked_out, vec![host_id]].concat();
-        }
-        let mut grids: Vec<Grid> = vec![];
-        for (host_id, linked_in, linked_out) in dependencies {
-            let on_right = get_forms_by_ids(&self.entity.components, &linked_in)?;
-            let on_left = get_forms_by_ids(&self.entity.components, &linked_out)?;
-            let on_center = get_forms_by_ids(&self.entity.components, &[host_id])?;
-            let grid = Grid::from(Layout::WithFormsBySides((on_left, on_center, on_right)))?;
-            grids.push(grid);
-        }
-        // Create common grid
-        let grid = Grid::from(Layout::GridsBox(&mut grids))?;
-        // Update possitions on components
+    pub fn align_to_grid(&mut self, grid: &Grid) -> Result<(), E> {
         for comp in self.entity.components.iter_mut() {
             let relative = grid.relative(comp.origin().sig.id);
-            let render = comp.render_mut()?;
-            let (x, y) = render.form.get_coors();
-            render
+            comp.render_mut()?
                 .form
-                .set_coors(Some(relative.x(x)), Some(relative.y(y)));
+                .set_coors(Some(relative.x(0)), Some(relative.y(0)));
         }
-        let grid_size = grid.get_size_px();
-        let height_by_grid = (grid_size.1 + CELL * 2) as i32;
-        self.form.set_box_size(
-            Some((grid_size.0 + CELL * 2) as i32),
-            Some(
-                [height_by_grid, self.entity.ports.render()?.height()]
-                    .iter()
-                    .max()
-                    .copied()
-                    .unwrap_or(height_by_grid),
-            ),
-        );
-        // Calc ports
-        self.entity
-            .ports
-            .render_mut()?
-            .calc(self.form.get_box_size().0)?;
+        let (x, y) = self.form.get_coors();
+        let relative = grid.relative(self.entity.sig.id);
         self.form
-            .set_coors(Some(-(CELL as i32)), Some(-(CELL as i32)));
-        // Save grid
-        self.grid = Some(grid);
+            .set_coors(Some(relative.x(x)), Some(relative.y(y)));
         // Setup connections
         for conn in self.entity.connections.iter_mut() {
             if let (Some(ins), Some(outs)) = (
@@ -167,6 +132,77 @@ impl Render<Composition> {
         Ok(())
     }
 
+    pub fn calc(&mut self) -> Result<(), E> {
+        // Order components by connections number
+        self.entity.order();
+        for component in self.entity.components.iter_mut() {
+            component.render_mut()?.calc()?;
+        }
+        for composition in self.entity.compositions.iter_mut() {
+            composition.render_mut()?.calc()?;
+        }
+        // Get dependencies data (list of components with IN / OUT connections)
+        let mut dependencies: Vec<(usize, Vec<usize>, Vec<usize>)> = vec![];
+        let mut located: Vec<usize> = vec![];
+        for component in self.entity.components.iter() {
+            let host_id = component.origin().sig.id;
+            if located.contains(&host_id) {
+                continue;
+            }
+            let (linked_in, linked_out) =
+                Connection::linked(&self.entity.connections, host_id, &located);
+            dependencies.push((host_id, linked_in.to_vec(), linked_out.to_vec()));
+            located = [located, linked_in, linked_out, vec![host_id]].concat();
+        }
+        let mut grids: Vec<Grid> = vec![];
+        // Get components grids
+        for (host_id, linked_in, linked_out) in dependencies {
+            let on_right = get_forms_by_ids(&self.entity.components, &linked_in)?;
+            let on_left = get_forms_by_ids(&self.entity.components, &linked_out)?;
+            let on_center = get_forms_by_ids(&self.entity.components, &[host_id])?;
+            let grid = Grid::from(Layout::WithFormsBySides((on_left, on_center, on_right)))?;
+            grids.push(grid);
+        }
+        // Get nested compositions grids
+        for composition in self.entity.compositions.iter_mut() {
+            if let Some(grid) = composition.render()?.grid.as_ref() {
+                let mut grid = grid.clone();
+                grid.insert_self(composition.origin().sig.id);
+                grids.push(grid);
+            }
+        }
+        // Create common grid
+        let grid = Grid::from(Layout::GridsBox(&mut grids, 1))?;
+        // Align to grid
+        self.align_to_grid(&grid)?;
+        // Align to grid nested compositions
+        for composition in self.entity.compositions.iter_mut() {
+            composition.render_mut()?.align_to_grid(&grid)?;
+        }
+        let grid_size = grid.get_size_px();
+        let height_by_grid = grid_size.1 as i32;
+        self.form.set_box_size(
+            Some(grid_size.0 as i32),
+            Some(
+                [height_by_grid, self.entity.ports.render()?.height()]
+                    .iter()
+                    .max()
+                    .copied()
+                    .unwrap_or(height_by_grid),
+            ),
+        );
+        // Calc ports
+        self.entity
+            .ports
+            .render_mut()?
+            .calc(self.form.get_box_size().0)?;
+        // self.form
+        //     .set_coors(Some(-(CELL as i32)), Some(-(CELL as i32)));
+        // Save grid
+        self.grid = Some(grid);
+        Ok(())
+    }
+
     pub fn draw(
         &self,
         context: &mut web_sys::CanvasRenderingContext2d,
@@ -194,14 +230,15 @@ impl Render<Composition> {
                 (x as u32, y as u32, x1 as u32, y1 as u32),
                 relative.get_zoom(),
             );
-
-            for component in self
-                .entity
-                .components
-                .iter()
-                .filter(|comp| targets.contains(&comp.origin().sig.id))
+            for component in self.entity.components.iter()
+            // .filter(|comp| targets.contains(&comp.origin().sig.id))
             {
                 component.render()?.draw(context, relative)?;
+            }
+            for composition in self.entity.compositions.iter()
+            // .filter(|comp| targets.contains(&comp.origin().sig.id))
+            {
+                composition.render()?.draw(context, relative, area)?;
             }
             for connection in self.entity.connections.iter().filter(|conn| {
                 targets.contains(&conn.origin().joint_in.component)

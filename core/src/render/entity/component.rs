@@ -26,7 +26,7 @@ impl Render<Component> {
                 fill_style: String::from("rgb(200,250,200)"),
             },
             over_style: None,
-            grid: Some(Grid::new()),
+            grid: Some(Grid::new(1)),
         }
     }
 

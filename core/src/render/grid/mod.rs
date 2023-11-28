@@ -17,12 +17,14 @@ pub enum Layout<'a> {
     WithFormsBySides((Vec<&'a Form>, Vec<&'a Form>, Vec<&'a Form>)),
     // From other grids into row
     GridsRow(&'a [Grid]),
-    // Order grids into one box
-    GridsBox(&'a mut [Grid]),
+    // Order grids into one box: Grid[], offset_by_each_side
+    GridsBox(&'a mut [Grid], u32),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Grid {
+    // Offset from each side
+    pub offset: u32,
     // Total grid size
     pub size: (u32, u32),
     // Cells map <EntityID, Occupied area <(x, y, x1, y1)>>
@@ -30,9 +32,10 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn new() -> Self {
+    pub fn new(offset: u32) -> Self {
         Grid {
-            size: (0, 0),
+            offset,
+            size: (offset * 2, offset * 2),
             map: HashMap::new(),
         }
     }
@@ -43,8 +46,12 @@ impl Grid {
                 with_forms_by_sides(left, center, right)?
             }
             Layout::GridsRow(grids) => from_grids_into_row(grids),
-            Layout::GridsBox(grids) => from_grids_into_box(grids),
+            Layout::GridsBox(grids, offset) => from_grids_into_box(grids, offset),
         })
+    }
+
+    pub fn insert_self(&mut self, id: usize) {
+        self.map.insert(id, (0, 0, self.size.0, self.size.1));
     }
 
     pub fn relative(&self, target: usize) -> Relative {
@@ -86,7 +93,7 @@ impl Grid {
     fn is_block_free(&self, target: (u32, u32, u32, u32)) -> bool {
         let (mut x, mut y, mut x1, mut y1) = target;
         // Check space
-        if self.size.0 < x1 || self.size.1 < y1 {
+        if self.size.0 - self.offset < x1 || self.size.1 - self.offset < y1 {
             return false;
         }
         // Extend box to consider necessary spaces
@@ -113,6 +120,13 @@ impl Grid {
     }
 
     fn is_point_free(&self, point: &(u32, u32)) -> bool {
+        if point.0 < self.offset
+            || point.0 > self.size.0 + self.offset * 2
+            || point.1 < self.offset
+            || point.1 > self.size.1 + self.offset * 2
+        {
+            return false;
+        }
         for (_, (ax, ay, ax1, ay1)) in self.map.iter() {
             if elements::is_point_in(point, &(*ax, *ay, *ax1, *ay1)) {
                 return false;
@@ -123,38 +137,34 @@ impl Grid {
 
     pub fn insert(&mut self, grid: &Grid) {
         // TODO: conside if size == (0,0)
-        if self.map.is_empty() {
-            self.map = grid.map.clone();
-        } else {
-            // Looking for point to insert grid
-            let mut point: Option<(u32, u32)> = None;
-            while point.is_none() {
-                for x in 0..self.size.0 {
-                    for y in 0..self.size.1 {
-                        if !self.is_point_free(&(x, y)) {
-                            continue;
-                        }
-                        if self.is_block_free((x, y, x + grid.size.0, y + grid.size.1)) {
-                            point = Some((x, y));
-                            break;
-                        }
+        // Looking for point to insert grid
+        let mut point: Option<(u32, u32)> = None;
+        while point.is_none() {
+            for x in 0..self.size.0 {
+                for y in 0..self.size.1 {
+                    if !self.is_point_free(&(x, y)) {
+                        continue;
                     }
-                    if point.is_some() {
+                    if self.is_block_free((x, y, x + grid.size.0, y + grid.size.1)) {
+                        point = Some((x, y));
                         break;
                     }
                 }
-                if point.is_none() {
-                    // Point isn't found. Grid doesn't have enought space. Increase space
-                    self.size.0 += 1;
-                    self.size.1 += 1;
+                if point.is_some() {
+                    break;
                 }
             }
-            // Merge grid
-            if let Some((p_x, p_y)) = point {
-                grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
-                    self.map.insert(*id, (x + p_x, y + p_y, x1 + p_x, y1 + p_y));
-                });
+            if point.is_none() {
+                // Point isn't found. Grid doesn't have enought space. Increase space
+                self.size.0 += 1;
+                self.size.1 += 1;
             }
+        }
+        // Merge grid
+        if let Some((p_x, p_y)) = point {
+            grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
+                self.map.insert(*id, (x + p_x, y + p_y, x1 + p_x, y1 + p_y));
+            });
         }
     }
 
@@ -250,7 +260,11 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     } else {
         (rows - 1) * SPACE_IN_HORIZONT
     };
-    Ok(Grid { size, map })
+    Ok(Grid {
+        offset: 0,
+        size,
+        map,
+    })
 }
 
 fn from_grids_into_row(grids: &[Grid]) -> Grid {
@@ -273,13 +287,17 @@ fn from_grids_into_row(grids: &[Grid]) -> Grid {
     if size.0 > 0 {
         size.0 -= SPACE_IN_HORIZONT;
     }
-    Grid { size, map }
+    Grid {
+        offset: 0,
+        size,
+        map,
+    }
 }
 
-fn from_grids_into_box(grids: &mut [Grid]) -> Grid {
+fn from_grids_into_box(grids: &mut [Grid], offset: u32) -> Grid {
     // Sort from biggest to smallest
     grids.sort_by(|a, b| (b.size.0 * b.size.1).cmp(&(a.size.0 * a.size.1)));
-    let mut packed = Grid::new();
+    let mut packed = Grid::new(offset);
     // Merge grids
     grids.iter().for_each(|grid| {
         packed.insert(grid);

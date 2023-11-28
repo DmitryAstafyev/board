@@ -249,16 +249,18 @@ function find(id: number, elements: IElement[]): IElement {
 //     console.log(elements);
 // });
 
+let signature: number = 1;
+
+function getSignature(): Signature {
+    const id = signature++;
+    return { id, class_name: `class_name_${id}` };
+}
+
 function getDummyComposition(
     comps: number,
     portsPerComp: number,
     deep: number
 ): Composition {
-    let signature: number = 1;
-    const getSignature = (): Signature => {
-        const id = signature++;
-        return { id, class_name: `class_name_${id}` };
-    };
     const components: Component[] = [];
     for (let c = 0; c <= comps; c += 1) {
         const ports: Port[] = [];
@@ -342,7 +344,7 @@ function getDummyComposition(
 }
 
 setTimeout(() => {
-    const composition = getDummyComposition(10, 10, 2);
+    const composition = getDummyComposition(10, 10, 1);
     console.log(composition);
     const board = new Board(`div#container`);
     board.init(composition);
