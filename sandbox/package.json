@@ -5,6 +5,7 @@
   "main": "./src/main.ts",
   "scripts": {
     "build": "./node_modules/.bin/webpack",
+    "build-ts": "./node_modules/.bin/tsc -p ./tsconfig.json",
     "serve": "./node_modules/.bin/webpack serve"
   },
   "author": "Dmitry Astafyev",

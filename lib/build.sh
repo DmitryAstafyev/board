@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 cd ../core
 wasm-pack build --target bundler
 cd ../lib

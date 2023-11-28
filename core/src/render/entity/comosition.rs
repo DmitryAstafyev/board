@@ -1,13 +1,12 @@
 use wasm_bindgen_test::console_log;
 
 use crate::{
-    entity::{Component, Composition, Connection},
+    entity::{Component, Composition, Connection, Ports},
     error::E,
     render::{
-        elements::relative,
         entity::port,
         form::{Path, Point, Rectangle},
-        grid::Layout,
+        grid::{Layout, CELL},
         Form, Grid, Relative, Render, Representation, Style,
     },
 };
@@ -36,6 +35,11 @@ impl Render<Composition> {
                 }
             })
             .collect::<Vec<Representation<Connection>>>();
+        entity.ports = if let Representation::Origin(ports) = entity.ports {
+            Representation::Render(Render::<Ports>::new(ports))
+        } else {
+            entity.ports
+        };
         let id = entity.sig.id;
         Self {
             entity,
@@ -48,7 +52,7 @@ impl Render<Composition> {
             }),
             style: Style {
                 stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(230,230,230)"),
+                fill_style: String::from("rgb(200,200,230)"),
             },
             over_style: None,
             grid: Some(Grid::new()),
@@ -83,7 +87,6 @@ impl Render<Composition> {
             grids.push(grid);
         }
         // Create common grid
-        // let grid = Grid::from(Layout::GridsRow(&grids))?;
         let grid = Grid::from(Layout::GridsBox(&mut grids))?;
         // Update possitions on components
         for comp in self.entity.components.iter_mut() {
@@ -94,6 +97,25 @@ impl Render<Composition> {
                 .form
                 .set_coors(Some(relative.x(x)), Some(relative.y(y)));
         }
+        let grid_size = grid.get_size_px();
+        let height_by_grid = (grid_size.1 + CELL * 2) as i32;
+        self.form.set_box_size(
+            Some((grid_size.0 + CELL * 2) as i32),
+            Some(
+                [height_by_grid, self.entity.ports.render()?.height()]
+                    .iter()
+                    .max()
+                    .copied()
+                    .unwrap_or(height_by_grid),
+            ),
+        );
+        // Calc ports
+        self.entity
+            .ports
+            .render_mut()?
+            .calc(self.form.get_box_size().0)?;
+        self.form
+            .set_coors(Some(-(CELL as i32)), Some(-(CELL as i32)));
         // Save grid
         self.grid = Some(grid);
         // Setup connections
@@ -109,8 +131,14 @@ impl Render<Composition> {
                     .find(|comp| comp.origin().sig.id == conn.origin().joint_out.component),
             ) {
                 if let (Some(port_in), Some(port_out)) = (
-                    ins.origin().ports.find(conn.origin().joint_in.port),
-                    outs.origin().ports.find(conn.origin().joint_out.port),
+                    ins.origin()
+                        .ports
+                        .origin()
+                        .find(conn.origin().joint_in.port),
+                    outs.origin()
+                        .ports
+                        .origin()
+                        .find(conn.origin().joint_out.port),
                 ) {
                     let port_in = port_in.render()?.form.get_coors();
                     let port_out = port_out.render()?.form.get_coors();
@@ -159,6 +187,8 @@ impl Render<Composition> {
             y = -y;
             y1 = y + area.1 as i32;
         }
+        let self_relative = self.relative(relative);
+        self.entity.ports.render()?.draw(context, &self_relative)?;
         if let Some(grid) = self.grid.as_ref() {
             let targets = grid.in_area(
                 (x as u32, y as u32, x1 as u32, y1 as u32),
@@ -179,12 +209,6 @@ impl Render<Composition> {
             }) {
                 connection.render()?.draw(context, relative)?;
             }
-            // for component in self.entity.components.iter() {
-            //     component.render()?.draw(context, &relative)?;
-            // }
-            // for connection in self.entity.connections.iter() {
-            //     connection.render()?.draw(context, &relative)?;
-            // }
             grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
             Ok(())
         } else {

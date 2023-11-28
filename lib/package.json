@@ -6,7 +6,7 @@
   "types": "./build/lib.d.ts",
   "scripts": {
     "build": "./node_modules/.bin/webpack",
-    "build-ts": "tsc -p ./tsconfig.json",
+    "build-ts": "./node_modules/.bin/tsc -p ./tsconfig.json",
     "build-wasm": "cd ../core && wasm-pack build --target bundler",
     "drop": "rm -rf ./node_modules",
     "reinstall": "yarn install"

@@ -34,11 +34,13 @@ export interface Connection {
 
 export interface Component {
     sig: Signature;
-    ports: Ports;
+    ports: Representation<Ports>;
 }
 
 export interface Composition {
     sig: Signature;
     components: Representation<Component>[];
     connections: Representation<Connection>[];
+    compositions: Representation<Composition>[];
+    ports: Representation<Ports>;
 }

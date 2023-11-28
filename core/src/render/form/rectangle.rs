@@ -58,6 +58,12 @@ impl Rectangle {
                 w as f64,
                 h as f64,
             );
+            context.stroke_rect(
+                relative.x(self.x) as f64,
+                relative.y(self.y) as f64,
+                w as f64,
+                h as f64,
+            );
         }
     }
 }

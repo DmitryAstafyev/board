@@ -7,3 +7,4 @@
 **/build/*.wasm
 **/test_output
 **/yarn-error.log
+sandbox/resources/*.json

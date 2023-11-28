@@ -178,6 +178,10 @@ impl Grid {
         context.stroke();
         Ok(())
     }
+
+    pub fn get_size_px(&self) -> (u32, u32) {
+        (self.size.0 * CELL, self.size.1 * CELL)
+    }
 }
 
 fn get_sizes(forms: Vec<&Form>) -> Result<Vec<(usize, (u32, u32))>, E> {

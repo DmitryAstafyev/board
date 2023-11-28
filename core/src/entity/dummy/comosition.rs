@@ -25,22 +25,27 @@ impl Dummy<Composition, (RangeInclusive<usize>, RangeInclusive<usize>)> for Comp
             }
             let left = &comp[0];
             let right = &comp[1];
-            let min = [left.origin().ports.len(), right.origin().ports.len()]
-                .iter()
-                .cloned()
-                .min()
-                .unwrap_or(0);
+            let min = [
+                left.origin().ports.origin().len(),
+                right.origin().ports.origin().len(),
+            ]
+            .iter()
+            .cloned()
+            .min()
+            .unwrap_or(0);
             // let count = rand::thread_rng().gen_range(0..min);
             for _ in 0..min {
                 let selected: usize = rand::thread_rng().gen_range(0..min);
                 comp[0]
                     .origin_mut()
                     .ports
+                    .origin_mut()
                     .get_mut(selected)
                     .set_type(PortType::In);
                 comp[1]
                     .origin_mut()
                     .ports
+                    .origin_mut()
                     .get_mut(selected)
                     .set_type(PortType::Out);
                 let left = &comp[0];
@@ -48,11 +53,11 @@ impl Dummy<Composition, (RangeInclusive<usize>, RangeInclusive<usize>)> for Comp
                 connections.push(Connection::new(
                     producer.next(),
                     Joint::new(
-                        left.origin().ports.get(selected).sig.id,
+                        left.origin().ports.origin().get(selected).sig.id,
                         left.origin().sig.id,
                     ),
                     Joint::new(
-                        right.origin().ports.get(selected).sig.id,
+                        right.origin().ports.origin().get(selected).sig.id,
                         right.origin().sig.id,
                     ),
                 ))

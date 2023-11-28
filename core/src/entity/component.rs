@@ -1,17 +1,20 @@
-use crate::entity::{Ports, Signature};
+use crate::{
+    entity::{Ports, Signature},
+    render::Representation,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Component {
     pub sig: Signature,
-    pub ports: Ports,
+    pub ports: Representation<Ports>,
 }
 
 impl Component {
     pub fn new(sig: Signature) -> Self {
         Self {
             sig,
-            ports: Ports::new(),
+            ports: Representation::Origin(Ports::new()),
         }
     }
 }

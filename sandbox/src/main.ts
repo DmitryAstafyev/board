@@ -6,7 +6,248 @@ import {
     Connection,
     PortType,
     Signature,
+    Representation,
 } from "board";
+
+enum Types {
+    PPortPrototype = "PPortPrototype",
+    AssemblySwConnector = "AssemblySwConnector",
+    PPortInCompositionInstanceRef = "PPortInCompositionInstanceRef",
+    RPortInCompositionInstanceRef = "RPortInCompositionInstanceRef",
+    RPortPrototype = "RPortPrototype",
+    SwComponentPrototype = "SwComponentPrototype",
+    ApplicationSwComponentType = "ApplicationSwComponentType",
+    ServiceSwComponentType = "ServiceSwComponentType",
+    ComplexDeviceDriverSwComponentType = "ComplexDeviceDriverSwComponentType",
+    CompositionSwComponentType = "CompositionSwComponentType",
+}
+interface IElement {
+    id: number;
+    className: string;
+    shortName: string;
+}
+
+interface IConnection extends IElement {
+    provider: number;
+    requester: number;
+}
+
+interface IComposition extends IElement {
+    component: number[];
+    connector: number[];
+    port: number[];
+}
+
+interface IComponentPrototype extends IElement {
+    rType: number;
+}
+
+interface IComponentType extends IElement {
+    port: number[];
+}
+
+interface IRPort extends IElement {
+    targetRPort: number;
+    contextComponent: number;
+}
+
+interface IPPort extends IElement {
+    targetPPort: number;
+    contextComponent: number;
+}
+
+function asComponentPrototype(el: IElement): IComponentPrototype | undefined {
+    return el.className == Types.SwComponentPrototype
+        ? (el as IComponentPrototype)
+        : undefined;
+}
+
+function asComposition(el: IElement): IComposition | undefined {
+    return el.className === Types.CompositionSwComponentType
+        ? (el as IComposition)
+        : undefined;
+}
+
+function asComponentType(el: IElement): IComposition | undefined {
+    return [
+        Types.ComplexDeviceDriverSwComponentType,
+        Types.ApplicationSwComponentType,
+        Types.ServiceSwComponentType,
+    ].includes(el.className as Types)
+        ? (el as IComposition)
+        : undefined;
+}
+
+function asConnection(el: IElement): IConnection | undefined {
+    return el.className === Types.AssemblySwConnector
+        ? (el as IConnection)
+        : undefined;
+}
+
+function asRPort(el: IElement): IRPort | undefined {
+    return el.className === Types.RPortInCompositionInstanceRef
+        ? (el as IRPort)
+        : undefined;
+}
+
+function asPPort(el: IElement): IPPort | undefined {
+    return el.className === Types.PPortInCompositionInstanceRef
+        ? (el as IPPort)
+        : undefined;
+}
+
+function load(parent: IComposition, elements: IElement[], holder: Composition) {
+    const comps: number[] = [];
+    parent.component.forEach((id: number) => {
+        const compPrototype: IComponentPrototype | undefined =
+            asComponentPrototype(find(id, elements));
+        if (compPrototype === undefined) {
+            console.error(`Element ${id} isn't IComponentPrototype`);
+            return;
+        }
+        const smth = find(compPrototype.rType, elements);
+        const composition = asComposition(smth);
+        const componentType = asComponentType(smth);
+        if (composition !== undefined) {
+            const nested: Composition = {
+                sig: {
+                    id,
+                    class_name: composition.className,
+                },
+                components: [],
+                connections: [],
+                compositions: [],
+                ports: { Origin: { ports: [] } },
+            };
+            load(composition, elements, nested);
+            holder.compositions.push({
+                Origin: nested,
+            });
+        } else if (componentType !== undefined) {
+            comps.push(id);
+            holder.components.push({
+                Origin: {
+                    sig: {
+                        id,
+                        class_name: componentType.className,
+                    },
+                    ports: {
+                        Origin: {
+                            ports: componentType.port.map((port: number) => {
+                                return {
+                                    Origin: {
+                                        sig: {
+                                            id: port,
+                                            class_name: "unknown",
+                                        },
+                                        port_type: PortType.In,
+                                    },
+                                };
+                            }),
+                        },
+                    },
+                },
+            });
+        } else {
+            console.error(
+                `Fail to detect type of ${smth.id}/${
+                    smth.className
+                }: ${JSON.stringify(smth)}`
+            );
+        }
+    });
+    let notFoundConnectors = 0;
+    parent.connector.forEach((connectionId: number) => {
+        const connection = (() => {
+            try {
+                const smth = find(connectionId, elements);
+                const connection = asConnection(smth);
+                if (connection === undefined) {
+                    console.error(
+                        `Entity ${connectionId} isn't connection: ${JSON.stringify(
+                            connection
+                        )}`
+                    );
+                }
+                return connection;
+            } catch (_e) {
+                notFoundConnectors += 1;
+                return undefined;
+            }
+        })();
+        if (connection === undefined) {
+            return;
+        }
+        const pPort = asPPort(find(connection.provider, elements));
+        const rPort = asRPort(find(connection.requester, elements));
+        if (pPort === undefined || rPort === undefined) {
+            console.error(`No ports`);
+            return;
+        }
+        holder.connections.push({
+            Origin: {
+                sig: {
+                    id: connectionId,
+                    class_name: connection.className,
+                },
+                joint_in: {
+                    component: pPort.contextComponent,
+                    port: pPort.id,
+                },
+                joint_out: {
+                    component: rPort.contextComponent,
+                    port: rPort.id,
+                },
+            },
+        });
+        // if (
+        //     !parent.component.includes(pPort.contextComponent) ||
+        //     !parent.component.includes(rPort.contextComponent)
+        // ) {
+        //     console.error(`contextComponent isn't found in components IDs`);
+        // }
+        // if (
+        //     !comps.includes(pPort.contextComponent) ||
+        //     !comps.includes(rPort.contextComponent)
+        // ) {
+        //     console.error(`contextComponent isn't found in comps IDs`);
+        // }
+    });
+    if (notFoundConnectors > 0) {
+        console.error(`Fail to find ${notFoundConnectors} connectors `);
+    }
+}
+
+function find(id: number, elements: IElement[]): IElement {
+    const target = elements.find((el) => el.id === id);
+    if (target === undefined) {
+        throw new Error(`Fail to find element: ${id}`);
+    }
+    return target;
+}
+
+// import("../resources/example.json").then((data: any) => {
+//     const compositionId: number = data[0];
+//     const elements: IElement[] = data[1];
+//     const rootElement = find(compositionId, elements);
+//     const root: Composition = {
+//         sig: {
+//             id: rootElement.id,
+//             class_name: rootElement.className,
+//         },
+//         components: [],
+//         connections: [],
+//         compositions: [],
+//     };
+//     const unique: string[] = [];
+//     elements.forEach((el) => {
+//         !unique.includes(el.className) && unique.push(el.className);
+//     });
+//     load(rootElement as IComposition, elements, root);
+//     console.log(root);
+//     console.log(JSON.stringify(root));
+//     console.log(elements);
+// });
 
 function getDummyComposition(comps: number, portsPerComp: number): Composition {
     let signature: number = 1;
@@ -26,11 +267,13 @@ function getDummyComposition(comps: number, portsPerComp: number): Composition {
         components.push({
             sig: getSignature(),
             ports: {
-                ports: ports.map((p) => {
-                    return {
-                        Origin: p,
-                    };
-                }),
+                Origin: {
+                    ports: ports.map((p) => {
+                        return {
+                            Origin: p,
+                        };
+                    }),
+                },
             },
         });
     }
@@ -41,10 +284,10 @@ function getDummyComposition(comps: number, portsPerComp: number): Composition {
         if (a === undefined || b === undefined) {
             break;
         }
-        const ports_a = a.ports.ports.map((p) => {
+        const ports_a = a.ports.Origin.ports.map((p) => {
             return { port: p.Origin.sig.id, comp: a.sig.id };
         });
-        const ports_b = b.ports.ports.map((p) => {
+        const ports_b = b.ports.Origin.ports.map((p) => {
             return { port: p.Origin.sig.id, comp: b.sig.id };
         });
         const count = Math.round(ports_a.length / 2);
@@ -62,6 +305,15 @@ function getDummyComposition(comps: number, portsPerComp: number): Composition {
             });
         }
     }
+    const ports: Representation<Port>[] = [];
+    for (let p = 0; p <= portsPerComp; p += 1) {
+        ports.push({
+            Origin: {
+                port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
+                sig: getSignature(),
+            },
+        });
+    }
     return {
         sig: getSignature(),
         components: components.map((c) => {
@@ -70,6 +322,8 @@ function getDummyComposition(comps: number, portsPerComp: number): Composition {
         connections: connections.map((c) => {
             return { Origin: c };
         }),
+        compositions: [],
+        ports: { Origin: { ports } },
     };
 }
 setTimeout(() => {

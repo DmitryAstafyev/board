@@ -1,5 +1,5 @@
 use crate::{
-    entity::{Component, Connection, Signature},
+    entity::{Component, Connection, Ports, Signature},
     render::Representation,
 };
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,8 @@ pub struct Composition {
     pub sig: Signature,
     pub components: Vec<Representation<Component>>,
     pub connections: Vec<Representation<Connection>>,
+    pub compositions: Vec<Representation<Composition>>,
+    pub ports: Representation<Ports>,
 }
 
 impl Composition {
@@ -17,6 +19,8 @@ impl Composition {
             sig,
             components: vec![],
             connections: vec![],
+            compositions: vec![],
+            ports: Representation::Origin(Ports::new()),
         }
     }
 
@@ -26,6 +30,10 @@ impl Composition {
 
     pub fn push_connection(&mut self, connection: Connection) {
         self.connections.push(Representation::Origin(connection))
+    }
+
+    pub fn push_composition(&mut self, composition: Composition) {
+        self.compositions.push(Representation::Origin(composition))
     }
 
     pub fn order(&mut self) {
