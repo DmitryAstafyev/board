@@ -344,7 +344,7 @@ function getDummyComposition(
 }
 
 setTimeout(() => {
-    const composition = getDummyComposition(10, 10, 1);
+    const composition = getDummyComposition(10, 10, 2);
     console.log(composition);
     const board = new Board(`div#container`);
     board.init(composition);

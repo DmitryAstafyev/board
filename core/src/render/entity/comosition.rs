@@ -79,10 +79,13 @@ impl Render<Composition> {
                 .form
                 .set_coors(Some(relative.x(0)), Some(relative.y(0)));
         }
-        let (x, y) = self.form.get_coors();
+        // Align to grid nested compositions
+        for composition in self.entity.compositions.iter_mut() {
+            composition.render_mut()?.align_to_grid(grid)?;
+        }
         let relative = grid.relative(self.entity.sig.id);
         self.form
-            .set_coors(Some(relative.x(x)), Some(relative.y(y)));
+            .set_coors(Some(relative.x(0)), Some(relative.y(0)));
         // Setup connections
         for conn in self.entity.connections.iter_mut() {
             if let (Some(ins), Some(outs)) = (
@@ -246,7 +249,7 @@ impl Render<Composition> {
             }) {
                 connection.render()?.draw(context, relative)?;
             }
-            grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
+            // grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
             Ok(())
         } else {
             Err(E::RenderNotInited)
