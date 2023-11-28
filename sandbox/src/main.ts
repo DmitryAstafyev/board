@@ -249,7 +249,11 @@ function find(id: number, elements: IElement[]): IElement {
 //     console.log(elements);
 // });
 
-function getDummyComposition(comps: number, portsPerComp: number): Composition {
+function getDummyComposition(
+    comps: number,
+    portsPerComp: number,
+    deep: number
+): Composition {
     let signature: number = 1;
     const getSignature = (): Signature => {
         const id = signature++;
@@ -314,6 +318,14 @@ function getDummyComposition(comps: number, portsPerComp: number): Composition {
             },
         });
     }
+    const compositions: Composition[] = [];
+    if (deep > 0) {
+        for (let i = 0; i <= comps / 2; i += 1) {
+            compositions.push(
+                getDummyComposition(comps, portsPerComp, deep - 1)
+            );
+        }
+    }
     return {
         sig: getSignature(),
         components: components.map((c) => {
@@ -322,12 +334,15 @@ function getDummyComposition(comps: number, portsPerComp: number): Composition {
         connections: connections.map((c) => {
             return { Origin: c };
         }),
-        compositions: [],
+        compositions: compositions.map((c) => {
+            return { Origin: c };
+        }),
         ports: { Origin: { ports } },
     };
 }
+
 setTimeout(() => {
-    const composition = getDummyComposition(10, 10);
+    const composition = getDummyComposition(10, 10, 2);
     console.log(composition);
     const board = new Board(`div#container`);
     board.init(composition);
