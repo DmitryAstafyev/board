@@ -1,124 +1,66 @@
-import {
-    Board,
-    Composition,
-    Component,
-    Port,
-    Connection,
-    PortType,
-    Signature,
-    Representation,
-} from "board";
-
-enum Types {
-    PPortPrototype = "PPortPrototype",
-    AssemblySwConnector = "AssemblySwConnector",
-    PPortInCompositionInstanceRef = "PPortInCompositionInstanceRef",
-    RPortInCompositionInstanceRef = "RPortInCompositionInstanceRef",
-    RPortPrototype = "RPortPrototype",
-    SwComponentPrototype = "SwComponentPrototype",
-    ApplicationSwComponentType = "ApplicationSwComponentType",
-    ServiceSwComponentType = "ServiceSwComponentType",
-    ComplexDeviceDriverSwComponentType = "ComplexDeviceDriverSwComponentType",
-    CompositionSwComponentType = "CompositionSwComponentType",
-}
-interface IElement {
-    id: number;
-    className: string;
-    shortName: string;
-}
-
-interface IConnection extends IElement {
-    provider: number;
-    requester: number;
-}
-
-interface IComposition extends IElement {
-    component: number[];
-    connector: number[];
-    port: number[];
-}
-
-interface IComponentPrototype extends IElement {
-    rType: number;
-}
-
-interface IComponentType extends IElement {
-    port: number[];
-}
-
-interface IRPort extends IElement {
-    targetRPort: number;
-    contextComponent: number;
-}
-
-interface IPPort extends IElement {
-    targetPPort: number;
-    contextComponent: number;
-}
-
-function asComponentPrototype(el: IElement): IComponentPrototype | undefined {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const board_1 = require("board");
+var Types;
+(function (Types) {
+    Types["PPortPrototype"] = "PPortPrototype";
+    Types["AssemblySwConnector"] = "AssemblySwConnector";
+    Types["PPortInCompositionInstanceRef"] = "PPortInCompositionInstanceRef";
+    Types["RPortInCompositionInstanceRef"] = "RPortInCompositionInstanceRef";
+    Types["RPortPrototype"] = "RPortPrototype";
+    Types["SwComponentPrototype"] = "SwComponentPrototype";
+    Types["ApplicationSwComponentType"] = "ApplicationSwComponentType";
+    Types["ServiceSwComponentType"] = "ServiceSwComponentType";
+    Types["ComplexDeviceDriverSwComponentType"] = "ComplexDeviceDriverSwComponentType";
+    Types["CompositionSwComponentType"] = "CompositionSwComponentType";
+})(Types || (Types = {}));
+function asComponentPrototype(el) {
     return el.className == Types.SwComponentPrototype
-        ? (el as IComponentPrototype)
+        ? el
         : undefined;
 }
-
-function asComposition(el: IElement): IComposition | undefined {
+function asComposition(el) {
     return el.className === Types.CompositionSwComponentType
-        ? (el as IComposition)
+        ? el
         : undefined;
 }
-
-function asComponentType(el: IElement): IComposition | undefined {
+function asComponentType(el) {
     return [
         Types.ComplexDeviceDriverSwComponentType,
         Types.ApplicationSwComponentType,
         Types.ServiceSwComponentType,
-    ].includes(el.className as Types)
-        ? (el as IComposition)
+    ].includes(el.className)
+        ? el
         : undefined;
 }
-
-function asConnection(el: IElement): IConnection | undefined {
+function asConnection(el) {
     return el.className === Types.AssemblySwConnector
-        ? (el as IConnection)
+        ? el
         : undefined;
 }
-
-function asRPort(el: IElement): IRPort | undefined {
+function asRPort(el) {
     return el.className === Types.RPortInCompositionInstanceRef
-        ? (el as IRPort)
+        ? el
         : undefined;
 }
-
-function asPPort(el: IElement): IPPort | undefined {
+function asPPort(el) {
     return el.className === Types.PPortInCompositionInstanceRef
-        ? (el as IPPort)
+        ? el
         : undefined;
 }
-
-function getPortRef(
-    components: Representation<Component>[],
-    id: number
-): Representation<Port> | undefined {
-    const component = components.find(
-        (c) =>
-            c.Origin.ports.Origin.ports.find((p) => p.Origin.sig.id == id) !==
-            undefined
-    );
+function getPortRef(components, id) {
+    const component = components.find((c) => c.Origin.ports.Origin.ports.find((p) => p.Origin.sig.id == id) !==
+        undefined);
     if (component === undefined) {
         return undefined;
     }
-    return component.Origin.ports.Origin.ports.find(
-        (p) => p.Origin.sig.id == id
-    );
+    return component.Origin.ports.Origin.ports.find((p) => p.Origin.sig.id == id);
 }
-const comps: number[] = [];
-const all_ports: number[] = [];
-
-function load(parent: IComposition, elements: IElement[], holder: Composition) {
-    parent.component.forEach((id: number) => {
-        const compPrototype: IComponentPrototype | undefined =
-            asComponentPrototype(find(id, elements));
+const comps = [];
+const all_ports = [];
+function load(parent, elements, holder) {
+    parent.component.forEach((id) => {
+        const compPrototype = asComponentPrototype(find(id, elements));
         if (compPrototype === undefined) {
             console.error(`Element ${id} isn't IComponentPrototype`);
             return;
@@ -128,7 +70,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
         const componentType = asComponentType(smth);
         if (composition !== undefined) {
             all_ports.push(...composition.port);
-            const nested: Composition = {
+            const nested = {
                 sig: {
                     id,
                     class_name: composition.className,
@@ -138,14 +80,14 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                 compositions: [],
                 ports: {
                     Origin: {
-                        ports: composition.port.map((port: number) => {
+                        ports: composition.port.map((port) => {
                             return {
                                 Origin: {
                                     sig: {
                                         id: port,
                                         class_name: "unknown",
                                     },
-                                    port_type: PortType.In,
+                                    port_type: board_1.PortType.In,
                                 },
                             };
                         }),
@@ -156,7 +98,8 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
             holder.compositions.push({
                 Origin: nested,
             });
-        } else if (componentType !== undefined) {
+        }
+        else if (componentType !== undefined) {
             comps.push(id);
             all_ports.push(...componentType.port);
             holder.components.push({
@@ -167,14 +110,14 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                     },
                     ports: {
                         Origin: {
-                            ports: componentType.port.map((port: number) => {
+                            ports: componentType.port.map((port) => {
                                 return {
                                     Origin: {
                                         sig: {
                                             id: port,
                                             class_name: "unknown",
                                         },
-                                        port_type: PortType.In,
+                                        port_type: board_1.PortType.In,
                                     },
                                 };
                             }),
@@ -182,29 +125,23 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                     },
                 },
             });
-        } else {
-            console.error(
-                `Fail to detect type of ${smth.id}/${
-                    smth.className
-                }: ${JSON.stringify(smth)}`
-            );
+        }
+        else {
+            console.error(`Fail to detect type of ${smth.id}/${smth.className}: ${JSON.stringify(smth)}`);
         }
     });
     let notFoundConnectors = 0;
-    parent.connector.forEach((connectionId: number) => {
+    parent.connector.forEach((connectionId) => {
         const connection = (() => {
             try {
                 const smth = find(connectionId, elements);
                 const connection = asConnection(smth);
                 if (connection === undefined) {
-                    console.error(
-                        `Entity ${connectionId} isn't connection: ${JSON.stringify(
-                            connection
-                        )}`
-                    );
+                    console.error(`Entity ${connectionId} isn't connection: ${JSON.stringify(connection)}`);
                 }
                 return connection;
-            } catch (_e) {
+            }
+            catch (_e) {
                 notFoundConnectors += 1;
                 return undefined;
             }
@@ -221,10 +158,10 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
         const pPortRef = getPortRef(holder.components, pPort.targetPPort);
         const rPortRef = getPortRef(holder.components, rPort.targetRPort);
         if (pPortRef !== undefined) {
-            pPortRef.Origin.port_type = PortType.Out;
+            pPortRef.Origin.port_type = board_1.PortType.Out;
         }
         if (rPortRef !== undefined) {
-            rPortRef.Origin.port_type = PortType.In;
+            rPortRef.Origin.port_type = board_1.PortType.In;
         }
         holder.connections.push({
             Origin: {
@@ -259,8 +196,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
         console.error(`Fail to find ${notFoundConnectors} connectors `);
     }
 }
-
-function find(id: number, elements: IElement[]): IElement {
+function find(id, elements) {
     const target = elements.find((el) => el.id === id);
     if (target === undefined) {
         throw new Error(`Fail to find element: ${id}`);
@@ -268,11 +204,11 @@ function find(id: number, elements: IElement[]): IElement {
     return target;
 }
 setTimeout(() => {
-    import("../resources/example.json").then((data: any) => {
-        const compositionId: number = data[0];
-        const elements: IElement[] = data[1];
+    Promise.resolve().then(() => require("../resources/example.json")).then((data) => {
+        const compositionId = data[0];
+        const elements = data[1];
         const rootElement = find(compositionId, elements);
-        const root: Composition = {
+        const root = {
             sig: {
                 id: rootElement.id,
                 class_name: rootElement.className,
@@ -282,38 +218,31 @@ setTimeout(() => {
             compositions: [],
             ports: { Origin: { ports: [] } },
         };
-        const unique: string[] = [];
+        const unique = [];
         elements.forEach((el) => {
             !unique.includes(el.className) && unique.push(el.className);
         });
-        load(rootElement as IComposition, elements, root);
+        load(rootElement, elements, root);
         console.log(root);
         // console.log(JSON.stringify(root));
         // console.log(elements);
-        const board = new Board(`div#container`);
+        const board = new board_1.Board(`div#container`);
         board.init(root);
         board.render();
     });
 }, 200);
-
-let signature: number = 1;
-
-function getSignature(): Signature {
+let signature = 1;
+function getSignature() {
     const id = signature++;
     return { id, class_name: `class_name_${id}` };
 }
-
-function getDummyComposition(
-    comps: number,
-    portsPerComp: number,
-    deep: number
-): Composition {
-    const components: Component[] = [];
+function getDummyComposition(comps, portsPerComp, deep) {
+    const components = [];
     for (let c = 0; c <= comps; c += 1) {
-        const ports: Port[] = [];
+        const ports = [];
         for (let p = 0; p <= portsPerComp; p += 1) {
             ports.push({
-                port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
+                port_type: Math.random() > 0.5 ? board_1.PortType.In : board_1.PortType.Out,
                 sig: getSignature(),
             });
         }
@@ -330,7 +259,7 @@ function getDummyComposition(
             },
         });
     }
-    const connections: Connection[] = [];
+    const connections = [];
     for (let i = 0; i <= components.length - 1; i += 2) {
         const a = components[i];
         const b = components[i + 1];
@@ -358,21 +287,19 @@ function getDummyComposition(
             });
         }
     }
-    const ports: Representation<Port>[] = [];
+    const ports = [];
     for (let p = 0; p <= portsPerComp; p += 1) {
         ports.push({
             Origin: {
-                port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
+                port_type: Math.random() > 0.5 ? board_1.PortType.In : board_1.PortType.Out,
                 sig: getSignature(),
             },
         });
     }
-    const compositions: Composition[] = [];
+    const compositions = [];
     if (deep > 0) {
         for (let i = 0; i <= comps / 2; i += 1) {
-            compositions.push(
-                getDummyComposition(comps, portsPerComp, deep - 1)
-            );
+            compositions.push(getDummyComposition(comps, portsPerComp, deep - 1));
         }
     }
     return {
@@ -389,7 +316,6 @@ function getDummyComposition(
         ports: { Origin: { ports } },
     };
 }
-
 // setTimeout(() => {
 //     const composition = getDummyComposition(6, 6, 3);
 //     console.log(composition);
@@ -397,3 +323,4 @@ function getDummyComposition(
 //     board.init(composition);
 //     board.render();
 // }, 200);
+//# sourceMappingURL=main.js.map

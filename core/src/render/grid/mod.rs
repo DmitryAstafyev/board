@@ -50,6 +50,13 @@ impl Grid {
         })
     }
 
+    pub fn set_min_height(&mut self, height_px: u32) -> u32 {
+        if self.size.1 * CELL < height_px {
+            self.size.1 = (height_px as f64 / CELL as f64).ceil() as u32;
+        }
+        self.size.1 * CELL
+    }
+
     pub fn insert_self(&mut self, id: usize) {
         self.map.insert(id, (0, 0, self.size.0, self.size.1));
     }

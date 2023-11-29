@@ -175,7 +175,7 @@ impl Render<Composition> {
             }
         }
         // Create common grid
-        let grid = Grid::from(Layout::GridsBox(&mut grids, 1))?;
+        let mut grid = Grid::from(Layout::GridsBox(&mut grids, 1))?;
         // Align to grid
         self.align_to_grid(&grid)?;
         // Align to grid nested compositions
@@ -183,24 +183,14 @@ impl Render<Composition> {
             composition.render_mut()?.align_to_grid(&grid)?;
         }
         let grid_size = grid.get_size_px();
-        let height_by_grid = grid_size.1 as i32;
-        self.form.set_box_size(
-            Some(grid_size.0 as i32),
-            Some(
-                [height_by_grid, self.entity.ports.render()?.height()]
-                    .iter()
-                    .max()
-                    .copied()
-                    .unwrap_or(height_by_grid),
-            ),
-        );
+        let grid_height_px = grid.set_min_height(self.entity.ports.render()?.height() as u32);
+        self.form
+            .set_box_size(Some(grid_size.0 as i32), Some(grid_height_px as i32));
         // Calc ports
         self.entity
             .ports
             .render_mut()?
             .calc(self.form.get_box_size().0)?;
-        // self.form
-        //     .set_coors(Some(-(CELL as i32)), Some(-(CELL as i32)));
         // Save grid
         self.grid = Some(grid);
         Ok(())

@@ -5,6 +5,6 @@
 **/build/*.js.map
 **/build/*.d.ts
 **/build/*.wasm
+**/resources/*.json
 **/test_output
 **/yarn-error.log
-sandbox/resources/*.json

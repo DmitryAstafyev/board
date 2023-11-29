@@ -16,6 +16,7 @@
     "importHelpers": true,
     "target": "ESNext",
     "module": "CommonJS",
+    "resolveJsonModule": true,
     "lib": [
       "ESNext",
       "DOM"
