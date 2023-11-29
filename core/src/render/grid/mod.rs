@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::console_log;
 
@@ -133,6 +133,27 @@ impl Grid {
             }
         }
         true
+    }
+
+    pub fn cut_unused_space(&mut self) {
+        let max_x = self
+            .map
+            .values()
+            .map(|(_, _, x1, _)| x1)
+            .max()
+            .unwrap_or(&0)
+            + self.offset;
+        let max_y = self
+            .map
+            .values()
+            .map(|(_, _, _, y1)| y1)
+            .max()
+            .unwrap_or(&0)
+            + self.offset;
+        self.size = (
+            [max_x, self.size.0].iter().min().copied().unwrap_or(0),
+            [max_y, self.size.1].iter().min().copied().unwrap_or(0),
+        );
     }
 
     pub fn insert(&mut self, grid: &Grid) {
@@ -302,5 +323,6 @@ fn from_grids_into_box(grids: &mut [Grid], offset: u32) -> Grid {
     grids.iter().for_each(|grid| {
         packed.insert(grid);
     });
+    packed.cut_unused_space();
     packed
 }
