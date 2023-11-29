@@ -1,4 +1,3 @@
-pub mod border;
 pub mod relative;
 
 pub fn is_point_in(point: &(u32, u32), area: &(u32, u32, u32, u32)) -> bool {

@@ -32,10 +32,6 @@ impl Composition {
         self.connections.push(Representation::Origin(connection))
     }
 
-    pub fn push_composition(&mut self, composition: Composition) {
-        self.compositions.push(Representation::Origin(composition))
-    }
-
     pub fn order(&mut self) {
         let connections = &self.connections;
         self.components.sort_by(|a, b| {

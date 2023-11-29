@@ -33,10 +33,6 @@ impl Ports {
         self.ports.len()
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.ports.is_empty()
-    }
-
     pub fn push(&mut self, port: Port) {
         self.ports.push(Representation::Origin(port));
     }
@@ -66,12 +62,6 @@ impl Ports {
     }
 
     pub fn find(&self, port_id: usize) -> Option<&Representation<Port>> {
-        self.ports.iter().find_map(|p| {
-            if p.origin().sig.id == port_id {
-                Some(p)
-            } else {
-                None
-            }
-        })
+        self.ports.iter().find(|p| p.origin().sig.id == port_id)
     }
 }

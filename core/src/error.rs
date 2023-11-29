@@ -4,7 +4,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum E {
     #[error("DOM error: {0}")]
-    DOM(String),
+    Dom(String),
     #[error("Serde parsing error: {0}")]
     Serde(String),
     #[error("Canvas context ins't setup")]

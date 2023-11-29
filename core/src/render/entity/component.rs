@@ -1,10 +1,7 @@
 use crate::{
-    entity::{Component, Port, PortType, Ports},
+    entity::{Component, Ports},
     error::E,
-    render::{
-        entity::port::PORT_SIDE, form::GridRectangle, Form, Grid, Relative, Render, Representation,
-        Style,
-    },
+    render::{form::GridRectangle, Form, Grid, Relative, Render, Representation, Style},
 };
 
 const MIN_HEIGHT: i32 = 64;

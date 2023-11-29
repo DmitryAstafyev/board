@@ -5,7 +5,7 @@ pub mod grid;
 pub mod representation;
 pub mod style;
 
-pub use elements::{border::Border, relative::Relative};
+pub use elements::relative::Relative;
 pub use form::Form;
 pub use grid::Grid;
 pub use representation::Representation;
@@ -31,7 +31,7 @@ impl<T> Render<T> {
 
     pub fn relative(&self, base: &Relative) -> Relative {
         let (x, y) = self.form.get_coors();
-        base.from_origin_coors(x, y)
+        base.clone_from_origin_coors(x, y)
     }
 
     pub fn own_relative(&self) -> Relative {

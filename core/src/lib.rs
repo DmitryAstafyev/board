@@ -13,7 +13,6 @@ use error::E;
 use render::{Relative, Render, Style};
 use std::{ops::RangeInclusive, panic};
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_test::console_log;
 use web_sys::CanvasRenderingContext2d;
 
 #[wasm_bindgen]
@@ -65,18 +64,18 @@ impl Board {
     #[wasm_bindgen]
     pub fn bind(&mut self, canvas_el_id: &str) -> Result<(), String> {
         let document = web_sys::window()
-            .ok_or(E::DOM("Window object isn't found".to_string()))?
+            .ok_or(E::Dom("Window object isn't found".to_string()))?
             .document()
-            .ok_or(E::DOM("Document object isn't found".to_string()))?;
+            .ok_or(E::Dom("Document object isn't found".to_string()))?;
         let canvas = document
             .get_element_by_id(canvas_el_id)
-            .ok_or(E::DOM(format!(
+            .ok_or(E::Dom(format!(
                 "Fail to find canvas with id[{canvas_el_id}]"
             )))?;
         let canvas: web_sys::HtmlCanvasElement = canvas
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .map_err(|e| {
-                E::DOM(format!(
+                E::Dom(format!(
                     "Fail to convert into HtmlCanvasElement: {}",
                     e.to_string()
                 ))
@@ -86,11 +85,11 @@ impl Board {
         let _ = self.context.insert(
             canvas
                 .get_context("2d")
-                .map_err(|_| E::DOM("Fail to get context from canvas".to_string()))?
-                .ok_or(E::DOM("Document isn't found".to_string()))?
+                .map_err(|_| E::Dom("Fail to get context from canvas".to_string()))?
+                .ok_or(E::Dom("Document isn't found".to_string()))?
                 .dyn_into::<web_sys::CanvasRenderingContext2d>()
                 .map_err(|e| {
-                    E::DOM(format!(
+                    E::Dom(format!(
                         "Fail to convert into 2d context; error: {}",
                         e.to_string()
                     ))
@@ -163,6 +162,12 @@ impl Board {
         } else {
             Err(E::NoCanvasContext)?
         }
+    }
+}
+
+impl Default for Board {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

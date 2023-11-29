@@ -1,6 +1,5 @@
-use std::{collections::HashMap, ops::Deref};
+use std::collections::HashMap;
 use wasm_bindgen::JsValue;
-use wasm_bindgen_test::console_log;
 
 use crate::{
     error::E,
@@ -16,7 +15,7 @@ pub enum Layout<'a> {
     // Forms in center and forms on left and right sides
     WithFormsBySides((Vec<&'a Form>, Vec<&'a Form>, Vec<&'a Form>)),
     // From other grids into row
-    GridsRow(&'a [Grid]),
+    _GridsRow(&'a [Grid]),
     // Order grids into one box: Grid[], offset_by_each_side
     GridsBox(&'a mut [Grid], u32),
 }
@@ -45,7 +44,7 @@ impl Grid {
             Layout::WithFormsBySides((left, center, right)) => {
                 with_forms_by_sides(left, center, right)?
             }
-            Layout::GridsRow(grids) => from_grids_into_row(grids),
+            Layout::_GridsRow(grids) => from_grids_into_row(grids),
             Layout::GridsBox(grids, offset) => from_grids_into_box(grids, offset),
         })
     }
@@ -222,7 +221,9 @@ impl Grid {
     }
 }
 
-fn get_sizes(forms: Vec<&Form>) -> Result<Vec<(usize, (u32, u32))>, E> {
+pub type FormSize = (usize, (u32, u32));
+
+fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
     let mut data = vec![];
     for form in forms {
         data.push((form.id(), form.cells()?));

@@ -1,5 +1,3 @@
-use std::ops::IndexMut;
-
 use wasm_bindgen_test::console_log;
 
 use crate::{
@@ -8,7 +6,7 @@ use crate::{
     render::{
         entity::port,
         form::{Path, Point, Rectangle},
-        grid::{Layout, CELL},
+        grid::Layout,
         Form, Grid, Relative, Render, Representation, Style,
     },
 };

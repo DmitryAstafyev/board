@@ -25,19 +25,7 @@ impl Relative {
     pub fn get_zoom(&self) -> f64 {
         self.zoom_
     }
-    pub fn set_x(&mut self, x: i32) {
-        self.x_ = x;
-    }
-    pub fn set_y(&mut self, y: i32) {
-        self.y_ = y;
-    }
-    pub fn from_coors(&self, x: i32, y: i32) -> Relative {
-        Relative::new(self.x(x), self.y(y), Some(self.zoom_))
-    }
-    pub fn from_origin_coors(&self, x: i32, y: i32) -> Relative {
+    pub fn clone_from_origin_coors(&self, x: i32, y: i32) -> Relative {
         Relative::new(self.x_ + x, self.y_ + y, Some(self.zoom_))
-    }
-    pub fn from_base(&self, base: &Relative) -> Relative {
-        Relative::new(base.x(self.x_), base.y(self.y_), Some(self.zoom_))
     }
 }

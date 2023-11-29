@@ -1,7 +1,6 @@
 use crate::{entity::Signature, render::Representation};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use wasm_bindgen_test::console_log;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Joint {
