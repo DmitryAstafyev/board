@@ -15,8 +15,6 @@ impl Render<Connection> {
                 fill_style: String::from("rgb(200,200,200)"),
             },
             over_style: None,
-
-            grid: None,
         }
     }
     pub fn draw(

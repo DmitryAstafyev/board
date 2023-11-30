@@ -17,7 +17,7 @@ pub enum Layout<'a> {
     // From other grids into row
     _GridsRow(&'a [Grid]),
     // Order grids into one box: Grid[], offset_by_each_side
-    GridsBox(&'a mut [Grid], u32),
+    _GridsBox(&'a mut [Grid], u32),
 }
 
 #[derive(Debug, Clone)]
@@ -45,7 +45,7 @@ impl Grid {
                 with_forms_by_sides(left, center, right)?
             }
             Layout::_GridsRow(grids) => from_grids_into_row(grids),
-            Layout::GridsBox(grids, offset) => from_grids_into_box(grids, offset),
+            Layout::_GridsBox(grids, offset) => from_grids_into_box(grids, offset),
         })
     }
 
@@ -166,6 +166,7 @@ impl Grid {
         // TODO: conside if size == (0,0)
         // Looking for point to insert grid
         let mut point: Option<(u32, u32)> = None;
+        let balance: f64 = self.size.0 as f64 / self.size.1 as f64;
         while point.is_none() {
             for x in 0..self.size.0 {
                 for y in 0..self.size.1 {
@@ -183,8 +184,8 @@ impl Grid {
             }
             if point.is_none() {
                 // Point isn't found. Grid doesn't have enought space. Increase space
-                self.size.0 += 1;
-                self.size.1 += 1;
+                self.size.0 += (1.0 / balance).ceil() as u32;
+                self.size.1 += (1.0 * balance).floor() as u32;
             }
         }
         // Merge grid
@@ -193,6 +194,8 @@ impl Grid {
                 self.map.insert(*id, (x + p_x, y + p_y, x1 + p_x, y1 + p_y));
             });
         }
+        // Remove unused space
+        self.cut_unused_space();
     }
 
     pub fn draw(
@@ -331,6 +334,5 @@ fn from_grids_into_box(grids: &mut [Grid], offset: u32) -> Grid {
     grids.iter().for_each(|grid| {
         packed.insert(grid);
     });
-    packed.cut_unused_space();
     packed
 }

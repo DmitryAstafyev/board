@@ -10,8 +10,8 @@ use entity::{
     Composition, Signature,
 };
 use error::E;
-use render::{Relative, Render, Style};
-use std::{ops::RangeInclusive, panic};
+use render::{Grid, Relative, Render, Style};
+use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 
@@ -21,6 +21,7 @@ pub struct Board {
     context: Option<CanvasRenderingContext2d>,
     width: u32,
     height: u32,
+    grid: Grid,
 }
 
 #[wasm_bindgen]
@@ -40,6 +41,7 @@ impl Board {
             context: None,
             width: 0,
             height: 0,
+            grid: Grid::new(1),
         }
     }
 
@@ -50,6 +52,7 @@ impl Board {
             context: None,
             width: 0,
             height: 0,
+            grid: Grid::new(1),
         }
     }
 
@@ -58,7 +61,7 @@ impl Board {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
         self.render = Render::<Composition>::new(composition);
-        Ok(self.render.calc()?)
+        Ok(self.render.calc(&mut self.grid)?)
     }
 
     #[wasm_bindgen]
@@ -103,6 +106,7 @@ impl Board {
         if let Some(mut context) = self.context.take() {
             context.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
             if let Err(e) = self.render.draw(
+                &self.grid,
                 &mut context,
                 &Relative::new(x, y, Some(zoom)),
                 (self.width, self.height),
@@ -126,7 +130,9 @@ impl Board {
         y: i32,
         zoom: f64,
     ) -> Result<Vec<usize>, String> {
-        Ok(self.render.who(target_x, target_y, x, y, zoom)?)
+        Ok(self
+            .render
+            .who(&self.grid, target_x, target_y, x, y, zoom)?)
     }
 
     #[wasm_bindgen]
@@ -141,6 +147,7 @@ impl Board {
     ) -> Result<(), String> {
         if let Some(mut context) = self.context.take() {
             if let Err(e) = self.render.draw_by_id(
+                &self.grid,
                 &mut context,
                 &Relative::new(x, y, Some(zoom)),
                 if let (Some(stroke_style), Some(fill_style)) = (stroke_style, fill_style) {

@@ -17,7 +17,6 @@ pub struct Render<T> {
     form: Form,
     style: Style,
     over_style: Option<Style>,
-    grid: Option<Grid>,
 }
 
 impl<T> Render<T> {

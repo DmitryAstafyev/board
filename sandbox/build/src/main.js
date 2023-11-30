@@ -320,7 +320,7 @@ function real() {
 }
 function dummy() {
     setTimeout(() => {
-        const composition = getDummyComposition(200, 50, 0);
+        const composition = getDummyComposition(15, 5, 2);
         console.log(composition);
         const board = new board_1.Board(`div#container`);
         board.init(composition);

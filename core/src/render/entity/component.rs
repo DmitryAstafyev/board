@@ -1,7 +1,7 @@
 use crate::{
     entity::{Component, Ports},
     error::E,
-    render::{form::GridRectangle, Form, Grid, Relative, Render, Representation, Style},
+    render::{form::GridRectangle, Form, Relative, Render, Representation, Style},
 };
 
 const MIN_HEIGHT: i32 = 64;
@@ -23,7 +23,6 @@ impl Render<Component> {
                 fill_style: String::from("rgb(200,250,200)"),
             },
             over_style: None,
-            grid: Some(Grid::new(1)),
         }
     }
 
