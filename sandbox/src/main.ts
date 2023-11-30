@@ -267,34 +267,6 @@ function find(id: number, elements: IElement[]): IElement {
     }
     return target;
 }
-setTimeout(() => {
-    import("../resources/example.json").then((data: any) => {
-        const compositionId: number = data[0];
-        const elements: IElement[] = data[1];
-        const rootElement = find(compositionId, elements);
-        const root: Composition = {
-            sig: {
-                id: rootElement.id,
-                class_name: rootElement.className,
-            },
-            components: [],
-            connections: [],
-            compositions: [],
-            ports: { Origin: { ports: [] } },
-        };
-        const unique: string[] = [];
-        elements.forEach((el) => {
-            !unique.includes(el.className) && unique.push(el.className);
-        });
-        load(rootElement as IComposition, elements, root);
-        console.log(root);
-        // console.log(JSON.stringify(root));
-        // console.log(elements);
-        const board = new Board(`div#container`);
-        board.init(root);
-        board.render();
-    });
-}, 200);
 
 let signature: number = 1;
 
@@ -390,10 +362,45 @@ function getDummyComposition(
     };
 }
 
-// setTimeout(() => {
-//     const composition = getDummyComposition(6, 6, 3);
-//     console.log(composition);
-//     const board = new Board(`div#container`);
-//     board.init(composition);
-//     board.render();
-// }, 200);
+function real() {
+    setTimeout(() => {
+        import("../resources/example.json").then((data: any) => {
+            const compositionId: number = data[0];
+            const elements: IElement[] = data[1];
+            const rootElement = find(compositionId, elements);
+            const root: Composition = {
+                sig: {
+                    id: rootElement.id,
+                    class_name: rootElement.className,
+                },
+                components: [],
+                connections: [],
+                compositions: [],
+                ports: { Origin: { ports: [] } },
+            };
+            const unique: string[] = [];
+            elements.forEach((el) => {
+                !unique.includes(el.className) && unique.push(el.className);
+            });
+            load(rootElement as IComposition, elements, root);
+            console.log(root);
+            // console.log(JSON.stringify(root));
+            // console.log(elements);
+            const board = new Board(`div#container`);
+            board.init(root);
+            board.render();
+        });
+    }, 200);
+}
+
+function dummy() {
+    setTimeout(() => {
+        const composition = getDummyComposition(6, 6, 2);
+        console.log(composition);
+        const board = new Board(`div#container`);
+        board.init(composition);
+        board.render();
+    }, 200);
+}
+
+dummy();

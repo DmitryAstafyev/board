@@ -203,34 +203,6 @@ function find(id, elements) {
     }
     return target;
 }
-setTimeout(() => {
-    Promise.resolve().then(() => require("../resources/example.json")).then((data) => {
-        const compositionId = data[0];
-        const elements = data[1];
-        const rootElement = find(compositionId, elements);
-        const root = {
-            sig: {
-                id: rootElement.id,
-                class_name: rootElement.className,
-            },
-            components: [],
-            connections: [],
-            compositions: [],
-            ports: { Origin: { ports: [] } },
-        };
-        const unique = [];
-        elements.forEach((el) => {
-            !unique.includes(el.className) && unique.push(el.className);
-        });
-        load(rootElement, elements, root);
-        console.log(root);
-        // console.log(JSON.stringify(root));
-        // console.log(elements);
-        const board = new board_1.Board(`div#container`);
-        board.init(root);
-        board.render();
-    });
-}, 200);
 let signature = 1;
 function getSignature() {
     const id = signature++;
@@ -316,11 +288,44 @@ function getDummyComposition(comps, portsPerComp, deep) {
         ports: { Origin: { ports } },
     };
 }
-// setTimeout(() => {
-//     const composition = getDummyComposition(6, 6, 3);
-//     console.log(composition);
-//     const board = new Board(`div#container`);
-//     board.init(composition);
-//     board.render();
-// }, 200);
+function real() {
+    setTimeout(() => {
+        Promise.resolve().then(() => require("../resources/example.json")).then((data) => {
+            const compositionId = data[0];
+            const elements = data[1];
+            const rootElement = find(compositionId, elements);
+            const root = {
+                sig: {
+                    id: rootElement.id,
+                    class_name: rootElement.className,
+                },
+                components: [],
+                connections: [],
+                compositions: [],
+                ports: { Origin: { ports: [] } },
+            };
+            const unique = [];
+            elements.forEach((el) => {
+                !unique.includes(el.className) && unique.push(el.className);
+            });
+            load(rootElement, elements, root);
+            console.log(root);
+            // console.log(JSON.stringify(root));
+            // console.log(elements);
+            const board = new board_1.Board(`div#container`);
+            board.init(root);
+            board.render();
+        });
+    }, 200);
+}
+function dummy() {
+    setTimeout(() => {
+        const composition = getDummyComposition(200, 50, 0);
+        console.log(composition);
+        const board = new board_1.Board(`div#container`);
+        board.init(composition);
+        board.render();
+    }, 200);
+}
+dummy();
 //# sourceMappingURL=main.js.map
