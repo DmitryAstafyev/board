@@ -117,11 +117,9 @@ export class Board {
             return;
         }
         this.position.x -=
-            (this.movement.x - event.clientX) *
-            (this.position.zoom < 0 ? 1 / this.position.zoom : 1);
+            (this.movement.x - event.clientX) / this.position.zoom;
         this.position.y -=
-            (this.movement.y - event.clientY) *
-            (this.position.zoom < 0 ? 1 / this.position.zoom : 1);
+            (this.movement.y - event.clientY) / this.position.zoom;
         this.movement.x = event.clientX;
         this.movement.y = event.clientY;
         this.render();

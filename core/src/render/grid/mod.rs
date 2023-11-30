@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use wasm_bindgen::JsValue;
-
 use crate::{
     error::E,
     render::{elements, Form, Relative},
 };
+use std::collections::HashMap;
+use wasm_bindgen::JsValue;
+use wasm_bindgen_test::console_log;
 
 pub const CELL: u32 = 25;
 pub const SPACE_IN_VERTICAL: u32 = 1;
@@ -78,13 +78,40 @@ impl Grid {
         }
     }
 
-    pub fn in_area(&self, area_px: (u32, u32, u32, u32), zoom: f64) -> Vec<usize> {
-        let cell = (CELL as f64 * zoom) as u32;
-        let (ax, ay, ax1, ay1) = area_px;
-        let (mut ax, mut ay, ax1, ay1) = (ax / cell, ay / cell, (ax1 / cell) + 1, (ay1 / cell) + 1);
+    pub fn viewport(&self, position: (i32, i32), size: (u32, u32), zoom: f64) -> Vec<usize> {
+        fn as_u32(n: i32) -> u32 {
+            (if n < 0 { 0 } else { n }) as u32
+        }
+        let (x, y) = (
+            (position.0 as f64 * zoom).ceil() as i32,
+            (position.1 as f64 * zoom).ceil() as i32,
+        );
+        // let (w, h) = ((size.0 as f64 / zoom) as u32, (size.1 as f64 / zoom) as u32);
+        let (w, h) = size;
+        let vx = if x > 0 { 0 } else { -x };
+        let vy = if y > 0 { 0 } else { -y };
+        let vx1 = w as i32 - x;
+        let vy1 = h as i32 - y;
+        console_log!(
+            "visible frame: {vx}, {vy}, {vx1}, {vy1} (w: {}, h: {})",
+            vx1 - vx,
+            vy1 - vy
+        );
+        self.in_area((as_u32(vx), as_u32(vy), as_u32(vx1), as_u32(vy1)), zoom)
+    }
+
+    fn in_area(&self, area_px: (u32, u32, u32, u32), zoom: f64) -> Vec<usize> {
+        let cell = (CELL as f64 * zoom).floor() as u32;
+        let (mut ax, mut ay, ax1, ay1) = (
+            area_px.0 / cell,
+            area_px.1 / cell,
+            (area_px.2 / cell) + 1,
+            (area_px.3 / cell) + 1,
+        );
         ax = ax.saturating_sub(1);
         ay = ay.saturating_sub(1);
-        self.map
+        let targets = self
+            .map
             .iter()
             .filter_map(|(id, block)| {
                 if elements::is_area_cross(&(ax, ay, ax1, ay1), block) {
@@ -93,7 +120,13 @@ impl Grid {
                     None
                 }
             })
-            .collect()
+            .collect::<Vec<usize>>();
+        console_log!(
+            "Targets: {}; skipped: {}",
+            targets.len(),
+            self.map.len() - targets.len()
+        );
+        targets
     }
 
     fn is_block_free(&self, target: (u32, u32, u32, u32)) -> bool {
@@ -166,8 +199,28 @@ impl Grid {
         // TODO: conside if size == (0,0)
         // Looking for point to insert grid
         let mut point: Option<(u32, u32)> = None;
-        let balance: f64 = self.size.0 as f64 / self.size.1 as f64;
+        let mut balance: f64 = self.size.0 as f64 / self.size.1 as f64;
+        self.size = (
+            [
+                self.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
+                grid.size.0,
+            ]
+            .iter()
+            .max()
+            .copied()
+            .unwrap_or(self.offset * 2),
+            [
+                self.size.1 + self.offset * 2 + SPACE_IN_VERTICAL * 2,
+                grid.size.1,
+            ]
+            .iter()
+            .max()
+            .copied()
+            .unwrap_or(self.offset * 2),
+        );
+        let mut iteration: usize = 0;
         while point.is_none() {
+            iteration += 1;
             for x in 0..self.size.0 {
                 for y in 0..self.size.1 {
                     if !self.is_point_free(&(x, y)) {
@@ -184,8 +237,24 @@ impl Grid {
             }
             if point.is_none() {
                 // Point isn't found. Grid doesn't have enought space. Increase space
-                self.size.0 += (1.0 / balance).ceil() as u32;
-                self.size.1 += (1.0 * balance).floor() as u32;
+                let mut d_w = (1.0 / balance).ceil() as u32;
+                let mut d_h = (1.0 * balance).floor() as u32;
+                if d_w + d_h == 0 {
+                    d_w = 1;
+                    d_h = 1;
+                }
+                self.size.0 += d_w;
+                self.size.1 += d_h;
+            }
+            if iteration > 100 {
+                // To many iterations. Update balance
+                balance = self.size.0 as f64 / self.size.1 as f64;
+                iteration = 0;
+                console_log!(
+                    "Balance updated: size {:?}; grid {:?}",
+                    self.size,
+                    grid.size,
+                );
             }
         }
         // Merge grid

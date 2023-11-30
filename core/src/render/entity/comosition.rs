@@ -165,18 +165,8 @@ impl Render<Composition> {
                 Grid::from(Layout::WithFormsBySides((on_left, on_center, on_right)))?;
             composition_grid.insert(&component_grid);
         }
-        // Get nested compositions grids
-        // for composition in self.entity.compositions.iter_mut() {
-        //     let mut nested_grid = grid.clone();
-        //     nested_grid.insert_self(composition.origin().sig.id);
-        //     grids.push(nested_grid);
-        // }
         // Align to composition grid
         self.align_to_grid(&composition_grid)?;
-        // Align to composition grid nested compositions
-        for composition in self.entity.compositions.iter_mut() {
-            composition.render_mut()?.align_to_grid(&composition_grid)?;
-        }
         let grid_size = composition_grid.get_size_px();
         let grid_height_px =
             composition_grid.set_min_height(self.entity.ports.render()?.height() as u32);
@@ -196,40 +186,32 @@ impl Render<Composition> {
 
     pub fn draw(
         &self,
-        grid: &Grid,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
-        area: (u32, u32),
+        targets: &Vec<usize>,
     ) -> Result<(), E> {
+        if !targets.contains(&self.entity.sig.id) {
+            Ok(())?;
+        }
         self.style.apply(context);
         self.form.render(context, relative);
-        let mut x = relative.x(0);
-        let mut y = relative.y(0);
-        let mut x1 = x + area.0 as i32;
-        let mut y1 = y + area.1 as i32;
-        if x < 0 {
-            x = -x;
-            x1 = x + area.0 as i32;
-        }
-        if y < 0 {
-            y = -y;
-            y1 = y + area.1 as i32;
-        }
         let self_relative = self.relative(relative);
         self.entity.ports.render()?.draw(context, &self_relative)?;
-        let targets = grid.in_area(
-            (x as u32, y as u32, x1 as u32, y1 as u32),
-            relative.get_zoom(),
-        );
-        for component in self.entity.components.iter()
-        // .filter(|comp| targets.contains(&comp.origin().sig.id))
+        for component in self
+            .entity
+            .components
+            .iter()
+            .filter(|comp| targets.contains(&comp.origin().sig.id))
         {
             component.render()?.draw(context, relative)?;
         }
-        for composition in self.entity.compositions.iter()
-        // .filter(|comp| targets.contains(&comp.origin().sig.id))
+        for composition in self
+            .entity
+            .compositions
+            .iter()
+            .filter(|comp| targets.contains(&comp.origin().sig.id))
         {
-            composition.render()?.draw(grid, context, relative, area)?;
+            composition.render()?.draw(context, relative, targets)?;
         }
         for connection in self.entity.connections.iter().filter(|conn| {
             targets.contains(&conn.origin().joint_in.component)
@@ -260,22 +242,6 @@ impl Render<Composition> {
         }
         grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
-    }
-
-    pub fn who(
-        &self,
-        grid: &Grid,
-        target_x: i32,
-        target_y: i32,
-        x: i32,
-        y: i32,
-        zoom: f64,
-    ) -> Result<Vec<usize>, E> {
-        let x = (target_x as f64 - (x as f64 * zoom)) as u32;
-        let y = (target_y as f64 - (y as f64 * zoom)) as u32;
-        let x1 = x + 2;
-        let y1 = y + 2;
-        Ok(grid.in_area((x, y, x1, y1), zoom))
     }
 }
 

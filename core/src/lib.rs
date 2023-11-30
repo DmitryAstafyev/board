@@ -13,6 +13,7 @@ use error::E;
 use render::{Grid, Relative, Render, Style};
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_test::console_log;
 use web_sys::CanvasRenderingContext2d;
 
 #[wasm_bindgen]
@@ -58,14 +59,17 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn init(&mut self, composition: JsValue) -> Result<(), String> {
+        console_log!("init 0");
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
         self.render = Render::<Composition>::new(composition);
+        console_log!("init 1");
         Ok(self.render.calc(&mut self.grid)?)
     }
 
     #[wasm_bindgen]
     pub fn bind(&mut self, canvas_el_id: &str) -> Result<(), String> {
+        console_log!("Binding 0");
         let document = web_sys::window()
             .ok_or(E::Dom("Window object isn't found".to_string()))?
             .document()
@@ -98,6 +102,7 @@ impl Board {
                     ))
                 })?,
         );
+        console_log!("Binding 1");
         Ok(())
     }
 
@@ -105,12 +110,13 @@ impl Board {
     pub fn render(&mut self, x: i32, y: i32, zoom: f64) -> Result<(), String> {
         if let Some(mut context) = self.context.take() {
             context.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
-            if let Err(e) = self.render.draw(
-                &self.grid,
-                &mut context,
-                &Relative::new(x, y, Some(zoom)),
-                (self.width, self.height),
-            ) {
+            console_log!("Render 0");
+            let targets = self.grid.viewport((x, y), (self.width, self.height), zoom);
+            console_log!("Render 1");
+            if let Err(e) =
+                self.render
+                    .draw(&mut context, &Relative::new(x, y, Some(zoom)), &targets)
+            {
                 self.context = Some(context);
                 Err(e)?
             } else {
@@ -126,13 +132,13 @@ impl Board {
         &self,
         target_x: i32,
         target_y: i32,
-        x: i32,
-        y: i32,
+        width: u32,
+        height: u32,
         zoom: f64,
     ) -> Result<Vec<usize>, String> {
         Ok(self
-            .render
-            .who(&self.grid, target_x, target_y, x, y, zoom)?)
+            .grid
+            .viewport((target_x, target_y), (width, height), zoom))
     }
 
     #[wasm_bindgen]
