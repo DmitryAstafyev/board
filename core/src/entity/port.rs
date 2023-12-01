@@ -11,6 +11,7 @@ pub enum PortType {
 pub struct Port {
     pub sig: Signature,
     pub port_type: PortType,
+    pub visibility: bool,
 }
 
 impl Port {
@@ -22,11 +23,15 @@ impl Port {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Ports {
     pub ports: Vec<Representation<Port>>,
+    pub hide_invisible: bool,
 }
 
 impl Ports {
     pub fn new() -> Self {
-        Self { ports: vec![] }
+        Self {
+            ports: vec![],
+            hide_invisible: true,
+        }
     }
 
     pub fn len(&self) -> usize {

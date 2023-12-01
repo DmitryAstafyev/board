@@ -146,9 +146,11 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                         class_name: "unknown",
                                     },
                                     port_type: PortType.In,
+                                    visibility: false,
                                 },
                             };
                         }),
+                        hide_invisible: true,
                     },
                 },
             };
@@ -175,9 +177,11 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                             class_name: "unknown",
                                         },
                                         port_type: PortType.In,
+                                        visibility: false,
                                     },
                                 };
                             }),
+                            hide_invisible: true,
                         },
                     },
                 },
@@ -222,9 +226,11 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
         const rPortRef = getPortRef(holder.components, rPort.targetRPort);
         if (pPortRef !== undefined) {
             pPortRef.Origin.port_type = PortType.Out;
+            pPortRef.Origin.visibility = true;
         }
         if (rPortRef !== undefined) {
             rPortRef.Origin.port_type = PortType.In;
+            rPortRef.Origin.visibility = true;
         }
         holder.connections.push({
             Origin: {
@@ -285,6 +291,7 @@ function getDummyComposition(
         const ports: Port[] = [];
         for (let p = 0; p <= portsPerComp; p += 1) {
             ports.push({
+                visibility: true,
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
             });
@@ -298,6 +305,7 @@ function getDummyComposition(
                             Origin: p,
                         };
                     }),
+                    hide_invisible: true,
                 },
             },
         });
@@ -336,6 +344,7 @@ function getDummyComposition(
             Origin: {
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
+                visibility: true,
             },
         });
     }
@@ -358,7 +367,7 @@ function getDummyComposition(
         compositions: compositions.map((c) => {
             return { Origin: c };
         }),
-        ports: { Origin: { ports } },
+        ports: { Origin: { ports, hide_invisible: true } },
     };
 }
 
@@ -376,7 +385,7 @@ function real() {
                 components: [],
                 connections: [],
                 compositions: [],
-                ports: { Origin: { ports: [] } },
+                ports: { Origin: { ports: [], hide_invisible: true } },
             };
             const unique: string[] = [];
             elements.forEach((el) => {
@@ -410,4 +419,4 @@ function dummy() {
 }
 console.log("zero");
 
-dummy();
+real();

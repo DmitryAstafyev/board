@@ -41,10 +41,28 @@ impl Render<Ports> {
         if self.entity.ports.is_empty() {
             return 0;
         }
+        let ports_in = self.entity.filter(PortType::In);
+        let ports_out = self.entity.filter(PortType::Out);
         elements::max(
             &[
-                self.entity.filter(PortType::In).len(),
-                self.entity.filter(PortType::Out).len(),
+                if self.origin().hide_invisible {
+                    ports_in
+                        .iter()
+                        .filter(|r| r.origin().visibility)
+                        .collect::<Vec<&&Representation<Port>>>()
+                        .len()
+                } else {
+                    ports_in.len()
+                },
+                if self.origin().hide_invisible {
+                    ports_out
+                        .iter()
+                        .filter(|r| r.origin().visibility)
+                        .collect::<Vec<&&Representation<Port>>>()
+                        .len()
+                } else {
+                    ports_in.len()
+                },
             ],
             0,
         ) as i32
@@ -53,13 +71,24 @@ impl Render<Ports> {
     }
 
     pub fn calc(&mut self, container_width: i32) -> Result<(), E> {
+        let hide = self.origin().hide_invisible;
         // Calc ports
-        for port in self.entity.ports.iter_mut() {
+        for port in self
+            .entity
+            .ports
+            .iter_mut()
+            .filter(|p| p.origin().visibility || !hide)
+        {
             port.render_mut()?.calc()?;
         }
         // Order ports on a left side
         let mut cursor: i32 = PORTS_VERTICAL_OFFSET;
-        for port in self.entity.filter_mut(PortType::In) {
+        for port in self
+            .entity
+            .filter_mut(PortType::In)
+            .iter_mut()
+            .filter(|p| p.origin().visibility || !hide)
+        {
             let render = port.render_mut()?;
             let (w, h) = render.form.get_box_size();
             render.form.set_coors(Some(-(w / 2)), Some(cursor));
@@ -67,7 +96,12 @@ impl Render<Ports> {
         }
         // Order ports on a right side
         cursor = PORTS_VERTICAL_OFFSET;
-        for port in self.entity.filter_mut(PortType::Out) {
+        for port in self
+            .entity
+            .filter_mut(PortType::Out)
+            .iter_mut()
+            .filter(|p| p.origin().visibility || !hide)
+        {
             let render = port.render_mut()?;
             let (w, h) = render.form.get_box_size();
             render
@@ -89,7 +123,13 @@ impl Render<Ports> {
             self.style.apply(context);
         }
         let self_relative = self.relative(relative);
-        for port in self.entity.ports.iter() {
+        let hide = self.origin().hide_invisible;
+        for port in self
+            .entity
+            .ports
+            .iter()
+            .filter(|p| p.origin().visibility || !hide)
+        {
             port.render()?.draw(context, &self_relative)?;
         }
         Ok(())

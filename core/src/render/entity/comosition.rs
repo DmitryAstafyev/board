@@ -153,7 +153,7 @@ impl Render<Composition> {
             }
             let (linked_in, linked_out) =
                 Connection::linked(&self.entity.connections, host_id, &located);
-            dependencies.push((host_id, linked_in.to_vec(), linked_out.to_vec()));
+            dependencies.push((host_id, linked_out.to_vec(), linked_in.to_vec()));
             located = [located, linked_in, linked_out, vec![host_id]].concat();
         }
         // Get components grids

@@ -11,6 +11,7 @@ export enum PortType {
 export interface Port {
     sig: Signature;
     port_type: PortType;
+    visibility: boolean;
 }
 
 export interface Representation<T> {
@@ -19,6 +20,7 @@ export interface Representation<T> {
 
 export interface Ports {
     ports: Representation<Port>[];
+    hide_invisible: boolean;
 }
 
 export interface Joint {

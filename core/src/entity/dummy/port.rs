@@ -16,6 +16,7 @@ impl Dummy<Port, ()> for Port {
             } else {
                 PortType::Out
             },
+            visibility: true,
         }
     }
 }
