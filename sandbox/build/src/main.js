@@ -322,7 +322,7 @@ function dummy() {
     console.log("started");
     setTimeout(() => {
         console.log("point 0");
-        const composition = getDummyComposition(50, 25, 0);
+        const composition = getDummyComposition(10, 5, 2);
         console.log("point 1");
         console.log(composition);
         const board = new board_1.Board(`div#container`);

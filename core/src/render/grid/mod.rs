@@ -86,27 +86,24 @@ impl Grid {
             (position.0 as f64 * zoom).ceil() as i32,
             (position.1 as f64 * zoom).ceil() as i32,
         );
-        // let (w, h) = ((size.0 as f64 / zoom) as u32, (size.1 as f64 / zoom) as u32);
         let (w, h) = size;
         let vx = if x > 0 { 0 } else { -x };
         let vy = if y > 0 { 0 } else { -y };
         let vx1 = w as i32 - x;
         let vy1 = h as i32 - y;
-        console_log!(
-            "visible frame: {vx}, {vy}, {vx1}, {vy1} (w: {}, h: {})",
-            vx1 - vx,
-            vy1 - vy
-        );
         self.in_area((as_u32(vx), as_u32(vy), as_u32(vx1), as_u32(vy1)), zoom)
     }
 
     fn in_area(&self, area_px: (u32, u32, u32, u32), zoom: f64) -> Vec<usize> {
-        let cell = (CELL as f64 * zoom).floor() as u32;
+        fn cells(px: u32, cell: f64) -> u32 {
+            (px as f64 / cell).ceil() as u32
+        }
+        let cell = CELL as f64 * zoom;
         let (mut ax, mut ay, ax1, ay1) = (
-            area_px.0 / cell,
-            area_px.1 / cell,
-            (area_px.2 / cell) + 1,
-            (area_px.3 / cell) + 1,
+            cells(area_px.0, cell),
+            cells(area_px.1, cell),
+            cells(area_px.2, cell) + 1,
+            cells(area_px.3, cell) + 1,
         );
         ax = ax.saturating_sub(1);
         ay = ay.saturating_sub(1);
@@ -199,11 +196,10 @@ impl Grid {
         // TODO: conside if size == (0,0)
         // Looking for point to insert grid
         let mut point: Option<(u32, u32)> = None;
-        let mut balance: f64 = self.size.0 as f64 / self.size.1 as f64;
         self.size = (
             [
                 self.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
-                grid.size.0,
+                grid.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
             ]
             .iter()
             .max()
@@ -211,16 +207,14 @@ impl Grid {
             .unwrap_or(self.offset * 2),
             [
                 self.size.1 + self.offset * 2 + SPACE_IN_VERTICAL * 2,
-                grid.size.1,
+                grid.size.1 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
             ]
             .iter()
             .max()
             .copied()
             .unwrap_or(self.offset * 2),
         );
-        let mut iteration: usize = 0;
         while point.is_none() {
-            iteration += 1;
             for x in 0..self.size.0 {
                 for y in 0..self.size.1 {
                     if !self.is_point_free(&(x, y)) {
@@ -237,24 +231,15 @@ impl Grid {
             }
             if point.is_none() {
                 // Point isn't found. Grid doesn't have enought space. Increase space
-                let mut d_w = (1.0 / balance).ceil() as u32;
-                let mut d_h = (1.0 * balance).floor() as u32;
-                if d_w + d_h == 0 {
-                    d_w = 1;
-                    d_h = 1;
+                let f_w = self.size.0 + grid.size.0;
+                let f_h = self.size.1 + grid.size.1;
+                if f_w as i32 - self.size.1 as i32 <= f_h as i32 - self.size.0 as i32 {
+                    self.size.0 += grid.size.0;
+                    self.size.1 += 1;
+                } else {
+                    self.size.1 += grid.size.1;
+                    self.size.0 += 1;
                 }
-                self.size.0 += d_w;
-                self.size.1 += d_h;
-            }
-            if iteration > 100 {
-                // To many iterations. Update balance
-                balance = self.size.0 as f64 / self.size.1 as f64;
-                iteration = 0;
-                console_log!(
-                    "Balance updated: size {:?}; grid {:?}",
-                    self.size,
-                    grid.size,
-                );
             }
         }
         // Merge grid
