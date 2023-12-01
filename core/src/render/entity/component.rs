@@ -1,7 +1,7 @@
 use crate::{
     entity::{Component, Ports},
     error::E,
-    render::{form::GridRectangle, Form, Relative, Render, Representation, Style},
+    render::{elements, form::GridRectangle, Form, Relative, Render, Representation, Style},
 };
 
 const MIN_HEIGHT: i32 = 64;
@@ -30,13 +30,10 @@ impl Render<Component> {
         // Set self size
         self.form.set_box_size(
             None,
-            Some(
-                [MIN_HEIGHT, self.entity.ports.render()?.height()]
-                    .iter()
-                    .max()
-                    .copied()
-                    .unwrap_or(MIN_HEIGHT),
-            ),
+            Some(elements::max(
+                &[MIN_HEIGHT, self.entity.ports.render()?.height()],
+                MIN_HEIGHT,
+            )),
         );
         // Calc ports
         self.entity

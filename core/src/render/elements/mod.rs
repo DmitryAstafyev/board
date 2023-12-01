@@ -15,3 +15,7 @@ pub fn is_area_cross(target: &(u32, u32, u32, u32), area: &(u32, u32, u32, u32))
     }
     true
 }
+
+pub fn max<T: std::cmp::Ord + std::marker::Copy>(values: &[T], default: T) -> T {
+    values.iter().max().copied().unwrap_or(default)
+}

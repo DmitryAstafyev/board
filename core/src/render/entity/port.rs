@@ -1,7 +1,7 @@
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
-    render::{form::Rectangle, Form, Relative, Render, Representation, Style},
+    render::{elements, form::Rectangle, Form, Relative, Render, Representation, Style},
 };
 
 pub const PORT_SIDE: i32 = 8;
@@ -41,14 +41,13 @@ impl Render<Ports> {
         if self.entity.ports.is_empty() {
             return 0;
         }
-        [
-            self.entity.filter(PortType::In).len(),
-            self.entity.filter(PortType::Out).len(),
-        ]
-        .iter()
-        .max()
-        .copied()
-        .unwrap_or(0) as i32
+        elements::max(
+            &[
+                self.entity.filter(PortType::In).len(),
+                self.entity.filter(PortType::Out).len(),
+            ],
+            0,
+        ) as i32
             * (PORTS_VERTICAL_OFFSET + PORT_SIDE)
             + PORTS_VERTICAL_OFFSET
     }

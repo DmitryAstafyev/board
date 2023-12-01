@@ -197,22 +197,20 @@ impl Grid {
         // Looking for point to insert grid
         let mut point: Option<(u32, u32)> = None;
         self.size = (
-            [
-                self.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
-                grid.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
-            ]
-            .iter()
-            .max()
-            .copied()
-            .unwrap_or(self.offset * 2),
-            [
-                self.size.1 + self.offset * 2 + SPACE_IN_VERTICAL * 2,
-                grid.size.1 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
-            ]
-            .iter()
-            .max()
-            .copied()
-            .unwrap_or(self.offset * 2),
+            elements::max(
+                &[
+                    self.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
+                    grid.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
+                ],
+                self.offset * 2,
+            ),
+            elements::max(
+                &[
+                    self.size.1 + self.offset * 2 + SPACE_IN_VERTICAL * 2,
+                    grid.size.1 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
+                ],
+                self.offset * 2,
+            ),
         );
         while point.is_none() {
             for x in 0..self.size.0 {
