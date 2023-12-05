@@ -144,26 +144,35 @@ impl Render<Composition> {
             composition.render_mut()?.calc(&mut composition_grid)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
-        let mut dependencies: Vec<(usize, Vec<usize>, Vec<usize>)> = vec![];
+        let mut dependencies: Vec<(usize, usize)> = vec![];
         let mut located: Vec<usize> = vec![];
-        for component in self.entity.components.iter() {
-            let host_id = component.origin().sig.id;
-            if located.contains(&host_id) {
+        let ordered_linked = Connection::get_ordered_linked(&self.entity.connections, &[]);
+        for (host_id, _, _) in ordered_linked.iter() {
+            if located.contains(host_id) {
                 continue;
             }
-            let (linked_in, linked_out) =
-                Connection::linked(&self.entity.connections, host_id, &located);
-            dependencies.push((host_id, linked_out.to_vec(), linked_in.to_vec()));
-            located = [located, linked_in, linked_out, vec![host_id]].concat();
+            let linked =
+                Connection::get_ordered_linked_to(&self.entity.connections, *host_id, &located);
+            if let Some((id, _, _)) = linked.first() {
+                dependencies.push((*host_id, *id));
+                located = [located, vec![*host_id, *id]].concat();
+            }
         }
-        // Get components grids
-        for (host_id, linked_in, linked_out) in dependencies {
-            let on_right = get_forms_by_ids(&self.entity.components, &linked_in)?;
-            let on_left = get_forms_by_ids(&self.entity.components, &linked_out)?;
-            let on_center = get_forms_by_ids(&self.entity.components, &[host_id])?;
-            let component_grid =
-                Grid::from(Layout::WithFormsBySides((on_left, on_center, on_right)))?;
+        // Get pairs grids
+        for (a_id, b_id) in dependencies {
+            let a = get_forms_by_ids(&self.entity.components, &[a_id])?;
+            let b = get_forms_by_ids(&self.entity.components, &[b_id])?;
+            let component_grid = Grid::from(Layout::Pair(a, b))?;
             composition_grid.insert(&component_grid);
+        }
+        for component in self.entity.components.iter() {
+            if !located.contains(&component.origin().sig.id) {
+                let component_grid = Grid::from(Layout::Pair(
+                    get_forms_by_ids(&self.entity.components, &[component.origin().sig.id])?,
+                    [].to_vec(),
+                ))?;
+                composition_grid.insert(&component_grid);
+            }
         }
         // Align to composition grid
         self.align_to_grid(&composition_grid)?;

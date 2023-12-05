@@ -51,6 +51,77 @@ impl Connection {
             .count()
     }
 
+    pub fn get_ordered_linked(
+        connections: &[Representation<Connection>],
+        ignore: &[usize],
+        // id, IN, OUT
+    ) -> Vec<(usize, usize, usize)> {
+        let mut map: HashMap<usize, (usize, usize, usize)> = HashMap::new();
+        connections.iter().for_each(|c| {
+            if !ignore.contains(&c.origin().joint_out.component)
+                && !ignore.contains(&c.origin().joint_in.component)
+            {
+                map.entry(c.origin().joint_out.component)
+                    .and_modify(|(_, _, outs)| {
+                        *outs += 1;
+                    })
+                    .or_insert((c.origin().joint_out.component, 0, 1));
+                map.entry(c.origin().joint_in.component)
+                    .and_modify(|(_, ins, _)| {
+                        *ins += 1;
+                    })
+                    .or_insert((c.origin().joint_in.component, 0, 1));
+            }
+        });
+        let mut components: Vec<(usize, usize, usize)> =
+            map.into_values().collect::<Vec<(usize, usize, usize)>>();
+        components
+            .sort_by(|(_, a_in, a_out), (_, b_in, b_out)| (b_in + b_out).cmp(&(a_in + a_out)));
+        components
+    }
+
+    pub fn get_ordered_linked_to(
+        connections: &[Representation<Connection>],
+        host_id: usize,
+        ignore: &[usize],
+        // id, IN, OUT
+    ) -> Vec<(usize, usize, usize)> {
+        let mut map: HashMap<usize, (usize, usize, usize)> = HashMap::new();
+        connections.iter().for_each(|c| {
+            if (c.origin().joint_in.component == host_id
+                && !ignore.contains(&c.origin().joint_out.component))
+                || (c.origin().joint_out.component == host_id
+                    && !ignore.contains(&c.origin().joint_in.component))
+            {
+                let in_connection = c.origin().joint_in.component != host_id;
+                let connected_comp_id = if in_connection {
+                    c.origin().joint_in.component
+                } else {
+                    c.origin().joint_out.component
+                };
+                let entry = map.entry(connected_comp_id);
+                entry
+                    .and_modify(|(_, ins, outs)| {
+                        if in_connection {
+                            *ins += 1;
+                        } else {
+                            *outs += 1;
+                        }
+                    })
+                    .or_insert(if in_connection {
+                        (connected_comp_id, 1, 0)
+                    } else {
+                        (connected_comp_id, 0, 1)
+                    });
+            }
+        });
+        let mut components: Vec<(usize, usize, usize)> =
+            map.into_values().collect::<Vec<(usize, usize, usize)>>();
+        components
+            .sort_by(|(_, a_in, a_out), (_, b_in, b_out)| (b_in + b_out).cmp(&(a_in + a_out)));
+        components
+    }
+
     // Returns ids of all linked components to host as (linked IN, linked OUT)
     pub fn linked(
         connections: &[Representation<Connection>],
@@ -91,9 +162,14 @@ impl Connection {
                 connected_out.push((*k, *ins));
             }
         });
+        connected_in.sort_by(|(_, a), (_, b)| b.cmp(a));
+        connected_out.sort_by(|(_, a), (_, b)| b.cmp(a));
         (
-            order_connections(&mut connected_in),
-            order_connections(&mut connected_out),
+            connected_in.iter().map(|(k, _)| *k).collect::<Vec<usize>>(),
+            connected_out
+                .iter()
+                .map(|(k, _)| *k)
+                .collect::<Vec<usize>>(),
         )
     }
 

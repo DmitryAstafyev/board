@@ -12,6 +12,8 @@ pub const SPACE_IN_HORIZONT: u32 = 3;
 
 #[derive(Debug)]
 pub enum Layout<'a> {
+    // Put form near
+    Pair(Vec<&'a Form>, Vec<&'a Form>),
     // Forms in center and forms on left and right sides
     WithFormsBySides((Vec<&'a Form>, Vec<&'a Form>, Vec<&'a Form>)),
     // From other grids into row
@@ -44,6 +46,7 @@ impl Grid {
             Layout::WithFormsBySides((left, center, right)) => {
                 with_forms_by_sides(left, center, right)?
             }
+            Layout::Pair(a, b) => forms_as_pair(a, b)?,
             Layout::_GridsRow(grids) => from_grids_into_row(grids),
             Layout::_GridsBox(grids, offset) => from_grids_into_box(grids, offset),
         })
@@ -286,6 +289,49 @@ fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
     Ok(data)
 }
 
+fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>) -> Result<Grid, E> {
+    let on_left = get_sizes(a)?;
+    let on_right = get_sizes(b)?;
+    let mut map: HashMap<usize, (u32, u32, u32, u32)> = HashMap::new();
+    let mut cursor_by_y: u32 = 0;
+    let mut size: (u32, u32) = (0, 0);
+    if !on_left.is_empty() {
+        on_left.iter().for_each(|(id, (w, h))| {
+            map.insert(*id, (0, cursor_by_y, *w, cursor_by_y + h));
+            cursor_by_y += h + SPACE_IN_VERTICAL;
+            if size.0 < *w {
+                size.0 = *w;
+                if *w > 3 {
+                    console_log!("OOPPS: {w}");
+                }
+            }
+        });
+        size.1 = cursor_by_y - SPACE_IN_VERTICAL;
+        size.0 += SPACE_IN_HORIZONT;
+    };
+    if !on_right.is_empty() {
+        cursor_by_y = 0;
+        let mut max_w = 0;
+        on_right.iter().for_each(|(id, (w, h))| {
+            map.insert(*id, (size.0, cursor_by_y, size.0 + w, cursor_by_y + h));
+            cursor_by_y += h + SPACE_IN_VERTICAL;
+            if max_w < *w {
+                max_w = *w;
+            }
+        });
+        size.1 = if cursor_by_y - SPACE_IN_VERTICAL > size.1 {
+            cursor_by_y - SPACE_IN_VERTICAL
+        } else {
+            size.1
+        };
+        size.0 += max_w;
+    }
+    Ok(Grid {
+        offset: 0,
+        size,
+        map,
+    })
+}
 fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) -> Result<Grid, E> {
     let on_left = get_sizes(left)?;
     let on_center = get_sizes(center)?;
