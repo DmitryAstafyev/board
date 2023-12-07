@@ -46,6 +46,7 @@ export interface Composition {
     connections: Representation<Connection>[];
     compositions: Representation<Composition>[];
     ports: Representation<Ports>;
+    parent: number | undefined;
 }
 
 export function getComposition(

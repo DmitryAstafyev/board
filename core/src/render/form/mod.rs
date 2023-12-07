@@ -8,6 +8,12 @@ pub use path::{Path, Point};
 pub use rectangle::Rectangle;
 
 #[derive(Debug)]
+pub struct View {
+    pub form: Form,
+    pub elements: Vec<Form>,
+}
+
+#[derive(Debug)]
 pub enum Form {
     GridRectangle(GridRectangle),
     Rectangle(Rectangle),

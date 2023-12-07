@@ -22,6 +22,14 @@ pub enum Layout<'a> {
     _GridsBox(&'a mut [Grid], u32),
 }
 
+fn as_u32(n: i32) -> u32 {
+    (if n < 0 { 0 } else { n }) as u32
+}
+
+fn as_cells(px: u32, cell: f64) -> u32 {
+    (px as f64 / cell).ceil() as u32
+}
+
 #[derive(Debug, Clone)]
 pub struct Grid {
     // Offset from each side
@@ -63,6 +71,17 @@ impl Grid {
         self.map.insert(id, (0, 0, self.size.0, self.size.1));
     }
 
+    pub fn inject(&mut self, area_px: (u32, u32, u32, u32), id: usize) {
+        let area = (
+            as_cells(area_px.0, CELL as f64),
+            as_cells(area_px.1, CELL as f64),
+            as_cells(area_px.2, CELL as f64),
+            as_cells(area_px.3, CELL as f64),
+        );
+        console_log!("INJECTED: {area:?}");
+        self.map.insert(id, area);
+    }
+
     pub fn relative(&self, target: usize) -> Relative {
         if let Some((x, y)) =
             self.map.iter().find_map(
@@ -81,10 +100,26 @@ impl Grid {
         }
     }
 
+    pub fn point(&self, position: (i32, i32), around: i32, zoom: f64) -> Vec<usize> {
+        let (x, y) = (
+            (position.0 as f64 * zoom).ceil() as i32,
+            (position.1 as f64 * zoom).ceil() as i32,
+        );
+        let targets = self.in_area(
+            (
+                as_u32(x - around),
+                as_u32(y - around),
+                as_u32(x + around * 2),
+                as_u32(y + around * 2),
+            ),
+            zoom,
+            0,
+        );
+        console_log!("TARGETS: {targets:?}");
+        targets
+    }
+
     pub fn viewport(&self, position: (i32, i32), size: (u32, u32), zoom: f64) -> Vec<usize> {
-        fn as_u32(n: i32) -> u32 {
-            (if n < 0 { 0 } else { n }) as u32
-        }
         let (x, y) = (
             (position.0 as f64 * zoom).ceil() as i32,
             (position.1 as f64 * zoom).ceil() as i32,
@@ -94,25 +129,26 @@ impl Grid {
         let vy = if y > 0 { 0 } else { -y };
         let vx1 = w as i32 - x;
         let vy1 = h as i32 - y;
-        console_log!("viewport: ({vx},{vy}),({vx1},{vy1})");
-
-        self.in_area((as_u32(vx), as_u32(vy), as_u32(vx1), as_u32(vy1)), zoom)
+        self.in_area((as_u32(vx), as_u32(vy), as_u32(vx1), as_u32(vy1)), zoom, 1)
     }
 
-    pub fn in_area(&self, area_px: (u32, u32, u32, u32), zoom: f64) -> Vec<usize> {
-        fn cells(px: u32, cell: f64) -> u32 {
-            (px as f64 / cell).ceil() as u32
-        }
-        console_log!("{area_px:?}");
+    pub fn in_area(
+        &self,
+        area_px: (u32, u32, u32, u32),
+        zoom: f64,
+        prolongation: u32,
+    ) -> Vec<usize> {
         let cell = CELL as f64 * zoom;
-        let (mut ax, mut ay, ax1, ay1) = (
-            cells(area_px.0, cell),
-            cells(area_px.1, cell),
-            cells(area_px.2, cell) + 1,
-            cells(area_px.3, cell) + 1,
+        let (mut ax, mut ay, mut ax1, mut ay1) = (
+            as_cells(area_px.0, cell),
+            as_cells(area_px.1, cell),
+            as_cells(area_px.2, cell) + prolongation,
+            as_cells(area_px.3, cell) + prolongation,
         );
         ax = ax.saturating_sub(1);
         ay = ay.saturating_sub(1);
+        ax1 = ax1.saturating_sub(1);
+        ay1 = ay1.saturating_sub(1);
         console_log!("({ax},{ay}),({ax1},{ay1})");
         let targets = self
             .map
@@ -125,11 +161,11 @@ impl Grid {
                 }
             })
             .collect::<Vec<usize>>();
-        console_log!(
-            "Targets: {}; skipped: {}",
-            targets.len(),
-            self.map.len() - targets.len()
-        );
+        // console_log!(
+        //     "Targets: {}; skipped: {}",
+        //     targets.len(),
+        //     self.map.len() - targets.len()
+        // );
         targets
     }
 

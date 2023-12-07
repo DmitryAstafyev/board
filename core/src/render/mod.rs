@@ -6,7 +6,7 @@ pub mod representation;
 pub mod style;
 
 pub use elements::relative::Relative;
-pub use form::Form;
+pub use form::{Form, View};
 pub use grid::Grid;
 pub use representation::Representation;
 pub use style::Style;

@@ -161,7 +161,7 @@ export class Board {
         let y = event.clientY - this.position.y;
         if (event.button == 0) {
             const targets = this.board
-                .who(x < 0 ? 0 : x, y < 0 ? 0 : y, 5, 5, this.position.zoom)
+                .who(x < 0 ? 0 : x, y < 0 ? 0 : y, 2, this.position.zoom)
                 .filter((id) => id !== this.data.composition);
             if (targets.length > 1) {
                 console.log(

@@ -124,16 +124,12 @@ impl Board {
     #[wasm_bindgen]
     pub fn who(
         &self,
-        target_x: u32,
-        target_y: u32,
-        width: u32,
-        height: u32,
+        target_x: i32,
+        target_y: i32,
+        around: i32,
         zoom: f64,
     ) -> Result<Vec<usize>, String> {
-        Ok(self.grid.in_area(
-            (target_x, target_y, target_x + width, target_y + height),
-            zoom,
-        ))
+        Ok(self.grid.point((target_x, target_y), around, zoom))
     }
 
     #[wasm_bindgen]

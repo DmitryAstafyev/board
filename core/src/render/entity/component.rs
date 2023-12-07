@@ -64,8 +64,8 @@ impl Render<Component> {
         self.entity.ports.render()?.draw(context, &self_relative)?;
         let _ = context.stroke_text(
             &self.origin().sig.id.to_string(),
-            relative.x(self.form.get_coors().0 + 4) as f64,
-            relative.y(self.form.get_coors().1 + 4) as f64,
+            relative.x(self.form.get_coors().0) as f64,
+            relative.y(self.form.get_coors().1 - 4) as f64,
         );
         Ok(())
     }

@@ -11,6 +11,7 @@ pub struct Composition {
     pub connections: Vec<Representation<Connection>>,
     pub compositions: Vec<Representation<Composition>>,
     pub ports: Representation<Ports>,
+    pub parent: Option<usize>,
 }
 
 impl Composition {
@@ -21,6 +22,7 @@ impl Composition {
             connections: vec![],
             compositions: vec![],
             ports: Representation::Origin(Ports::new()),
+            parent: None,
         }
     }
 

@@ -95,6 +95,7 @@ function load(parent, elements, holder) {
                         hide_invisible: true,
                     },
                 },
+                parent: holder.sig.id,
             };
             load(composition, elements, nested);
             holder.compositions.push({
@@ -215,7 +216,7 @@ function getSignature() {
     const id = signature++;
     return { id, class_name: `class_name_${id}` };
 }
-function getDummyComposition(comps, portsPerComp, deep) {
+function getDummyComposition(comps, portsPerComp, deep, parent) {
     const components = [];
     for (let c = 0; c <= comps; c += 1) {
         const ports = [];
@@ -279,14 +280,15 @@ function getDummyComposition(comps, portsPerComp, deep) {
             },
         });
     }
+    const sig = getSignature();
     const compositions = [];
     if (deep > 0) {
         for (let i = 0; i <= comps / 2; i += 1) {
-            compositions.push(getDummyComposition(comps, portsPerComp, deep - 1));
+            compositions.push(getDummyComposition(comps, portsPerComp, deep - 1, sig.id));
         }
     }
     return {
-        sig: getSignature(),
+        sig,
         components: components.map((c) => {
             return { Origin: c };
         }),
@@ -297,6 +299,7 @@ function getDummyComposition(comps, portsPerComp, deep) {
             return { Origin: c };
         }),
         ports: { Origin: { ports, hide_invisible: true } },
+        parent,
     };
 }
 function real() {
@@ -314,6 +317,7 @@ function real() {
                 connections: [],
                 compositions: [],
                 ports: { Origin: { ports: [], hide_invisible: true } },
+                parent: undefined,
             };
             const unique = [];
             elements.forEach((el) => {
@@ -333,7 +337,7 @@ function dummy() {
     console.log("started");
     setTimeout(() => {
         console.log("point 0");
-        const composition = getDummyComposition(10, 5, 2);
+        const composition = getDummyComposition(10, 5, 2, undefined);
         console.log("point 1");
         console.log(composition);
         const board = new board_1.Board(`div#container`);

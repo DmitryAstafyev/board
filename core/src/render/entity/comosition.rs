@@ -204,6 +204,10 @@ impl Render<Composition> {
             .calc(self.form.get_box_size().0)?;
         // Add composition as itself into grid
         composition_grid.insert_self(self.entity.sig.id);
+        // Add reference to parent (is exists)
+        if let Some(id) = self.entity.parent {
+            composition_grid.inject((grid_size.0 - 30, 0, grid_size.0, 30), id);
+        }
         // Add into global
         grid.insert(&composition_grid);
         Ok(())
@@ -216,9 +220,6 @@ impl Render<Composition> {
         targets: &Vec<usize>,
     ) -> Result<(), E> {
         if !targets.contains(&self.entity.sig.id) || self.hidden {
-            if self.hidden {
-                console_log!(">>>>>>>>>>>>>>>>>>>>> HIDDEN");
-            }
             return Ok(());
         }
         self.style.apply(context);
@@ -246,6 +247,18 @@ impl Render<Composition> {
                 || targets.contains(&conn.origin().joint_out.component)
         }) {
             connection.render()?.draw(context, relative)?;
+        }
+        let _ = context.stroke_text(
+            &self.origin().sig.id.to_string(),
+            relative.x(self.form.get_coors().0) as f64,
+            relative.y(self.form.get_coors().1 - 4) as f64,
+        );
+        if let Some(id) = self.entity.parent {
+            let _ = context.stroke_text(
+                &id.to_string(),
+                relative.x(self.form.get_box_size().0 - 30) as f64,
+                relative.y(0) as f64,
+            );
         }
         // grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
