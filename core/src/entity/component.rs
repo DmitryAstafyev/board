@@ -8,4 +8,5 @@ use serde::{Deserialize, Serialize};
 pub struct Component {
     pub sig: Signature,
     pub ports: Representation<Ports>,
+    pub composition: bool,
 }

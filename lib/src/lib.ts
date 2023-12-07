@@ -29,6 +29,8 @@ import("core")
         console.error(`Fail to core load wasm module: ${err.message}`);
     });
 
+const CLICK_DURATION = 150;
+
 export class Board {
     protected readonly board: Core.Board;
     protected readonly canvas: HTMLCanvasElement;
@@ -54,10 +56,21 @@ export class Board {
         x: number;
         y: number;
         processing: boolean;
+        clickTimer: any;
     } = {
         x: 0,
         y: 0,
         processing: false,
+        clickTimer: -1,
+    };
+    protected data: {
+        composition: number | undefined;
+        root: Types.Composition | undefined;
+        history: number[];
+    } = {
+        composition: undefined,
+        root: undefined,
+        history: [],
     };
 
     constructor(parent: string | HTMLElement) {
@@ -92,8 +105,10 @@ export class Board {
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onWheel = this.onWheel.bind(this);
+        this.onClick = this.onClick.bind(this);
         this.parent.addEventListener("mousedown", this.onMouseDown);
         this.parent.addEventListener("wheel", this.onWheel);
+        this.parent.addEventListener("click", this.onClick);
         window.addEventListener("mousemove", this.onMouseMove);
         window.addEventListener("mouseup", this.onMouseUp);
     }
@@ -107,9 +122,11 @@ export class Board {
     }
 
     protected onMouseDown(event: MouseEvent): void {
-        this.movement.processing = true;
         this.movement.x = event.clientX;
         this.movement.y = event.clientY;
+        this.movement.clickTimer = setTimeout(() => {
+            this.movement.processing = true;
+        }, CLICK_DURATION);
     }
 
     protected onMouseMove(event: MouseEvent): void {
@@ -127,6 +144,7 @@ export class Board {
 
     protected onMouseUp(event: MouseEvent): void {
         this.movement.processing = false;
+        clearTimeout(this.movement.clickTimer);
     }
 
     protected onWheel(event: WheelEvent): void {
@@ -137,6 +155,49 @@ export class Board {
         this.render();
     }
 
+    protected onClick(event: MouseEvent): void {
+        clearTimeout(this.movement.clickTimer);
+        let x = event.clientX - this.position.x;
+        let y = event.clientY - this.position.y;
+        if (event.button == 0) {
+            const targets = this.board
+                .who(x < 0 ? 0 : x, y < 0 ? 0 : y, 5, 5, this.position.zoom)
+                .filter((id) => id !== this.data.composition);
+            if (targets.length > 1) {
+                console.log(
+                    `Cannot detect target too many ids: ${targets.join(", ")}`
+                );
+                return;
+            } else if (targets.length === 0) {
+                const prev = this.data.history.splice(
+                    this.data.history.length - 1,
+                    1
+                );
+                if (prev.length === 1) {
+                    this.goToComposition(prev[0]);
+                }
+            } else {
+                this.data.composition !== undefined &&
+                    this.data.history.push(this.data.composition);
+                this.goToComposition(targets[0]);
+            }
+        }
+    }
+
+    protected goToComposition(id: number) {
+        if (this.data.root === undefined) {
+            return;
+        }
+        const composition = Types.getComposition(this.data.root, id);
+        if (composition === undefined) {
+            console.log(`Fail to find composition ID: ${id}`);
+            return;
+        }
+        this.board.init(composition, Uint32Array.from([]));
+        this.data.composition = id;
+        this.render();
+    }
+
     public destroy(): void {
         this.parent.removeEventListener("mousedown", this.onMouseDown);
         this.parent.removeEventListener("wheel", this.onWheel);
@@ -144,8 +205,10 @@ export class Board {
         window.removeEventListener("mouseup", this.onMouseUp);
     }
 
-    public init(composition: Types.Composition) {
-        this.board.init(composition);
+    public bind(composition: Types.Composition, expanded: number[]) {
+        this.board.init(composition, Uint32Array.from(expanded));
+        this.data.composition = composition.sig.id;
+        this.data.root = composition;
     }
 
     public render() {

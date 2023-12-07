@@ -94,13 +94,16 @@ impl Grid {
         let vy = if y > 0 { 0 } else { -y };
         let vx1 = w as i32 - x;
         let vy1 = h as i32 - y;
+        console_log!("viewport: ({vx},{vy}),({vx1},{vy1})");
+
         self.in_area((as_u32(vx), as_u32(vy), as_u32(vx1), as_u32(vy1)), zoom)
     }
 
-    fn in_area(&self, area_px: (u32, u32, u32, u32), zoom: f64) -> Vec<usize> {
+    pub fn in_area(&self, area_px: (u32, u32, u32, u32), zoom: f64) -> Vec<usize> {
         fn cells(px: u32, cell: f64) -> u32 {
             (px as f64 / cell).ceil() as u32
         }
+        console_log!("{area_px:?}");
         let cell = CELL as f64 * zoom;
         let (mut ax, mut ay, ax1, ay1) = (
             cells(area_px.0, cell),
@@ -110,6 +113,7 @@ impl Grid {
         );
         ax = ax.saturating_sub(1);
         ay = ay.saturating_sub(1);
+        console_log!("({ax},{ay}),({ax1},{ay1})");
         let targets = self
             .map
             .iter()
@@ -202,14 +206,14 @@ impl Grid {
         self.size = (
             elements::max(
                 &[
-                    self.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
+                    self.size.0 + self.offset * 2,
                     grid.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
                 ],
                 self.offset * 2,
             ),
             elements::max(
                 &[
-                    self.size.1 + self.offset * 2 + SPACE_IN_VERTICAL * 2,
+                    self.size.1 + self.offset * 2,
                     grid.size.1 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
                 ],
                 self.offset * 2,
@@ -234,7 +238,7 @@ impl Grid {
                 // Point isn't found. Grid doesn't have enought space. Increase space
                 let f_w = self.size.0 + grid.size.0;
                 let f_h = self.size.1 + grid.size.1;
-                if f_w as i32 - self.size.1 as i32 <= f_h as i32 - self.size.0 as i32 {
+                if f_w as i32 - self.size.1 as i32 >= f_h as i32 - self.size.0 as i32 {
                     self.size.0 += grid.size.0;
                     self.size.1 += 1;
                 } else {

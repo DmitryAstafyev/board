@@ -127,6 +127,7 @@ function load(parent, elements, holder) {
                             hide_invisible: true,
                         },
                     },
+                    composition: false,
                 },
             });
         }
@@ -237,6 +238,7 @@ function getDummyComposition(comps, portsPerComp, deep) {
                     hide_invisible: true,
                 },
             },
+            composition: false,
         });
     }
     const connections = [];
@@ -322,7 +324,7 @@ function real() {
             // console.log(JSON.stringify(root));
             // console.log(elements);
             const board = new board_1.Board(`div#container`);
-            board.init(root);
+            board.bind(root, []);
             board.render();
         });
     }, 200);
@@ -336,12 +338,12 @@ function dummy() {
         console.log(composition);
         const board = new board_1.Board(`div#container`);
         console.log("point 2");
-        board.init(composition);
+        board.bind(composition, []);
         console.log("point 3");
         board.render();
         console.log("point 4");
     }, 200);
 }
 console.log("zero");
-real();
+dummy();
 //# sourceMappingURL=main.js.map

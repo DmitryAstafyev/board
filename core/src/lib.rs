@@ -57,11 +57,12 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn init(&mut self, composition: JsValue) -> Result<(), String> {
+    pub fn init(&mut self, composition: JsValue, expanded: Vec<usize>) -> Result<(), String> {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
         self.render = Render::<Composition>::new(composition);
-        Ok(self.render.calc(&mut self.grid)?)
+        self.grid = Grid::new(1);
+        Ok(self.render.calc(&mut self.grid, &expanded)?)
     }
 
     #[wasm_bindgen]
@@ -123,15 +124,16 @@ impl Board {
     #[wasm_bindgen]
     pub fn who(
         &self,
-        target_x: i32,
-        target_y: i32,
+        target_x: u32,
+        target_y: u32,
         width: u32,
         height: u32,
         zoom: f64,
     ) -> Result<Vec<usize>, String> {
-        Ok(self
-            .grid
-            .viewport((target_x, target_y), (width, height), zoom))
+        Ok(self.grid.in_area(
+            (target_x, target_y, target_x + width, target_y + height),
+            zoom,
+        ))
     }
 
     #[wasm_bindgen]

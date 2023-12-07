@@ -66,6 +66,7 @@ impl Render<Composition> {
                 fill_style: String::from("rgb(200,200,230)"),
             },
             over_style: None,
+            hidden: false,
         }
     }
 
@@ -78,7 +79,10 @@ impl Render<Composition> {
         }
         // Align to grid nested compositions
         for composition in self.entity.compositions.iter_mut() {
-            composition.render_mut()?.align_to_grid(grid)?;
+            let render = composition.render_mut()?;
+            if !render.hidden {
+                render.align_to_grid(grid)?;
+            }
         }
         let relative = grid.relative(self.entity.sig.id);
         self.form
@@ -132,16 +136,28 @@ impl Render<Composition> {
         Ok(())
     }
 
-    pub fn calc(&mut self, grid: &mut Grid) -> Result<(), E> {
+    pub fn calc(&mut self, grid: &mut Grid, expanded: &[usize]) -> Result<(), E> {
         // Create composition grid
         let mut composition_grid = Grid::new(1);
         // Order components by connections number
         self.entity.order();
+        for composition in self.entity.compositions.iter_mut() {
+            if expanded.contains(&composition.origin().sig.id) {
+                composition
+                    .render_mut()?
+                    .calc(&mut composition_grid, expanded)?;
+                composition.render_mut()?.show();
+            } else {
+                self.entity
+                    .components
+                    .push(Representation::Render(Render::<Component>::new(
+                        composition.origin().to_component(),
+                    )));
+                composition.render_mut()?.hide();
+            }
+        }
         for component in self.entity.components.iter_mut() {
             component.render_mut()?.calc()?;
-        }
-        for composition in self.entity.compositions.iter_mut() {
-            composition.render_mut()?.calc(&mut composition_grid)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
         let mut dependencies: Vec<(usize, usize)> = vec![];
@@ -199,8 +215,11 @@ impl Render<Composition> {
         relative: &Relative,
         targets: &Vec<usize>,
     ) -> Result<(), E> {
-        if !targets.contains(&self.entity.sig.id) {
-            Ok(())?;
+        if !targets.contains(&self.entity.sig.id) || self.hidden {
+            if self.hidden {
+                console_log!(">>>>>>>>>>>>>>>>>>>>> HIDDEN");
+            }
+            return Ok(());
         }
         self.style.apply(context);
         self.form.render(context, relative);

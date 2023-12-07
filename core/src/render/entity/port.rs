@@ -34,6 +34,7 @@ impl Render<Ports> {
                 fill_style: String::from("rgb(0,0,0)"),
             },
             over_style: None,
+            hidden: false,
         }
     }
 
@@ -153,6 +154,7 @@ impl Render<Port> {
                 fill_style: String::from("rgb(50,50,50)"),
             },
             over_style: None,
+            hidden: false,
         }
     }
 

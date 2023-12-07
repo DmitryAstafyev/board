@@ -1,13 +1,13 @@
 use crate::{entity::Signature, render::Representation};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PortType {
     In,
     Out,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Port {
     pub sig: Signature,
     pub port_type: PortType,
@@ -68,5 +68,16 @@ impl Ports {
 
     pub fn find(&self, port_id: usize) -> Option<&Representation<Port>> {
         self.ports.iter().find(|p| p.origin().sig.id == port_id)
+    }
+
+    pub fn clone(&self) -> Ports {
+        Ports {
+            ports: self
+                .ports
+                .iter()
+                .map(|r| Representation::Origin(r.origin().clone()))
+                .collect::<Vec<Representation<Port>>>(),
+            hide_invisible: self.hide_invisible,
+        }
     }
 }

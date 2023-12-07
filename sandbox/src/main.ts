@@ -184,6 +184,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                             hide_invisible: true,
                         },
                     },
+                    composition: false,
                 },
             });
         } else {
@@ -308,6 +309,7 @@ function getDummyComposition(
                     hide_invisible: true,
                 },
             },
+            composition: false,
         });
     }
     const connections: Connection[] = [];
@@ -396,7 +398,7 @@ function real() {
             // console.log(JSON.stringify(root));
             // console.log(elements);
             const board = new Board(`div#container`);
-            board.init(root);
+            board.bind(root, []);
             board.render();
         });
     }, 200);
@@ -411,7 +413,7 @@ function dummy() {
         console.log(composition);
         const board = new Board(`div#container`);
         console.log("point 2");
-        board.init(composition);
+        board.bind(composition, []);
         console.log("point 3");
         board.render();
         console.log("point 4");
@@ -419,4 +421,4 @@ function dummy() {
 }
 console.log("zero");
 
-dummy();
+real();

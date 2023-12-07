@@ -12,6 +12,7 @@ impl Dummy<Component, RangeInclusive<usize>> for Component {
         Self {
             sig: producer.next(),
             ports: Representation::Origin(Ports::dummy(producer, ports)),
+            composition: false,
         }
     }
 }

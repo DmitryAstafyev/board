@@ -17,6 +17,7 @@ pub struct Render<T> {
     form: Form,
     style: Style,
     over_style: Option<Style>,
+    hidden: bool,
 }
 
 impl<T> Render<T> {
@@ -40,5 +41,12 @@ impl<T> Render<T> {
 
     pub fn set_over_style(&mut self, style: Option<Style>) {
         self.over_style = style;
+    }
+
+    pub fn hide(&mut self) {
+        self.hidden = true;
+    }
+    pub fn show(&mut self) {
+        self.hidden = false;
     }
 }

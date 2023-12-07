@@ -15,14 +15,20 @@ impl Render<Component> {
             entity.ports
         };
         let id = entity.sig.id;
+        let composition = entity.composition;
         Self {
             entity,
             form: Form::GridRectangle(GridRectangle::new(id, 0, 0, MIN_WIDTH, MIN_HEIGHT)),
             style: Style {
                 stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(200,250,200)"),
+                fill_style: if composition {
+                    String::from("rgb(250,200,200)")
+                } else {
+                    String::from("rgb(200,250,200)")
+                },
             },
             over_style: None,
+            hidden: false,
         }
     }
 

@@ -37,6 +37,7 @@ export interface Connection {
 export interface Component {
     sig: Signature;
     ports: Representation<Ports>;
+    composition: boolean;
 }
 
 export interface Composition {
@@ -45,4 +46,20 @@ export interface Composition {
     connections: Representation<Connection>[];
     compositions: Representation<Composition>[];
     ports: Representation<Ports>;
+}
+
+export function getComposition(
+    composition: Composition,
+    target: number
+): Composition | undefined {
+    if (composition.sig.id === target) {
+        return composition;
+    }
+    for (let nested of composition.compositions) {
+        const found = getComposition(nested.Origin, target);
+        if (found !== undefined) {
+            return found;
+        }
+    }
+    return undefined;
 }
