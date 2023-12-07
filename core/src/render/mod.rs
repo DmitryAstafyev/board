@@ -6,7 +6,7 @@ pub mod representation;
 pub mod style;
 
 pub use elements::relative::Relative;
-pub use form::{Form, View};
+pub use form::{Container, Form, View};
 pub use grid::Grid;
 pub use representation::Representation;
 pub use style::Style;
@@ -14,9 +14,7 @@ pub use style::Style;
 #[derive(Debug)]
 pub struct Render<T> {
     entity: T,
-    form: Form,
-    style: Style,
-    over_style: Option<Style>,
+    view: View,
     hidden: bool,
 }
 
@@ -30,17 +28,17 @@ impl<T> Render<T> {
     }
 
     pub fn relative(&self, base: &Relative) -> Relative {
-        let (x, y) = self.form.get_coors();
+        let (x, y) = self.view.container.get_coors();
         base.clone_from_origin_coors(x, y)
     }
 
     pub fn own_relative(&self) -> Relative {
-        let (x, y) = self.form.get_coors();
+        let (x, y) = self.view.container.get_coors();
         Relative::new(x, y, None)
     }
 
     pub fn set_over_style(&mut self, style: Option<Style>) {
-        self.over_style = style;
+        // self.over_style = style;
     }
 
     pub fn hide(&mut self) {

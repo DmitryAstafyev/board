@@ -5,9 +5,9 @@ use crate::{
     error::E,
     render::{
         entity::port,
-        form::{Path, Point, Rectangle},
+        form::{button, Button, Path, Point, Rectangle},
         grid::Layout,
-        Form, Grid, Relative, Render, Representation, Style,
+        Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
 };
 
@@ -52,20 +52,44 @@ impl Render<Composition> {
             entity.ports
         };
         let id = entity.sig.id;
+        let parent = entity.parent;
         Self {
             entity,
-            form: Form::Rectangle(Rectangle {
-                id,
-                x: 0,
-                y: 0,
-                w: 100,
-                h: 100,
-            }),
-            style: Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(200,200,230)"),
+            view: View {
+                container: Container {
+                    form: Form::Rectangle(Rectangle {
+                        id,
+                        x: 0,
+                        y: 0,
+                        w: 100,
+                        h: 100,
+                    }),
+                    style: Style {
+                        stroke_style: String::from("rgb(0,0,0)"),
+                        fill_style: String::from("rgb(200,200,230)"),
+                    },
+                    hover: None,
+                },
+                elements: if let Some(id) = parent {
+                    vec![Container {
+                        form: Form::Button(Button {
+                            id,
+                            x: 0,
+                            y: 0,
+                            label: id.to_string(),
+                            align: button::Align::Right,
+                            padding: 3,
+                        }),
+                        style: Style {
+                            stroke_style: String::from("rgb(0,0,0)"),
+                            fill_style: String::from("rgb(100,150,255)"),
+                        },
+                        hover: None,
+                    }]
+                } else {
+                    vec![]
+                },
             },
-            over_style: None,
             hidden: false,
         }
     }
@@ -74,7 +98,8 @@ impl Render<Composition> {
         for comp in self.entity.components.iter_mut() {
             let relative = grid.relative(comp.origin().sig.id);
             comp.render_mut()?
-                .form
+                .view
+                .container
                 .set_coors(Some(relative.x(0)), Some(relative.y(0)));
         }
         // Align to grid nested compositions
@@ -85,7 +110,8 @@ impl Render<Composition> {
             }
         }
         let relative = grid.relative(self.entity.sig.id);
-        self.form
+        self.view
+            .container
             .set_coors(Some(relative.x(0)), Some(relative.y(0)));
         // Setup connections
         for conn in self.entity.connections.iter_mut() {
@@ -109,8 +135,8 @@ impl Render<Composition> {
                         .origin()
                         .find(conn.origin().joint_out.port),
                 ) {
-                    let port_in = port_in.render()?.form.get_coors();
-                    let port_out = port_out.render()?.form.get_coors();
+                    let port_in = port_in.render()?.view.container.get_coors();
+                    let port_out = port_out.render()?.view.container.get_coors();
                     let relative_inns = ins.render()?.own_relative();
                     let relative_outs = outs.render()?.own_relative();
                     let offset = port::PORT_SIDE / 2;
@@ -127,7 +153,7 @@ impl Render<Composition> {
                             },
                         ],
                     );
-                    conn.render_mut()?.form = Form::Path(path);
+                    conn.render_mut()?.view.container.set_form(Form::Path(path));
                 } else {
                     console_log!("No ports has been found :/");
                 }
@@ -195,19 +221,23 @@ impl Render<Composition> {
         let grid_size = composition_grid.get_size_px();
         let grid_height_px =
             composition_grid.set_min_height(self.entity.ports.render()?.height() as u32);
-        self.form
+        self.view
+            .container
             .set_box_size(Some(grid_size.0 as i32), Some(grid_height_px as i32));
         // Calc ports
         self.entity
             .ports
             .render_mut()?
-            .calc(self.form.get_box_size().0)?;
+            .calc(self.view.container.get_box_size().0)?;
         // Add composition as itself into grid
         composition_grid.insert_self(self.entity.sig.id);
-        // Add reference to parent (is exists)
-        if let Some(id) = self.entity.parent {
-            composition_grid.inject((grid_size.0 - 30, 0, grid_size.0, 30), id);
+        if let Some(container) = self.view.elements.first_mut() {
+            container.set_coors(Some(grid_size.0 as i32), None);
         }
+        // // Add reference to parent (is exists)
+        // if let Some(id) = self.entity.parent {
+        //     composition_grid.inject((grid_size.0 - 30, 0, grid_size.0, 30), id);
+        // }
         // Add into global
         grid.insert(&composition_grid);
         Ok(())
@@ -222,8 +252,7 @@ impl Render<Composition> {
         if !targets.contains(&self.entity.sig.id) || self.hidden {
             return Ok(());
         }
-        self.style.apply(context);
-        self.form.render(context, relative);
+        self.view.render(context, relative);
         let self_relative = self.relative(relative);
         self.entity.ports.render()?.draw(context, &self_relative)?;
         for component in self
@@ -250,13 +279,13 @@ impl Render<Composition> {
         }
         let _ = context.stroke_text(
             &self.origin().sig.id.to_string(),
-            relative.x(self.form.get_coors().0) as f64,
-            relative.y(self.form.get_coors().1 - 4) as f64,
+            relative.x(self.view.container.get_coors().0) as f64,
+            relative.y(self.view.container.get_coors().1 - 4) as f64,
         );
         if let Some(id) = self.entity.parent {
             let _ = context.stroke_text(
                 &id.to_string(),
-                relative.x(self.form.get_box_size().0 - 30) as f64,
+                relative.x(self.view.container.get_box_size().0 - 30) as f64,
                 relative.y(0) as f64,
             );
         }
@@ -293,7 +322,7 @@ fn get_forms_by_ids<'a>(
     let mut found: Vec<&Form> = vec![];
     for comp in components.iter() {
         if ids.contains(&comp.origin().sig.id) {
-            found.push(&comp.render()?.form);
+            found.push(&comp.render()?.view.container.form);
         }
     }
     Ok(found)

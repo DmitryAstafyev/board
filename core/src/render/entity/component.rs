@@ -1,7 +1,10 @@
 use crate::{
     entity::{Component, Ports},
     error::E,
-    render::{elements, form::GridRectangle, Form, Relative, Render, Representation, Style},
+    render::{
+        elements, form::GridRectangle, Container, Form, Relative, Render, Representation, Style,
+        View,
+    },
 };
 
 const MIN_HEIGHT: i32 = 64;
@@ -18,23 +21,28 @@ impl Render<Component> {
         let composition = entity.composition;
         Self {
             entity,
-            form: Form::GridRectangle(GridRectangle::new(id, 0, 0, MIN_WIDTH, MIN_HEIGHT)),
-            style: Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: if composition {
-                    String::from("rgb(250,200,200)")
-                } else {
-                    String::from("rgb(200,250,200)")
+            view: View {
+                container: Container {
+                    form: Form::GridRectangle(GridRectangle::new(id, 0, 0, MIN_WIDTH, MIN_HEIGHT)),
+                    style: Style {
+                        stroke_style: String::from("rgb(0,0,0)"),
+                        fill_style: if composition {
+                            String::from("rgb(250,200,200)")
+                        } else {
+                            String::from("rgb(200,250,200)")
+                        },
+                    },
+                    hover: None,
                 },
+                elements: vec![],
             },
-            over_style: None,
             hidden: false,
         }
     }
 
     pub fn calc(&mut self) -> Result<(), E> {
         // Set self size
-        self.form.set_box_size(
+        self.view.container.set_box_size(
             None,
             Some(elements::max(
                 &[MIN_HEIGHT, self.entity.ports.render()?.height()],
@@ -45,7 +53,7 @@ impl Render<Component> {
         self.entity
             .ports
             .render_mut()?
-            .calc(self.form.get_box_size().0)?;
+            .calc(self.view.container.get_box_size().0)?;
         Ok(())
     }
 
@@ -54,18 +62,18 @@ impl Render<Component> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
-        if let Some(over) = self.over_style.as_ref() {
-            over.apply(context);
-        } else {
-            self.style.apply(context);
-        }
-        self.form.render(context, relative);
+        // if let Some(over) = self.over_style.as_ref() {
+        //     over.apply(context);
+        // } else {
+        //     self.style.apply(context);
+        // }
+        self.view.render(context, relative);
         let self_relative = self.relative(relative);
         self.entity.ports.render()?.draw(context, &self_relative)?;
         let _ = context.stroke_text(
             &self.origin().sig.id.to_string(),
-            relative.x(self.form.get_coors().0) as f64,
-            relative.y(self.form.get_coors().1 - 4) as f64,
+            relative.x(self.view.container.get_coors().0) as f64,
+            relative.y(self.view.container.get_coors().1 - 4) as f64,
         );
         Ok(())
     }

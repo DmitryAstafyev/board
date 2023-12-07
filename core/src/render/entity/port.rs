@@ -1,7 +1,9 @@
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
-    render::{elements, form::Rectangle, Form, Relative, Render, Representation, Style},
+    render::{
+        elements, form::Rectangle, Container, Form, Relative, Render, Representation, Style, View,
+    },
 };
 
 pub const PORT_SIDE: i32 = 8;
@@ -22,18 +24,23 @@ impl Render<Ports> {
             .collect::<Vec<Representation<Port>>>();
         Self {
             entity,
-            form: Form::Rectangle(Rectangle {
-                x: 0,
-                y: 0,
-                w: 0,
-                h: 0,
-                id: 0,
-            }),
-            style: Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(0,0,0)"),
+            view: View {
+                container: Container {
+                    form: Form::Rectangle(Rectangle {
+                        x: 0,
+                        y: 0,
+                        w: 0,
+                        h: 0,
+                        id: 0,
+                    }),
+                    style: Style {
+                        stroke_style: String::from("rgb(0,0,0)"),
+                        fill_style: String::from("rgb(0,0,0)"),
+                    },
+                    hover: None,
+                },
+                elements: vec![],
             },
-            over_style: None,
             hidden: false,
         }
     }
@@ -91,8 +98,11 @@ impl Render<Ports> {
             .filter(|p| p.origin().visibility || !hide)
         {
             let render = port.render_mut()?;
-            let (w, h) = render.form.get_box_size();
-            render.form.set_coors(Some(-(w / 2)), Some(cursor));
+            let (w, h) = render.view.container.get_box_size();
+            render
+                .view
+                .container
+                .set_coors(Some(-(w / 2)), Some(cursor));
             cursor += h + PORTS_VERTICAL_OFFSET;
         }
         // Order ports on a right side
@@ -104,9 +114,10 @@ impl Render<Ports> {
             .filter(|p| p.origin().visibility || !hide)
         {
             let render = port.render_mut()?;
-            let (w, h) = render.form.get_box_size();
+            let (w, h) = render.view.container.get_box_size();
             render
-                .form
+                .view
+                .container
                 .set_coors(Some(container_width - (w / 2)), Some(cursor));
             cursor += h + PORTS_VERTICAL_OFFSET;
         }
@@ -118,11 +129,11 @@ impl Render<Ports> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
-        if let Some(over) = self.over_style.as_ref() {
-            over.apply(context);
-        } else {
-            self.style.apply(context);
-        }
+        // if let Some(over) = self.over_style.as_ref() {
+        //     over.apply(context);
+        // } else {
+        //     self.style.apply(context);
+        // }
         let self_relative = self.relative(relative);
         let hide = self.origin().hide_invisible;
         for port in self
@@ -142,18 +153,23 @@ impl Render<Port> {
         let id = entity.sig.id;
         Self {
             entity,
-            form: Form::Rectangle(Rectangle {
-                x: 0,
-                y: 0,
-                w: PORT_SIDE,
-                h: PORT_SIDE,
-                id,
-            }),
-            style: Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(50,50,50)"),
+            view: View {
+                container: Container {
+                    form: Form::Rectangle(Rectangle {
+                        x: 0,
+                        y: 0,
+                        w: PORT_SIDE,
+                        h: PORT_SIDE,
+                        id,
+                    }),
+                    style: Style {
+                        stroke_style: String::from("rgb(0,0,0)"),
+                        fill_style: String::from("rgb(50,50,50)"),
+                    },
+                    hover: None,
+                },
+                elements: vec![],
             },
-            over_style: None,
             hidden: false,
         }
     }
@@ -167,12 +183,12 @@ impl Render<Port> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
-        if let Some(over) = self.over_style.as_ref() {
-            over.apply(context);
-        } else {
-            self.style.apply(context);
-        }
-        self.form.render(context, relative);
+        // if let Some(over) = self.over_style.as_ref() {
+        //     over.apply(context);
+        // } else {
+        //     self.style.apply(context);
+        // }
+        self.view.render(context, relative);
         Ok(())
     }
 }
