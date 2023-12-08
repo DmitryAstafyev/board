@@ -140,7 +140,7 @@ impl Board {
     ) -> Result<JsValue, String> {
         let relative = Relative::new(x, y, Some(zoom));
         let ids = self.grid.point((target_x, target_y), around, &relative);
-        let inner = self.render.find(&(target_x, target_y), &relative)?;
+        let inner = self.render.find(&(target_x, target_y))?;
         let elements = [ids, inner].concat();
         serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())
     }

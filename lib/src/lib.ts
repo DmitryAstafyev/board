@@ -184,13 +184,12 @@ export class Board {
                 (element: Types.ElementCoors) =>
                     element[0] !== this.data.composition?.toString()
             );
-
         if (targets.length === 1) {
             this.hover.show(
                 targets[0][1][0] + this.position.x,
                 targets[0][1][1] + this.position.y,
                 targets[0][1][2] - targets[0][1][0],
-                targets[0][1][3] - targets[0][1][1]
+                targets[0][1][3] - targets[0][1][1],
             );
             console.log(`hovering: ${targets[0]}`);
         } else {
@@ -198,17 +197,21 @@ export class Board {
         }
     }
 
-    protected onHoverOver(event: MouseEvent): void {}
+    protected onHoverOver(event: MouseEvent): void {
+        this.hover.hide();
+    }
 
     protected onWheel(event: WheelEvent): void {
         this.position.zoom += event.deltaY > 0 ? 0.05 : -0.05;
         this.position.zoom =
             this.position.zoom < 0.1 ? 0.1 : this.position.zoom;
         this.position.zoom = this.position.zoom > 2 ? 2 : this.position.zoom;
+        this.hover.hide();
         this.render();
     }
 
     protected onClick(event: MouseEvent): void {
+        this.hover.hide();
         clearTimeout(this.movement.clickTimer);
         if (this.movement.processing || this.movement.dropClick) {
             return;

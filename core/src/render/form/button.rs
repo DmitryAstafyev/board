@@ -1,5 +1,7 @@
 use crate::render::Relative;
 
+const PADDING_IN_HORIZONT: u32 = 8;
+
 #[derive(Debug)]
 pub enum Align {
     Left,
@@ -32,7 +34,10 @@ impl Button {
     pub fn get_coors(&self) -> (i32, i32) {
         match self.align {
             Align::Left => (self.x, self.y),
-            Align::Right => (self.x - (self.w + 8), self.y),
+            Align::Right => (
+                self.x - (self.w + (PADDING_IN_HORIZONT / 2) as i32),
+                self.y + 2,
+            ),
         }
     }
 
@@ -45,13 +50,13 @@ impl Button {
         let mut x = relative.x(self.x) as f64;
         let y = (relative.y(self.y) + self.padding) as f64;
         if matches!(self.align, Align::Right) {
-            x -= w + 8.0 + self.padding as f64;
+            x -= w + PADDING_IN_HORIZONT as f64 + self.padding as f64;
         } else {
             x += self.padding as f64;
         }
-        context.fill_rect(x, y, w + 8.0, 18.0);
+        context.fill_rect(x, y, w + PADDING_IN_HORIZONT as f64, 18.0);
         let _ = context.stroke_text(&self.label, x + 3.0, y + 12.0);
-        self.w = w as i32;
+        self.w = w as i32 + PADDING_IN_HORIZONT as i32;
         self.h = 18;
     }
 }

@@ -309,33 +309,21 @@ impl Render<Composition> {
         Ok(())
     }
 
-    pub fn find(&self, position: &(i32, i32), relative: &Relative) -> Result<Vec<ElementCoors>, E> {
+    pub fn find(&self, position: &(i32, i32)) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(vec![]);
         }
         let mut found: Vec<ElementCoors> = vec![];
-        let rel_position = (relative.x(position.0), relative.y(position.1));
         for el in self.view.elements.iter() {
             let (x, y) = el.form.get_coors();
             let (w, h) = el.form.get_box_size();
-            let area = (
-                relative.x(x) as u32,
-                relative.y(y) as u32,
-                (relative.x(x) + w) as u32,
-                (relative.y(y) + h) as u32,
-            );
-            // console_log!(
-            //     "POS: {position:?}; REL_POS: {rel_position:?};COORS ({}): {x}, {y}; AREA: {area:?} ({}, {})",
-            //     el.form.id(),
-            //     relative.x(x),
-            //     relative.y(y)
-            // );
-            if elements::is_point_in(&(rel_position.0 as u32, rel_position.1 as u32), &area) {
+            let area = (x as u32, y as u32, (x + w) as u32, (y + h) as u32);
+            if elements::is_point_in(&(position.0 as u32, position.1 as u32), &area) {
                 found.push((el.id(), area));
             }
         }
         for nested in self.entity.compositions.iter() {
-            found = [found, nested.render()?.find(&rel_position, relative)?].concat();
+            found = [found, nested.render()?.find(position)?].concat();
         }
         Ok(found)
     }
