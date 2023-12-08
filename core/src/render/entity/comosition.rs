@@ -7,7 +7,7 @@ use crate::{
         elements,
         entity::port,
         form::{button, Button, Path, Point, Rectangle},
-        grid::Layout,
+        grid::{ElementCoors, Layout},
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
 };
@@ -309,11 +309,11 @@ impl Render<Composition> {
         Ok(())
     }
 
-    pub fn find(&self, position: &(i32, i32), relative: &Relative) -> Result<Vec<String>, E> {
+    pub fn find(&self, position: &(i32, i32), relative: &Relative) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(vec![]);
         }
-        let mut found: Vec<String> = vec![];
+        let mut found: Vec<ElementCoors> = vec![];
         let rel_position = (relative.x(position.0), relative.y(position.1));
         for el in self.view.elements.iter() {
             let (x, y) = el.form.get_coors();
@@ -331,7 +331,7 @@ impl Render<Composition> {
             //     relative.y(y)
             // );
             if elements::is_point_in(&(rel_position.0 as u32, rel_position.1 as u32), &area) {
-                found.push(el.id());
+                found.push((el.id(), area));
             }
         }
         for nested in self.entity.compositions.iter() {

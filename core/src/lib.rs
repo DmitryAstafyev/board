@@ -10,7 +10,7 @@ use entity::{
     Composition, Signature,
 };
 use error::E;
-use render::{Grid, Relative, Render, Style};
+use render::{grid::ElementCoors, Grid, Relative, Render, Style};
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
@@ -114,7 +114,7 @@ impl Board {
                 &relative,
                 &targets
                     .iter()
-                    .map(|id| id.parse::<usize>().unwrap())
+                    .map(|(id, _)| id.parse::<usize>().unwrap())
                     .collect(),
             ) {
                 self.context = Some(context);
@@ -137,12 +137,12 @@ impl Board {
         target_y: i32,
         around: i32,
         zoom: f64,
-    ) -> Result<Vec<String>, String> {
+    ) -> Result<JsValue, String> {
         let relative = Relative::new(x, y, Some(zoom));
         let ids = self.grid.point((target_x, target_y), around, &relative);
         let inner = self.render.find(&(target_x, target_y), &relative)?;
-        console_log!("CLICK ON: {ids:?}, {inner:?}");
-        Ok([ids, inner].concat())
+        let elements = [ids, inner].concat();
+        serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]

@@ -10,6 +10,8 @@ pub const CELL: u32 = 25;
 pub const SPACE_IN_VERTICAL: u32 = 1;
 pub const SPACE_IN_HORIZONT: u32 = 3;
 
+pub type ElementCoors = (String, (u32, u32, u32, u32));
+
 #[derive(Debug)]
 pub enum Layout<'a> {
     // Put form near
@@ -97,7 +99,12 @@ impl Grid {
         }
     }
 
-    pub fn point(&self, position: (i32, i32), around: i32, relative: &Relative) -> Vec<String> {
+    pub fn point(
+        &self,
+        position: (i32, i32),
+        around: i32,
+        relative: &Relative,
+    ) -> Vec<ElementCoors> {
         let (x, y) = (position.0, position.1);
         self.in_area(
             (
@@ -111,7 +118,7 @@ impl Grid {
         )
     }
 
-    pub fn viewport(&self, position: (i32, i32), size: (u32, u32), zoom: f64) -> Vec<String> {
+    pub fn viewport(&self, position: (i32, i32), size: (u32, u32), zoom: f64) -> Vec<ElementCoors> {
         let (x, y) = (
             (position.0 as f64 * zoom).ceil() as i32,
             (position.1 as f64 * zoom).ceil() as i32,
@@ -129,7 +136,7 @@ impl Grid {
         area_px: (u32, u32, u32, u32),
         zoom: f64,
         prolongation: u32,
-    ) -> Vec<String> {
+    ) -> Vec<ElementCoors> {
         let cell = CELL as f64 * zoom;
         let (mut ax, mut ay, mut ax1, mut ay1) = (
             as_cells(area_px.0, cell),
@@ -141,19 +148,27 @@ impl Grid {
         ay = ay.saturating_sub(1);
         ax1 = ax1.saturating_sub(1);
         ay1 = ay1.saturating_sub(1);
-        console_log!("cells area: ({ax},{ay}),({ax1},{ay1})");
+        // console_log!("cells area: ({ax},{ay}),({ax1},{ay1})");
         let targets = self
             .map
             .iter()
             .filter_map(|(id, block)| {
                 if elements::is_area_cross(&(ax, ay, ax1, ay1), block) {
-                    console_log!("found block ({id}): ({block:?})");
-                    Some(id.clone())
+                    // console_log!("found block ({id}): ({block:?})");
+                    Some((
+                        id.clone(),
+                        (
+                            (block.0 as f64 * cell) as u32,
+                            (block.1 as f64 * cell) as u32,
+                            ((block.2 + 1) as f64 * cell) as u32,
+                            ((block.3 + 1) as f64 * cell) as u32,
+                        ),
+                    ))
                 } else {
                     None
                 }
             })
-            .collect::<Vec<String>>();
+            .collect::<Vec<ElementCoors>>();
         // console_log!(
         //     "Targets: {}; skipped: {}",
         //     targets.len(),

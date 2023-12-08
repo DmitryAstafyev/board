@@ -1,3 +1,5 @@
+import { Hover } from "./hover";
+
 import * as Core from "core";
 import * as Types from "./types";
 
@@ -36,6 +38,7 @@ export class Board {
     protected readonly canvas: HTMLCanvasElement;
     protected readonly parent: HTMLElement;
     protected readonly id: string;
+    protected readonly hover: Hover = new Hover();
     protected readonly size: {
         height: number;
         width: number;
@@ -105,9 +108,13 @@ export class Board {
         this.board.bind(this.id);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
+        this.onHover = this.onHover.bind(this);
+        this.onHoverOver = this.onHoverOver.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onWheel = this.onWheel.bind(this);
         this.onClick = this.onClick.bind(this);
+        this.parent.addEventListener("mousemove", this.onHover);
+        this.parent.addEventListener("mouseleave", this.onHoverOver);
         this.parent.addEventListener("mousedown", this.onMouseDown);
         this.parent.addEventListener("wheel", this.onWheel);
         this.parent.addEventListener("click", this.onClick);
@@ -126,6 +133,7 @@ export class Board {
         this.movement.y = event.clientY;
         this.movement.dropClick = false;
         this.movement.clickTimer = setTimeout(() => {
+            this.hover.hide();
             this.movement.processing = true;
             this.movement.dropClick = true;
             window.addEventListener("mousemove", this.onMouseMove);
@@ -134,7 +142,7 @@ export class Board {
     }
 
     protected onMouseMove(event: MouseEvent): void {
-        if (!this.movement.processing) {
+        if (this.movement.processing) {
             return;
         }
         this.position.x -=
@@ -152,6 +160,45 @@ export class Board {
         window.removeEventListener("mouseup", this.onMouseUp);
         clearTimeout(this.movement.clickTimer);
     }
+
+    protected onHover(event: MouseEvent): void {
+        if (this.movement.processing) {
+            return;
+        }
+        if (
+            event.clientX - this.position.x < 0 ||
+            event.clientY - this.position.y < 0
+        ) {
+            return;
+        }
+        const targets = this.board
+            .who(
+                this.position.x,
+                this.position.y,
+                event.clientX - this.position.x,
+                event.clientY - this.position.y,
+                2,
+                this.position.zoom
+            )
+            .filter(
+                (element: Types.ElementCoors) =>
+                    element[0] !== this.data.composition?.toString()
+            );
+
+        if (targets.length === 1) {
+            this.hover.show(
+                targets[0][1][0],
+                targets[0][1][1],
+                targets[0][1][2] - targets[0][1][0],
+                targets[0][1][3] - targets[0][1][1]
+            );
+            console.log(`hovering: ${targets[0]}`);
+        } else {
+            this.hover.hide();
+        }
+    }
+
+    protected onHoverOver(event: MouseEvent): void {}
 
     protected onWheel(event: WheelEvent): void {
         this.position.zoom += event.deltaY > 0 ? 0.05 : -0.05;
@@ -182,10 +229,15 @@ export class Board {
                     2,
                     this.position.zoom
                 )
-                .filter((id) => id !== this.data.composition?.toString());
-            const back = targets.find((target) => target.startsWith("back::"));
+                .filter(
+                    (element: Types.ElementCoors) =>
+                        element[0] !== this.data.composition?.toString()
+                );
+            const back = targets.find((element: Types.ElementCoors) =>
+                element[0].startsWith("back::")
+            );
             if (back !== undefined) {
-                const target = parseInt(back.replace("back::", ""), 10);
+                const target = parseInt(back[0].replace("back::", ""), 10);
                 this.data.history.pop();
                 this.goToComposition(target);
             } else if (targets.length > 1) {
@@ -218,8 +270,11 @@ export class Board {
     public destroy(): void {
         this.parent.removeEventListener("mousedown", this.onMouseDown);
         this.parent.removeEventListener("wheel", this.onWheel);
+        this.parent.removeEventListener("mousemove", this.onHover);
+        this.parent.removeEventListener("mouseleave", this.onHoverOver);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
+        this.hover.destroy();
     }
 
     public bind(composition: Types.Composition, expanded: number[]) {
