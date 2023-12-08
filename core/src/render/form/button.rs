@@ -9,15 +9,17 @@ pub enum Align {
 pub struct Button {
     pub x: i32,
     pub y: i32,
+    pub w: i32,
+    pub h: i32,
     pub label: String,
     pub padding: i32,
-    pub id: usize,
+    pub id: String,
     pub align: Align,
 }
 
 impl Button {
     pub fn get_box_size(&self) -> (i32, i32) {
-        (0, 0)
+        (self.w, self.h)
     }
     pub fn set_coors(&mut self, x: Option<i32>, y: Option<i32>) {
         if let Some(x) = x {
@@ -28,10 +30,13 @@ impl Button {
         }
     }
     pub fn get_coors(&self) -> (i32, i32) {
-        (self.x, self.y)
+        match self.align {
+            Align::Left => (self.x, self.y),
+            Align::Right => (self.x - (self.w + 8), self.y),
+        }
     }
 
-    pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         let w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width()
         } else {
@@ -46,5 +51,7 @@ impl Button {
         }
         context.fill_rect(x, y, w + 8.0, 18.0);
         let _ = context.stroke_text(&self.label, x + 3.0, y + 12.0);
+        self.w = w as i32;
+        self.h = 18;
     }
 }

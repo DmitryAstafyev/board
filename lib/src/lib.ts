@@ -29,7 +29,7 @@ import("core")
         console.error(`Fail to core load wasm module: ${err.message}`);
     });
 
-const CLICK_DURATION = 150;
+const CLICK_DURATION = 250;
 
 export class Board {
     protected readonly board: Core.Board;
@@ -57,11 +57,13 @@ export class Board {
         y: number;
         processing: boolean;
         clickTimer: any;
+        dropClick: boolean;
     } = {
         x: 0,
         y: 0,
         processing: false,
         clickTimer: -1,
+        dropClick: false,
     };
     protected data: {
         composition: number | undefined;
@@ -109,8 +111,6 @@ export class Board {
         this.parent.addEventListener("mousedown", this.onMouseDown);
         this.parent.addEventListener("wheel", this.onWheel);
         this.parent.addEventListener("click", this.onClick);
-        window.addEventListener("mousemove", this.onMouseMove);
-        window.addEventListener("mouseup", this.onMouseUp);
     }
 
     protected setSize(): void {
@@ -124,8 +124,12 @@ export class Board {
     protected onMouseDown(event: MouseEvent): void {
         this.movement.x = event.clientX;
         this.movement.y = event.clientY;
+        this.movement.dropClick = false;
         this.movement.clickTimer = setTimeout(() => {
             this.movement.processing = true;
+            this.movement.dropClick = true;
+            window.addEventListener("mousemove", this.onMouseMove);
+            window.addEventListener("mouseup", this.onMouseUp);
         }, CLICK_DURATION);
     }
 
@@ -144,6 +148,8 @@ export class Board {
 
     protected onMouseUp(event: MouseEvent): void {
         this.movement.processing = false;
+        window.removeEventListener("mousemove", this.onMouseMove);
+        window.removeEventListener("mouseup", this.onMouseUp);
         clearTimeout(this.movement.clickTimer);
     }
 
@@ -157,29 +163,40 @@ export class Board {
 
     protected onClick(event: MouseEvent): void {
         clearTimeout(this.movement.clickTimer);
-        let x = event.clientX - this.position.x;
-        let y = event.clientY - this.position.y;
+        if (this.movement.processing || this.movement.dropClick) {
+            return;
+        }
+        if (
+            event.clientX - this.position.x < 0 ||
+            event.clientY - this.position.y < 0
+        ) {
+            return;
+        }
         if (event.button == 0) {
             const targets = this.board
-                .who(x < 0 ? 0 : x, y < 0 ? 0 : y, 2, this.position.zoom)
-                .filter((id) => id !== this.data.composition);
-            if (targets.length > 1) {
+                .who(
+                    this.position.x,
+                    this.position.y,
+                    event.clientX - this.position.x,
+                    event.clientY - this.position.y,
+                    2,
+                    this.position.zoom
+                )
+                .filter((id) => id !== this.data.composition?.toString());
+            const back = targets.find((target) => target.startsWith("back::"));
+            if (back !== undefined) {
+                const target = parseInt(back.replace("back::", ""), 10);
+                this.data.history.pop();
+                this.goToComposition(target);
+            } else if (targets.length > 1) {
                 console.log(
                     `Cannot detect target too many ids: ${targets.join(", ")}`
                 );
                 return;
-            } else if (targets.length === 0) {
-                const prev = this.data.history.splice(
-                    this.data.history.length - 1,
-                    1
-                );
-                if (prev.length === 1) {
-                    this.goToComposition(prev[0]);
-                }
-            } else {
+            } else if (targets.length === 1) {
                 this.data.composition !== undefined &&
                     this.data.history.push(this.data.composition);
-                this.goToComposition(targets[0]);
+                this.goToComposition(parseInt(targets[0], 10));
             }
         }
     }

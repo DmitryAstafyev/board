@@ -4,6 +4,7 @@ use crate::{
     entity::{Component, Composition, Connection, Ports},
     error::E,
     render::{
+        elements,
         entity::port,
         form::{button, Button, Path, Point, Rectangle},
         grid::Layout,
@@ -58,7 +59,7 @@ impl Render<Composition> {
             view: View {
                 container: Container {
                     form: Form::Rectangle(Rectangle {
-                        id,
+                        id: id.to_string(),
                         x: 0,
                         y: 0,
                         w: 100,
@@ -73,9 +74,11 @@ impl Render<Composition> {
                 elements: if let Some(id) = parent {
                     vec![Container {
                         form: Form::Button(Button {
-                            id,
+                            id: format!("back::{id}"),
                             x: 0,
                             y: 0,
+                            w: 0,
+                            h: 0,
                             label: id.to_string(),
                             align: button::Align::Right,
                             padding: 3,
@@ -141,7 +144,7 @@ impl Render<Composition> {
                     let relative_outs = outs.render()?.own_relative();
                     let offset = port::PORT_SIDE / 2;
                     let path = Path::new(
-                        conn.origin().sig.id,
+                        conn.origin().sig.id.to_string(),
                         vec![
                             Point {
                                 x: relative_inns.x(port_in.0) + offset,
@@ -234,17 +237,13 @@ impl Render<Composition> {
         if let Some(container) = self.view.elements.first_mut() {
             container.set_coors(Some(grid_size.0 as i32), None);
         }
-        // // Add reference to parent (is exists)
-        // if let Some(id) = self.entity.parent {
-        //     composition_grid.inject((grid_size.0 - 30, 0, grid_size.0, 30), id);
-        // }
         // Add into global
         grid.insert(&composition_grid);
         Ok(())
     }
 
     pub fn draw(
-        &self,
+        &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
         targets: &Vec<usize>,
@@ -254,41 +253,37 @@ impl Render<Composition> {
         }
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
-        self.entity.ports.render()?.draw(context, &self_relative)?;
+        self.entity
+            .ports
+            .render_mut()?
+            .draw(context, &self_relative)?;
         for component in self
             .entity
             .components
-            .iter()
+            .iter_mut()
             .filter(|comp| targets.contains(&comp.origin().sig.id))
         {
-            component.render()?.draw(context, relative)?;
+            component.render_mut()?.draw(context, relative)?;
         }
         for composition in self
             .entity
             .compositions
-            .iter()
+            .iter_mut()
             .filter(|comp| targets.contains(&comp.origin().sig.id))
         {
-            composition.render()?.draw(context, relative, targets)?;
+            composition.render_mut()?.draw(context, relative, targets)?;
         }
-        for connection in self.entity.connections.iter().filter(|conn| {
+        for connection in self.entity.connections.iter_mut().filter(|conn| {
             targets.contains(&conn.origin().joint_in.component)
                 || targets.contains(&conn.origin().joint_out.component)
         }) {
-            connection.render()?.draw(context, relative)?;
+            connection.render_mut()?.draw(context, relative)?;
         }
         let _ = context.stroke_text(
             &self.origin().sig.id.to_string(),
             relative.x(self.view.container.get_coors().0) as f64,
             relative.y(self.view.container.get_coors().1 - 4) as f64,
         );
-        if let Some(id) = self.entity.parent {
-            let _ = context.stroke_text(
-                &id.to_string(),
-                relative.x(self.view.container.get_box_size().0 - 30) as f64,
-                relative.y(0) as f64,
-            );
-        }
         // grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
     }
@@ -308,10 +303,41 @@ impl Render<Composition> {
             .find(|comp| comp.origin().sig.id == id)
         {
             component.render_mut()?.set_over_style(style);
-            component.render()?.draw(context, relative)?;
+            component.render_mut()?.draw(context, relative)?;
         }
         grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
+    }
+
+    pub fn find(&self, position: &(i32, i32), relative: &Relative) -> Result<Vec<String>, E> {
+        if self.hidden {
+            return Ok(vec![]);
+        }
+        let mut found: Vec<String> = vec![];
+        let rel_position = (relative.x(position.0), relative.y(position.1));
+        for el in self.view.elements.iter() {
+            let (x, y) = el.form.get_coors();
+            let (w, h) = el.form.get_box_size();
+            let area = (
+                relative.x(x) as u32,
+                relative.y(y) as u32,
+                (relative.x(x) + w) as u32,
+                (relative.y(y) + h) as u32,
+            );
+            // console_log!(
+            //     "POS: {position:?}; REL_POS: {rel_position:?};COORS ({}): {x}, {y}; AREA: {area:?} ({}, {})",
+            //     el.form.id(),
+            //     relative.x(x),
+            //     relative.y(y)
+            // );
+            if elements::is_point_in(&(rel_position.0 as u32, rel_position.1 as u32), &area) {
+                found.push(el.id());
+            }
+        }
+        for nested in self.entity.compositions.iter() {
+            found = [found, nested.render()?.find(&rel_position, relative)?].concat();
+        }
+        Ok(found)
     }
 }
 

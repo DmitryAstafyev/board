@@ -7,7 +7,7 @@ pub struct GridRectangle {
     pub w: i32,
     pub h: i32,
     pub cells: (u32, u32),
-    pub id: usize,
+    pub id: String,
 }
 
 impl GridRectangle {
@@ -29,7 +29,7 @@ impl GridRectangle {
         self.h = (cells.1 * grid::CELL) as i32;
         self.cells = cells;
     }
-    pub fn new(id: usize, x: i32, y: i32, w: i32, h: i32) -> Self {
+    pub fn new(id: String, x: i32, y: i32, w: i32, h: i32) -> Self {
         let mut instance = Self {
             x,
             y,

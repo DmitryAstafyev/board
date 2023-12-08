@@ -31,7 +31,7 @@ impl Render<Ports> {
                         y: 0,
                         w: 0,
                         h: 0,
-                        id: 0,
+                        id: String::new(),
                     }),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
@@ -125,7 +125,7 @@ impl Render<Ports> {
     }
 
     pub fn draw(
-        &self,
+        &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
@@ -139,10 +139,10 @@ impl Render<Ports> {
         for port in self
             .entity
             .ports
-            .iter()
+            .iter_mut()
             .filter(|p| p.origin().visibility || !hide)
         {
-            port.render()?.draw(context, &self_relative)?;
+            port.render_mut()?.draw(context, &self_relative)?;
         }
         Ok(())
     }
@@ -160,7 +160,7 @@ impl Render<Port> {
                         y: 0,
                         w: PORT_SIDE,
                         h: PORT_SIDE,
-                        id,
+                        id: id.to_string(),
                     }),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
@@ -179,7 +179,7 @@ impl Render<Port> {
     }
 
     pub fn draw(
-        &self,
+        &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {

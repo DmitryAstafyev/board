@@ -13,6 +13,7 @@ use error::E;
 use render::{Grid, Relative, Render, Style};
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_test::console_log;
 use web_sys::CanvasRenderingContext2d;
 
 #[wasm_bindgen]
@@ -52,7 +53,7 @@ impl Board {
             context: None,
             width: 0,
             height: 0,
-            grid: Grid::new(1),
+            grid: Grid::new(0),
         }
     }
 
@@ -61,7 +62,7 @@ impl Board {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
         self.render = Render::<Composition>::new(composition);
-        self.grid = Grid::new(1);
+        self.grid = Grid::new(0);
         Ok(self.render.calc(&mut self.grid, &expanded)?)
     }
 
@@ -107,13 +108,19 @@ impl Board {
         if let Some(mut context) = self.context.take() {
             context.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
             let targets = self.grid.viewport((x, y), (self.width, self.height), zoom);
-            if let Err(e) =
-                self.render
-                    .draw(&mut context, &Relative::new(x, y, Some(zoom)), &targets)
-            {
+            let relative = Relative::new(x, y, Some(zoom));
+            if let Err(e) = self.render.draw(
+                &mut context,
+                &relative,
+                &targets
+                    .iter()
+                    .map(|id| id.parse::<usize>().unwrap())
+                    .collect(),
+            ) {
                 self.context = Some(context);
                 Err(e)?
             } else {
+                let _ = self.grid.draw(&mut context, &relative);
                 self.context = Some(context);
                 Ok(())
             }
@@ -124,12 +131,18 @@ impl Board {
     #[wasm_bindgen]
     pub fn who(
         &self,
+        x: i32,
+        y: i32,
         target_x: i32,
         target_y: i32,
         around: i32,
         zoom: f64,
-    ) -> Result<Vec<usize>, String> {
-        Ok(self.grid.point((target_x, target_y), around, zoom))
+    ) -> Result<Vec<String>, String> {
+        let relative = Relative::new(x, y, Some(zoom));
+        let ids = self.grid.point((target_x, target_y), around, &relative);
+        let inner = self.render.find(&(target_x, target_y), &relative)?;
+        console_log!("CLICK ON: {ids:?}, {inner:?}");
+        Ok([ids, inner].concat())
     }
 
     #[wasm_bindgen]

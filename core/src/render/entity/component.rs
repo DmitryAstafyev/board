@@ -23,7 +23,13 @@ impl Render<Component> {
             entity,
             view: View {
                 container: Container {
-                    form: Form::GridRectangle(GridRectangle::new(id, 0, 0, MIN_WIDTH, MIN_HEIGHT)),
+                    form: Form::GridRectangle(GridRectangle::new(
+                        id.to_string(),
+                        0,
+                        0,
+                        MIN_WIDTH,
+                        MIN_HEIGHT,
+                    )),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: if composition {
@@ -58,7 +64,7 @@ impl Render<Component> {
     }
 
     pub fn draw(
-        &self,
+        &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
@@ -69,7 +75,10 @@ impl Render<Component> {
         // }
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
-        self.entity.ports.render()?.draw(context, &self_relative)?;
+        self.entity
+            .ports
+            .render_mut()?
+            .draw(context, &self_relative)?;
         let _ = context.stroke_text(
             &self.origin().sig.id.to_string(),
             relative.x(self.view.container.get_coors().0) as f64,

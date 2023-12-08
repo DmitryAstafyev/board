@@ -6,7 +6,7 @@ pub struct Rectangle {
     pub y: i32,
     pub w: i32,
     pub h: i32,
-    pub id: usize,
+    pub id: String,
 }
 
 impl Rectangle {

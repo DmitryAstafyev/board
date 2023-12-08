@@ -11,7 +11,10 @@ impl Render<Connection> {
             entity,
             view: View {
                 container: Container {
-                    form: Form::Path(Path { points: vec![], id }),
+                    form: Form::Path(Path {
+                        points: vec![],
+                        id: id.to_string(),
+                    }),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: String::from("rgb(200,200,200)"),
@@ -24,7 +27,7 @@ impl Render<Connection> {
         }
     }
     pub fn draw(
-        &self,
+        &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {

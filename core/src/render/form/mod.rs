@@ -16,10 +16,10 @@ pub struct View {
 }
 
 impl View {
-    pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         self.container.render(context, relative);
         self.elements
-            .iter()
+            .iter_mut()
             .for_each(|container| container.render(context, relative));
     }
 }
@@ -50,10 +50,10 @@ impl Container {
     pub fn cells(&self) -> Result<(u32, u32), E> {
         self.form.cells()
     }
-    pub fn id(&self) -> usize {
+    pub fn id(&self) -> String {
         self.form.id()
     }
-    pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         self.style.apply(context);
         self.form.render(context, relative);
     }
@@ -111,15 +111,15 @@ impl Form {
             Self::Button(_) => Err(E::NotGridForm),
         }
     }
-    pub fn id(&self) -> usize {
+    pub fn id(&self) -> String {
         match self {
-            Self::Rectangle(figure) => figure.id,
-            Self::GridRectangle(figure) => figure.id,
-            Self::Path(figure) => figure.id,
-            Self::Button(figure) => figure.id,
+            Self::Rectangle(figure) => figure.id.clone(),
+            Self::GridRectangle(figure) => figure.id.clone(),
+            Self::Path(figure) => figure.id.clone(),
+            Self::Button(figure) => figure.id.clone(),
         }
     }
-    pub fn render(&self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         match self {
             Self::Rectangle(figure) => figure.render(context, relative),
             Self::GridRectangle(figure) => figure.render(context, relative),

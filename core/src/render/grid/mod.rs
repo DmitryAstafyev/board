@@ -37,7 +37,7 @@ pub struct Grid {
     // Total grid size
     pub size: (u32, u32),
     // Cells map <EntityID, Occupied area <(x, y, x1, y1)>>
-    pub map: HashMap<usize, (u32, u32, u32, u32)>,
+    pub map: HashMap<String, (u32, u32, u32, u32)>,
 }
 
 impl Grid {
@@ -68,58 +68,50 @@ impl Grid {
     }
 
     pub fn insert_self(&mut self, id: usize) {
-        self.map.insert(id, (0, 0, self.size.0, self.size.1));
+        self.map
+            .insert(id.to_string(), (0, 0, self.size.0, self.size.1));
     }
 
-    pub fn inject(&mut self, area_px: (u32, u32, u32, u32), id: usize) {
-        let area = (
-            as_cells(area_px.0, CELL as f64),
-            as_cells(area_px.1, CELL as f64),
-            as_cells(area_px.2, CELL as f64),
-            as_cells(area_px.3, CELL as f64),
-        );
-        console_log!("INJECTED: {area:?}");
-        self.map.insert(id, area);
-    }
+    // pub fn inject(&mut self, area_px: (u32, u32, u32, u32), id: String) {
+    //     let area = (
+    //         as_cells(area_px.0, CELL as f64),
+    //         as_cells(area_px.1, CELL as f64),
+    //         as_cells(area_px.2, CELL as f64),
+    //         as_cells(area_px.3, CELL as f64),
+    //     );
+    //     console_log!("INJECTED: {area:?}");
+    //     self.map.insert(id, area);
+    // }
 
     pub fn relative(&self, target: usize) -> Relative {
-        if let Some((x, y)) =
-            self.map.iter().find_map(
-                |(id, (x, y, _, _))| {
-                    if id == &target {
-                        Some((x, y))
-                    } else {
-                        None
-                    }
-                },
-            )
-        {
+        if let Some((x, y)) = self.map.iter().find_map(|(id, (x, y, _, _))| {
+            if id == &target.to_string() {
+                Some((x, y))
+            } else {
+                None
+            }
+        }) {
             Relative::new((x * CELL) as i32, (y * CELL) as i32, None)
         } else {
             Relative::new(0, 0, None)
         }
     }
 
-    pub fn point(&self, position: (i32, i32), around: i32, zoom: f64) -> Vec<usize> {
-        let (x, y) = (
-            (position.0 as f64 * zoom).ceil() as i32,
-            (position.1 as f64 * zoom).ceil() as i32,
-        );
-        let targets = self.in_area(
+    pub fn point(&self, position: (i32, i32), around: i32, relative: &Relative) -> Vec<String> {
+        let (x, y) = (position.0, position.1);
+        self.in_area(
             (
                 as_u32(x - around),
                 as_u32(y - around),
                 as_u32(x + around * 2),
                 as_u32(y + around * 2),
             ),
-            zoom,
+            relative.get_zoom(),
             0,
-        );
-        console_log!("TARGETS: {targets:?}");
-        targets
+        )
     }
 
-    pub fn viewport(&self, position: (i32, i32), size: (u32, u32), zoom: f64) -> Vec<usize> {
+    pub fn viewport(&self, position: (i32, i32), size: (u32, u32), zoom: f64) -> Vec<String> {
         let (x, y) = (
             (position.0 as f64 * zoom).ceil() as i32,
             (position.1 as f64 * zoom).ceil() as i32,
@@ -137,7 +129,7 @@ impl Grid {
         area_px: (u32, u32, u32, u32),
         zoom: f64,
         prolongation: u32,
-    ) -> Vec<usize> {
+    ) -> Vec<String> {
         let cell = CELL as f64 * zoom;
         let (mut ax, mut ay, mut ax1, mut ay1) = (
             as_cells(area_px.0, cell),
@@ -149,18 +141,19 @@ impl Grid {
         ay = ay.saturating_sub(1);
         ax1 = ax1.saturating_sub(1);
         ay1 = ay1.saturating_sub(1);
-        console_log!("({ax},{ay}),({ax1},{ay1})");
+        console_log!("cells area: ({ax},{ay}),({ax1},{ay1})");
         let targets = self
             .map
             .iter()
             .filter_map(|(id, block)| {
                 if elements::is_area_cross(&(ax, ay, ax1, ay1), block) {
-                    Some(*id)
+                    console_log!("found block ({id}): ({block:?})");
+                    Some(id.clone())
                 } else {
                     None
                 }
             })
-            .collect::<Vec<usize>>();
+            .collect::<Vec<String>>();
         // console_log!(
         //     "Targets: {}; skipped: {}",
         //     targets.len(),
@@ -176,13 +169,13 @@ impl Grid {
             return false;
         }
         // Extend box to consider necessary spaces
-        x = if x > SPACE_IN_HORIZONT - 1 {
-            x - (SPACE_IN_HORIZONT - 1)
+        x = if x > SPACE_IN_HORIZONT {
+            x - SPACE_IN_HORIZONT
         } else {
             0
         };
-        y = if y > SPACE_IN_VERTICAL - 1 {
-            y - (SPACE_IN_VERTICAL - 1)
+        y = if y > SPACE_IN_VERTICAL {
+            y - SPACE_IN_VERTICAL
         } else {
             0
         };
@@ -207,7 +200,15 @@ impl Grid {
             return false;
         }
         for (_, (ax, ay, ax1, ay1)) in self.map.iter() {
-            if elements::is_point_in(point, &(*ax, *ay, *ax1, *ay1)) {
+            if elements::is_point_in(
+                point,
+                &(
+                    as_u32(*ax as i32 - 1),
+                    as_u32(*ay as i32 - 1),
+                    *ax1 + 1,
+                    *ay1 + 1,
+                ),
+            ) {
                 return false;
             }
         }
@@ -221,14 +222,14 @@ impl Grid {
             .map(|(_, _, x1, _)| x1)
             .max()
             .unwrap_or(&0)
-            + self.offset;
+            + self.offset * 2;
         let max_y = self
             .map
             .values()
             .map(|(_, _, _, y1)| y1)
             .max()
             .unwrap_or(&0)
-            + self.offset;
+            + self.offset * 2;
         self.size = (
             [max_x, self.size.0].iter().min().copied().unwrap_or(0),
             [max_y, self.size.1].iter().min().copied().unwrap_or(0),
@@ -286,7 +287,8 @@ impl Grid {
         // Merge grid
         if let Some((p_x, p_y)) = point {
             grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
-                self.map.insert(*id, (x + p_x, y + p_y, x1 + p_x, y1 + p_y));
+                self.map
+                    .insert(id.clone(), (x + p_x, y + p_y, x1 + p_x, y1 + p_y));
             });
         }
         // Remove unused space
@@ -319,7 +321,7 @@ impl Grid {
     }
 }
 
-pub type FormSize = (usize, (u32, u32));
+pub type FormSize = (String, (u32, u32));
 
 fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
     let mut data = vec![];
@@ -332,12 +334,15 @@ fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
 fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>) -> Result<Grid, E> {
     let on_left = get_sizes(a)?;
     let on_right = get_sizes(b)?;
-    let mut map: HashMap<usize, (u32, u32, u32, u32)> = HashMap::new();
+    let mut map: HashMap<String, (u32, u32, u32, u32)> = HashMap::new();
     let mut cursor_by_y: u32 = 0;
     let mut size: (u32, u32) = (0, 0);
     if !on_left.is_empty() {
         on_left.iter().for_each(|(id, (w, h))| {
-            map.insert(*id, (0, cursor_by_y, *w, cursor_by_y + h));
+            map.insert(
+                id.to_string(),
+                (0, cursor_by_y, w - 1, cursor_by_y + (h - 1)),
+            );
             cursor_by_y += h + SPACE_IN_VERTICAL;
             if size.0 < *w {
                 size.0 = *w;
@@ -347,13 +352,18 @@ fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>) -> Result<Grid, E> {
             }
         });
         size.1 = cursor_by_y - SPACE_IN_VERTICAL;
-        size.0 += SPACE_IN_HORIZONT;
+        if !on_right.is_empty() {
+            size.0 += SPACE_IN_HORIZONT;
+        }
     };
     if !on_right.is_empty() {
         cursor_by_y = 0;
         let mut max_w = 0;
         on_right.iter().for_each(|(id, (w, h))| {
-            map.insert(*id, (size.0, cursor_by_y, size.0 + w, cursor_by_y + h));
+            map.insert(
+                id.to_string(),
+                (size.0, cursor_by_y, size.0 + (w - 1), cursor_by_y + (h - 1)),
+            );
             cursor_by_y += h + SPACE_IN_VERTICAL;
             if max_w < *w {
                 max_w = *w;
@@ -376,12 +386,12 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     let on_left = get_sizes(left)?;
     let on_center = get_sizes(center)?;
     let on_right = get_sizes(right)?;
-    let mut map: HashMap<usize, (u32, u32, u32, u32)> = HashMap::new();
+    let mut map: HashMap<String, (u32, u32, u32, u32)> = HashMap::new();
     let mut size: (u32, u32) = (0, 0);
     // Put left side
     let mut cursor_by_y: u32 = 0;
     on_left.iter().for_each(|(id, (w, h))| {
-        map.insert(*id, (0, cursor_by_y, *w, cursor_by_y + h));
+        map.insert(id.to_string(), (0, cursor_by_y, *w, cursor_by_y + h));
         cursor_by_y += h + SPACE_IN_VERTICAL;
     });
     if cursor_by_y > 0 {
@@ -396,7 +406,7 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     cursor_by_y = 0;
     on_center.iter().for_each(|(id, (w, h))| {
         map.insert(
-            *id,
+            id.to_string(),
             (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
         );
         cursor_by_y += h + SPACE_IN_VERTICAL;
@@ -413,7 +423,7 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     cursor_by_y = 0;
     on_right.iter().for_each(|(id, (w, h))| {
         map.insert(
-            *id,
+            id.to_string(),
             (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
         );
         cursor_by_y += h + SPACE_IN_VERTICAL;
@@ -438,11 +448,11 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
 }
 
 fn from_grids_into_row(grids: &[Grid]) -> Grid {
-    let mut map: HashMap<usize, (u32, u32, u32, u32)> = HashMap::new();
+    let mut map: HashMap<String, (u32, u32, u32, u32)> = HashMap::new();
     let mut size: (u32, u32) = (0, 0);
     grids.iter().for_each(|grid| {
         grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
-            map.insert(*id, (x + size.0, *y, x1 + size.0, *y1));
+            map.insert(id.clone(), (x + size.0, *y, x1 + size.0, *y1));
         });
         size.0 += grid.size.0
             + if grid.size.0 > 0 {
