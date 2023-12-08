@@ -142,7 +142,7 @@ export class Board {
     }
 
     protected onMouseMove(event: MouseEvent): void {
-        if (this.movement.processing) {
+        if (!this.movement.processing) {
             return;
         }
         this.position.x -=
@@ -187,8 +187,8 @@ export class Board {
 
         if (targets.length === 1) {
             this.hover.show(
-                targets[0][1][0],
-                targets[0][1][1],
+                targets[0][1][0] + this.position.x,
+                targets[0][1][1] + this.position.y,
                 targets[0][1][2] - targets[0][1][0],
                 targets[0][1][3] - targets[0][1][1]
             );
