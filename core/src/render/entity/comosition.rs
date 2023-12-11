@@ -309,13 +309,14 @@ impl Render<Composition> {
         Ok(())
     }
 
-    pub fn find(&self, position: &(i32, i32)) -> Result<Vec<ElementCoors>, E> {
+    pub fn find(&self, position: &(i32, i32), zoom: f64) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(vec![]);
         }
+        let relative = Relative::new(0, 0, Some(zoom));
         let mut found: Vec<ElementCoors> = vec![];
         for el in self.view.elements.iter() {
-            let (x, y) = el.form.get_coors();
+            let (x, y) = el.form.get_coors_with_zoom(&relative);
             let (w, h) = el.form.get_box_size();
             let area = (x as u32, y as u32, (x + w) as u32, (y + h) as u32);
             if elements::is_point_in(&(position.0 as u32, position.1 as u32), &area) {
@@ -323,7 +324,7 @@ impl Render<Composition> {
             }
         }
         for nested in self.entity.compositions.iter() {
-            found = [found, nested.render()?.find(position)?].concat();
+            found = [found, nested.render()?.find(position, zoom)?].concat();
         }
         Ok(found)
     }

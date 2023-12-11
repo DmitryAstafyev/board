@@ -103,6 +103,15 @@ impl Form {
             Self::Button(figure) => figure.get_coors(),
         }
     }
+    pub fn get_coors_with_zoom(&self, relative: &Relative) -> (i32, i32) {
+        match self {
+            Self::Rectangle(_) | Self::GridRectangle(_) | Self::Path(_) => {
+                /* Ignore */
+                (0, 0)
+            }
+            Self::Button(figure) => figure.get_coors_with_zoom(relative),
+        }
+    }
     pub fn cells(&self) -> Result<(u32, u32), E> {
         match self {
             Self::Rectangle(_) => Err(E::NotGridForm),

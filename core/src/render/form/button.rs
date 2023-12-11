@@ -40,7 +40,15 @@ impl Button {
             ),
         }
     }
-
+    pub fn get_coors_with_zoom(&self, relative: &Relative) -> (i32, i32) {
+        match self.align {
+            Align::Left => (relative.zoom(self.x), relative.zoom(self.y)),
+            Align::Right => (
+                relative.zoom(self.x) - (self.w + (PADDING_IN_HORIZONT / 2) as i32),
+                relative.zoom(self.y + 2),
+            ),
+        }
+    }
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         let w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width()

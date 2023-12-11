@@ -20,7 +20,7 @@ impl Relative {
         self.zoom(self.y_ + y)
     }
     pub fn zoom(&self, v: i32) -> i32 {
-        (v as f64 * self.zoom_) as i32
+        (v as f64 * self.zoom_).ceil() as i32
     }
     pub fn get_zoom(&self) -> f64 {
         self.zoom_

@@ -161,24 +161,25 @@ export class Board {
         clearTimeout(this.movement.clickTimer);
     }
 
-    protected onHover(event: MouseEvent): void {
-        if (this.movement.processing) {
-            return;
-        }
+    protected getTargetsOnMouse(event: MouseEvent): Types.ElementCoors[] {
         let x = event.clientX - this.position.x * this.position.zoom;
         let y = event.clientY - this.position.y * this.position.zoom;
         if (x < 0 || y < 0) {
-            console.log(
-                `cancel: (${event.clientX}:${this.position.x}) - (${event.clientY}:${this.position.y})`
-            );
-            return;
+            return [];
         }
-        const targets: Types.ElementCoors[] = this.board
+        return this.board
             .who(this.position.x, this.position.y, x, y, 2, this.position.zoom)
             .filter(
                 (element: Types.ElementCoors) =>
                     element[0] !== this.data.composition?.toString()
             );
+    }
+
+    protected onHover(event: MouseEvent): void {
+        if (this.movement.processing) {
+            return;
+        }
+        const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
         if (targets.length === 1) {
             this.hover.show(
                 targets[0][1][0] + this.position.x * this.position.zoom,
@@ -210,26 +211,8 @@ export class Board {
         if (this.movement.processing || this.movement.dropClick) {
             return;
         }
-        if (
-            event.clientX - this.position.x < 0 ||
-            event.clientY - this.position.y < 0
-        ) {
-            return;
-        }
         if (event.button == 0) {
-            const targets = this.board
-                .who(
-                    this.position.x,
-                    this.position.y,
-                    event.clientX - this.position.x,
-                    event.clientY - this.position.y,
-                    2,
-                    this.position.zoom
-                )
-                .filter(
-                    (element: Types.ElementCoors) =>
-                        element[0] !== this.data.composition?.toString()
-                );
+            const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
             const back = targets.find((element: Types.ElementCoors) =>
                 element[0].startsWith("back::")
             );
@@ -245,7 +228,7 @@ export class Board {
             } else if (targets.length === 1) {
                 this.data.composition !== undefined &&
                     this.data.history.push(this.data.composition);
-                this.goToComposition(parseInt(targets[0], 10));
+                this.goToComposition(parseInt(targets[0][0], 10));
             }
         }
     }
