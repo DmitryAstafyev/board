@@ -165,33 +165,27 @@ export class Board {
         if (this.movement.processing) {
             return;
         }
-        if (
-            event.clientX - this.position.x < 0 ||
-            event.clientY - this.position.y < 0
-        ) {
+        let x = event.clientX - this.position.x * this.position.zoom;
+        let y = event.clientY - this.position.y * this.position.zoom;
+        if (x < 0 || y < 0) {
+            console.log(
+                `cancel: (${event.clientX}:${this.position.x}) - (${event.clientY}:${this.position.y})`
+            );
             return;
         }
-        const targets = this.board
-            .who(
-                this.position.x,
-                this.position.y,
-                event.clientX - this.position.x,
-                event.clientY - this.position.y,
-                2,
-                this.position.zoom
-            )
+        const targets: Types.ElementCoors[] = this.board
+            .who(this.position.x, this.position.y, x, y, 2, this.position.zoom)
             .filter(
                 (element: Types.ElementCoors) =>
                     element[0] !== this.data.composition?.toString()
             );
         if (targets.length === 1) {
             this.hover.show(
-                targets[0][1][0] + this.position.x,
-                targets[0][1][1] + this.position.y,
+                targets[0][1][0] + this.position.x * this.position.zoom,
+                targets[0][1][1] + this.position.y * this.position.zoom,
                 targets[0][1][2] - targets[0][1][0],
-                targets[0][1][3] - targets[0][1][1],
+                targets[0][1][3] - targets[0][1][1]
             );
-            console.log(`hovering: ${targets[0]}`);
         } else {
             this.hover.hide();
         }
