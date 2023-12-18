@@ -1,7 +1,9 @@
 use wasm_bindgen_test::console_log;
 
 use crate::{
-    entity::{Component, Composition, Connection, Ports},
+    entity::{
+        dummy::SignatureProducer, Component, Composition, Connection, Joint, Port, PortType, Ports,
+    },
     error::E,
     render::{
         elements,
@@ -11,9 +13,28 @@ use crate::{
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
 };
+use std::collections::HashMap;
 
 impl Render<Composition> {
     pub fn new(mut entity: Composition) -> Self {
+        let mut sig_producer = SignatureProducer::new(100000000);
+        let (added_connections, mut added_ports) =
+            group_ports(&entity.connections, &mut sig_producer);
+        entity.connections.extend(added_connections);
+        while let Some((component_id, added_port)) = added_ports.pop() {
+            if let Some(component) = entity
+                .components
+                .iter_mut()
+                .find(|c| c.origin().sig.id == component_id)
+            {
+                component
+                    .origin_mut()
+                    .ports
+                    .origin_mut()
+                    .hide(&added_port.origin().contains);
+                component.origin_mut().ports.origin_mut().add(added_port);
+            }
+        }
         entity.components = entity
             .components
             .drain(..)
@@ -132,11 +153,11 @@ impl Render<Composition> {
                     ins.origin()
                         .ports
                         .origin()
-                        .find(conn.origin().joint_in.port),
+                        .find_visible(conn.origin().joint_in.port),
                     outs.origin()
                         .ports
                         .origin()
-                        .find(conn.origin().joint_out.port),
+                        .find_visible(conn.origin().joint_out.port),
                 ) {
                     let port_in = port_in.render()?.view.container.get_coors();
                     let port_out = port_out.render()?.view.container.get_coors();
@@ -341,4 +362,70 @@ fn get_forms_by_ids<'a>(
         }
     }
     Ok(found)
+}
+
+type GrouppedPorts = (
+    Vec<Representation<Connection>>,
+    Vec<(usize, Representation<Port>)>,
+);
+pub fn group_ports(
+    connections: &[Representation<Connection>],
+    sig_producer: &mut SignatureProducer,
+) -> GrouppedPorts {
+    // if self.origin.is_none() {
+    //     self.origin = Some(self.cloned_ports());
+    // }
+    let mut added_connections: Vec<Representation<Connection>> = vec![];
+    let mut added_ports: Vec<(usize, Representation<Port>)> = vec![];
+    let mut groupped: HashMap<(usize, usize), Vec<(usize, usize)>> = HashMap::new();
+    connections.iter().for_each(|conn| {
+        let uuid = (
+            conn.origin().joint_in.component,
+            conn.origin().joint_out.component,
+        );
+        groupped
+            .entry(uuid)
+            .and_modify(|ports| {
+                ports.push((conn.origin().joint_in.port, conn.origin().joint_out.port))
+            })
+            .or_insert(vec![(
+                conn.origin().joint_in.port,
+                conn.origin().joint_out.port,
+            )]);
+    });
+    groupped
+        .iter()
+        .for_each(|((comp_joint_in, comp_joint_out), ports)| {
+            let ports_in = ports.iter().map(|(l, _)| *l).collect::<Vec<usize>>();
+            let ports_out = ports.iter().map(|(_, r)| *r).collect::<Vec<usize>>();
+            if ports_in.is_empty() || ports_out.is_empty() {
+                console_log!(">>>>>>>>>>>>>>>>>> empty groupped ports :/");
+            }
+            let joined_port_in = Port {
+                sig: sig_producer.next_for("joined port IN"),
+                port_type: PortType::In,
+                contains: ports_in,
+                visibility: true,
+            };
+            let joined_port_out = Port {
+                sig: sig_producer.next_for("joined port OUT"),
+                port_type: PortType::Out,
+                contains: ports_out,
+                visibility: true,
+            };
+            added_connections.push(Representation::Origin(Connection {
+                joint_in: Joint {
+                    component: *comp_joint_in,
+                    port: joined_port_in.sig.id,
+                },
+                joint_out: Joint {
+                    component: *comp_joint_out,
+                    port: joined_port_out.sig.id,
+                },
+                sig: sig_producer.next_for("joined connection"),
+            }));
+            added_ports.push((*comp_joint_in, Representation::Origin(joined_port_in)));
+            added_ports.push((*comp_joint_out, Representation::Origin(joined_port_out)));
+        });
+    (added_connections, added_ports)
 }

@@ -15,6 +15,7 @@ export interface Port {
     sig: Signature;
     port_type: PortType;
     visibility: boolean;
+    contains: number[];
 }
 
 export interface Representation<T> {

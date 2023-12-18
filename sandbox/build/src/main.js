@@ -89,6 +89,7 @@ function load(parent, elements, holder) {
                                     },
                                     port_type: board_1.PortType.In,
                                     visibility: false,
+                                    contains: [],
                                 },
                             };
                         }),
@@ -122,6 +123,7 @@ function load(parent, elements, holder) {
                                         },
                                         port_type: board_1.PortType.In,
                                         visibility: false,
+                                        contains: [],
                                     },
                                 };
                             }),
@@ -225,6 +227,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
                 visibility: true,
                 port_type: Math.random() > 0.5 ? board_1.PortType.In : board_1.PortType.Out,
                 sig: getSignature(),
+                contains: [],
             });
         }
         components.push({
@@ -277,6 +280,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
                 port_type: Math.random() > 0.5 ? board_1.PortType.In : board_1.PortType.Out,
                 sig: getSignature(),
                 visibility: true,
+                contains: [],
             },
         });
     }

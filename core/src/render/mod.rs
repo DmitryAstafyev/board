@@ -37,7 +37,7 @@ impl<T> Render<T> {
         Relative::new(x, y, None)
     }
 
-    pub fn set_over_style(&mut self, style: Option<Style>) {
+    pub fn set_over_style(&mut self, _style: Option<Style>) {
         // self.over_style = style;
     }
 

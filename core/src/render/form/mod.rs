@@ -47,9 +47,6 @@ impl Container {
     pub fn get_coors(&self) -> (i32, i32) {
         self.form.get_coors()
     }
-    pub fn cells(&self) -> Result<(u32, u32), E> {
-        self.form.cells()
-    }
     pub fn id(&self) -> String {
         self.form.id()
     }

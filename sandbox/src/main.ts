@@ -147,6 +147,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                     },
                                     port_type: PortType.In,
                                     visibility: false,
+                                    contains: [],
                                 },
                             };
                         }),
@@ -179,6 +180,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                         },
                                         port_type: PortType.In,
                                         visibility: false,
+                                        contains: [],
                                     },
                                 };
                             }),
@@ -297,6 +299,7 @@ function getDummyComposition(
                 visibility: true,
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
+                contains: [],
             });
         }
         components.push({
@@ -349,6 +352,7 @@ function getDummyComposition(
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
                 visibility: true,
+                contains: [],
             },
         });
     }

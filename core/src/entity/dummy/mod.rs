@@ -10,8 +10,8 @@ pub struct SignatureProducer {
 }
 
 impl SignatureProducer {
-    pub fn new() -> Self {
-        Self { current: 0 }
+    pub fn new(current: usize) -> Self {
+        Self { current }
     }
     // This method is used for testing only with Dummy<T>
     pub fn next(&mut self) -> Signature {
@@ -19,6 +19,14 @@ impl SignatureProducer {
         Signature {
             id: self.current,
             class_name: format!("DummyClass_{}", self.current),
+        }
+    }
+
+    pub fn next_for(&mut self, class_name: &str) -> Signature {
+        self.current += 1;
+        Signature {
+            id: self.current,
+            class_name: class_name.to_string(),
         }
     }
 }

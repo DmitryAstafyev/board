@@ -1,3 +1,5 @@
+use std::usize;
+
 use crate::{entity::Signature, render::Representation};
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +13,7 @@ pub enum PortType {
 pub struct Port {
     pub sig: Signature,
     pub port_type: PortType,
+    pub contains: Vec<usize>,
     pub visibility: bool,
 }
 
@@ -23,6 +26,7 @@ impl Port {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Ports {
     pub ports: Vec<Representation<Port>>,
+    #[serde(skip_serializing, skip_deserializing)]
     pub hide_invisible: bool,
 }
 
@@ -66,18 +70,39 @@ impl Ports {
             .collect::<Vec<&mut Representation<Port>>>()
     }
 
-    pub fn find(&self, port_id: usize) -> Option<&Representation<Port>> {
+    pub fn _find(&self, port_id: usize) -> Option<&Representation<Port>> {
         self.ports.iter().find(|p| p.origin().sig.id == port_id)
+    }
+
+    pub fn find_visible(&self, port_id: usize) -> Option<&Representation<Port>> {
+        self.ports
+            .iter()
+            .find(|p| p.origin().sig.id == port_id && p.origin().visibility)
+    }
+
+    pub fn cloned_ports(&self) -> Vec<Representation<Port>> {
+        self.ports
+            .iter()
+            .map(|r| Representation::Origin(r.origin().clone()))
+            .collect::<Vec<Representation<Port>>>()
     }
 
     pub fn clone(&self) -> Ports {
         Ports {
-            ports: self
-                .ports
-                .iter()
-                .map(|r| Representation::Origin(r.origin().clone()))
-                .collect::<Vec<Representation<Port>>>(),
+            ports: self.cloned_ports(),
             hide_invisible: self.hide_invisible,
         }
+    }
+
+    pub fn hide(&mut self, ids: &[usize]) {
+        self.ports.iter_mut().for_each(|port| {
+            if ids.contains(&port.origin().sig.id) {
+                port.origin_mut().visibility = false;
+            }
+        });
+    }
+
+    pub fn add(&mut self, port: Representation<Port>) {
+        self.ports.push(port);
     }
 }

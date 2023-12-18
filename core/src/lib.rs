@@ -10,10 +10,9 @@ use entity::{
     Composition, Signature,
 };
 use error::E;
-use render::{grid::ElementCoors, Grid, Relative, Render, Style};
+use render::{Grid, Relative, Render, Style};
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_test::console_log;
 use web_sys::CanvasRenderingContext2d;
 
 #[wasm_bindgen]
@@ -29,7 +28,7 @@ pub struct Board {
 impl Board {
     #[wasm_bindgen]
     pub fn dummy(components: usize, ports: usize) -> Self {
-        let mut producer = SignatureProducer::new();
+        let mut producer = SignatureProducer::new(0);
         let composition = Composition::dummy(
             &mut producer,
             (

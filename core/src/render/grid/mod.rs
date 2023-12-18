@@ -17,7 +17,7 @@ pub enum Layout<'a> {
     // Put form near
     Pair(Vec<&'a Form>, Vec<&'a Form>),
     // Forms in center and forms on left and right sides
-    WithFormsBySides((Vec<&'a Form>, Vec<&'a Form>, Vec<&'a Form>)),
+    _WithFormsBySides((Vec<&'a Form>, Vec<&'a Form>, Vec<&'a Form>)),
     // From other grids into row
     _GridsRow(&'a [Grid]),
     // Order grids into one box: Grid[], offset_by_each_side
@@ -53,7 +53,7 @@ impl Grid {
 
     pub fn from(layout: Layout<'_>) -> Result<Self, E> {
         Ok(match layout {
-            Layout::WithFormsBySides((left, center, right)) => {
+            Layout::_WithFormsBySides((left, center, right)) => {
                 with_forms_by_sides(left, center, right)?
             }
             Layout::Pair(a, b) => forms_as_pair(a, b)?,

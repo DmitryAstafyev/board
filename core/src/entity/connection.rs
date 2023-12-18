@@ -21,7 +21,7 @@ impl Joint {
 //    = = = = =
 //  = = = = = = =
 // In center will be bigest and go lowest to left and right
-fn order_connections(src: &mut [(usize, usize)]) -> Vec<usize> {
+fn _order_connections(src: &mut [(usize, usize)]) -> Vec<usize> {
     src.sort_by(|(_, count_a), (_, count_b)| count_a.cmp(count_b));
     let mut ordered: Vec<usize> = vec![];
     src.iter().enumerate().for_each(|(i, (id, _))| {
@@ -123,7 +123,7 @@ impl Connection {
     }
 
     // Returns ids of all linked components to host as (linked IN, linked OUT)
-    pub fn linked(
+    pub fn _linked(
         connections: &[Representation<Connection>],
         host_id: usize,
         ignore: &[usize],
