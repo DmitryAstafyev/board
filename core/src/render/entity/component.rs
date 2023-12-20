@@ -1,3 +1,5 @@
+use wasm_bindgen_test::console_log;
+
 use crate::{
     entity::{Component, Ports},
     error::E,
@@ -68,11 +70,6 @@ impl Render<Component> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
-        // if let Some(over) = self.over_style.as_ref() {
-        //     over.apply(context);
-        // } else {
-        //     self.style.apply(context);
-        // }
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
         self.entity

@@ -7,7 +7,7 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_test::console_log;
 
 pub const CELL: u32 = 25;
-pub const SPACE_IN_VERTICAL: u32 = 1;
+pub const SPACE_IN_VERTICAL: u32 = 3;
 pub const SPACE_IN_HORIZONT: u32 = 3;
 
 pub type ElementCoors = (String, (u32, u32, u32, u32));
@@ -32,6 +32,234 @@ fn as_cells(px: u32, cell: f64) -> u32 {
     (px as f64 / cell).ceil() as u32
 }
 
+fn as_cells_round(px: u32, cell: f64) -> u32 {
+    (px as f64 / cell).round() as u32
+}
+
+#[derive(Debug)]
+pub struct Cell {
+    pub x: u32,
+    pub y: u32,
+    pub left: bool,
+}
+
+impl Cell {
+    pub fn new(x: u32, y: u32, grid: &Grid) -> Result<Self, E> {
+        let left = (
+            as_cells_round(x - CELL / 2, CELL as f64),
+            as_cells_round(y, CELL as f64),
+        );
+        if grid.is_map_point_free(&left) {
+            return Ok(Self {
+                x: left.0,
+                y: left.1,
+                left: true,
+            });
+        }
+        let right = (
+            as_cells_round(x + CELL / 2, CELL as f64),
+            as_cells_round(y, CELL as f64),
+        );
+        if grid.is_map_point_free(&right) {
+            return Ok(Self {
+                x: right.0,
+                y: right.1,
+                left: false,
+            });
+        }
+        Err(E::Other("Fail to detect start point".to_string()))
+    }
+    pub fn normalize(
+        a: &(u32, u32),
+        b: &(u32, u32),
+        grid: &Grid,
+        points: &mut Vec<(u32, u32)>,
+    ) -> Result<(), E> {
+        fn get_busy_in_horizont(
+            a: &(u32, u32),
+            b: &(u32, u32),
+            grid: &Grid,
+        ) -> Option<((u32, u32), (u32, u32))> {
+            //TODO: check a.0 < b.0
+            let mut from: Option<(u32, u32)> = None;
+            for x in a.0..=b.0 {
+                let free = grid.is_map_point_free(&(x, a.1));
+                if !free && from.is_none() {
+                    from = Some((x, a.1));
+                    continue;
+                }
+                if free && from.is_some() {
+                    return Some((from.unwrap(), (x - 1, a.1)));
+                }
+            }
+            if let Some(from) = from {
+                Some((from, *b))
+            } else {
+                None
+            }
+        }
+        fn get_busy_in_vertical(
+            a: &(u32, u32),
+            b: &(u32, u32),
+            grid: &Grid,
+        ) -> Option<((u32, u32), (u32, u32))> {
+            //TODO: check a.1 < b.1
+            let mut from: Option<(u32, u32)> = None;
+            for y in a.1..=b.1 {
+                let free = grid.is_map_point_free(&(a.0, y));
+                if !free && from.is_none() {
+                    from = Some((a.0, y));
+                    continue;
+                }
+                if free && from.is_some() {
+                    return Some((from.unwrap(), (a.0, y - 1)));
+                }
+            }
+            if let Some(from) = from {
+                Some((from, *b))
+            } else {
+                None
+            }
+        }
+        fn get_closed_free_in_horizont(
+            a: &(u32, u32),
+            b: &(u32, u32),
+            grid: &Grid,
+        ) -> Option<((u32, u32), (u32, u32))> {
+            let mut above: Option<u32> = None;
+            let mut bellow: Option<u32> = None;
+            for y in (0..a.1).rev() {
+                console_log!("checking for free (u): {:?}", (a.0, y, b.0, y));
+                if grid.is_map_block_free((a.0, y, b.0, y)) {
+                    above = Some(y);
+                    break;
+                }
+            }
+
+            for y in a.1..grid.size.1 {
+                console_log!("checking for free (d): {:?}", (a.0, y, b.0, y));
+                if grid.is_map_block_free((a.0, y, b.0, y)) {
+                    bellow = Some(y);
+                    break;
+                }
+            }
+            if let (Some(above), Some(bellow)) = (above, bellow) {
+                Some(if a.1 - above < bellow - a.1 {
+                    ((a.0, above), (b.0, above))
+                } else {
+                    ((a.0, bellow), (b.0, bellow))
+                })
+            } else if let Some(above) = above {
+                Some(((a.0, above), (b.0, above)))
+            } else if let Some(bellow) = bellow {
+                Some(((a.0, bellow), (b.0, bellow)))
+            } else {
+                None
+            }
+        }
+        fn get_closed_free_in_vertical(
+            a: &(u32, u32),
+            b: &(u32, u32),
+            grid: &Grid,
+        ) -> Option<((u32, u32), (u32, u32))> {
+            let mut left: Option<u32> = None;
+            let mut right: Option<u32> = None;
+            for x in (a.0..=0).rev() {
+                if grid.is_map_block_free((x, a.1, x, b.1)) {
+                    left = Some(x);
+                    break;
+                }
+            }
+            for x in a.0..grid.size.0 {
+                if grid.is_map_block_free((x, a.1, x, b.1)) {
+                    right = Some(x);
+                    break;
+                }
+            }
+            if let (Some(left), Some(right)) = (left, right) {
+                Some(if a.1 - left < right - a.1 {
+                    ((left, a.1), (left, b.1))
+                } else {
+                    ((right, a.1), (right, b.1))
+                })
+            } else if let Some(left) = left {
+                Some(((left, a.1), (left, b.1)))
+            } else if let Some(right) = right {
+                Some(((right, a.1), (right, b.1)))
+            } else {
+                None
+            }
+        }
+        fn push_unique(points: &mut Vec<(u32, u32)>, point: (u32, u32)) {
+            let add = if let Some(last) = points.last() {
+                last != &point
+            } else {
+                true
+            };
+            if add {
+                points.push(point);
+            }
+        }
+        let mut current = *a;
+        let mut checking = (*a, *b);
+        push_unique(points, current);
+        console_log!("checking: a = {a:?}; b = {b:?}");
+        let mut iteration = 0;
+        if a.1 == b.1 {
+            // Horizontal
+            loop {
+                iteration += 1;
+                if iteration > 10 {
+                    break;
+                }
+                if let Some(busy) = get_busy_in_horizont(&checking.0, &checking.1, grid) {
+                    console_log!("busy: {busy:?}");
+                    let free = get_closed_free_in_horizont(
+                        &(busy.0 .0 - 1, busy.0 .1),
+                        &(busy.1 .0 + 1, busy.1 .1),
+                        grid,
+                    )
+                    .ok_or(E::Other("Fail find free in horizont".to_string()))?;
+                    push_unique(points, (free.0 .0, current.1));
+                    push_unique(points, (free.0 .0, free.0 .1));
+                    push_unique(points, (free.1 .0, free.1 .1));
+                    push_unique(points, (free.1 .0, current.1));
+                    current = (free.1 .0, current.1);
+                    checking = (current, *b);
+                } else {
+                    push_unique(points, *b);
+                    break;
+                }
+            }
+        } else {
+            // Vertical
+            loop {
+                iteration += 1;
+                if iteration > 10 {
+                    break;
+                }
+                if let Some(busy) = get_busy_in_vertical(&checking.0, &checking.1, grid) {
+                    let free = get_closed_free_in_vertical(
+                        &(busy.0 .0, busy.0 .1 - 1),
+                        &(busy.1 .0, busy.1 .1 + 1),
+                        grid,
+                    )
+                    .ok_or(E::Other("Fail find free in vertical".to_string()))?;
+                    push_unique(points, (current.0, free.0 .1));
+                    push_unique(points, (free.0 .0, free.0 .1));
+                    push_unique(points, (free.1 .0, free.1 .1));
+                    push_unique(points, (current.0, free.1 .1));
+                    current = (current.0, free.1 .1);
+                    checking = (current, *b);
+                } else {
+                    push_unique(points, *b);
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
+}
 #[derive(Debug, Clone)]
 pub struct Grid {
     // Offset from each side
@@ -40,6 +268,7 @@ pub struct Grid {
     pub size: (u32, u32),
     // Cells map <EntityID, Occupied area <(x, y, x1, y1)>>
     pub map: HashMap<String, (u32, u32, u32, u32)>,
+    pub id: Option<usize>,
 }
 
 impl Grid {
@@ -48,6 +277,7 @@ impl Grid {
             offset,
             size: (offset * 2, offset * 2),
             map: HashMap::new(),
+            id: None,
         }
     }
 
@@ -70,8 +300,16 @@ impl Grid {
     }
 
     pub fn insert_self(&mut self, id: usize) {
-        self.map
-            .insert(id.to_string(), (0, 0, self.size.0, self.size.1));
+        self.id = Some(id);
+        self.map.insert(
+            id.to_string(),
+            (
+                0,
+                0,
+                as_u32(self.size.0 as i32 - 1),
+                as_u32(self.size.1 as i32 - 1),
+            ),
+        );
     }
 
     // pub fn inject(&mut self, area_px: (u32, u32, u32, u32), id: String) {
@@ -206,6 +444,21 @@ impl Grid {
         true
     }
 
+    fn is_map_block_free(&self, target: (u32, u32, u32, u32)) -> bool {
+        // Check space
+        if self.size.0 - 1 < target.2 || self.size.1 - 1 < target.3 {
+            return false;
+        }
+        let self_id = self.id.unwrap_or(0).to_string();
+        // Check crossing
+        for (id, area) in self.map.iter() {
+            if &self_id != id && elements::is_area_cross(&target, area) {
+                return false;
+            }
+        }
+        true
+    }
+
     fn is_point_free(&self, point: &(u32, u32)) -> bool {
         if point.0 < self.offset
             || point.0 > self.size.0 + self.offset * 2
@@ -214,16 +467,29 @@ impl Grid {
         {
             return false;
         }
-        for (_, (ax, ay, ax1, ay1)) in self.map.iter() {
-            if elements::is_point_in(
-                point,
-                &(
-                    as_u32(*ax as i32 - 1),
-                    as_u32(*ay as i32 - 1),
-                    *ax1 + 1,
-                    *ay1 + 1,
-                ),
-            ) {
+        let self_id = self.id.unwrap_or(0).to_string();
+        for (id, (ax, ay, ax1, ay1)) in self.map.iter() {
+            if &self_id != id
+                && elements::is_point_in(
+                    point,
+                    &(as_u32(*ax as i32), as_u32(*ay as i32), *ax1, *ay1),
+                )
+            {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn is_map_point_free(&self, point: &(u32, u32)) -> bool {
+        let self_id = self.id.unwrap_or(0).to_string();
+        for (id, (ax, ay, ax1, ay1)) in self.map.iter() {
+            if &self_id != id
+                && elements::is_point_in(
+                    point,
+                    &(as_u32(*ax as i32), as_u32(*ay as i32), *ax1, *ay1),
+                )
+            {
                 return false;
             }
         }
@@ -237,17 +503,17 @@ impl Grid {
             .map(|(_, _, x1, _)| x1)
             .max()
             .unwrap_or(&0)
-            + self.offset * 2;
+            + self.offset;
         let max_y = self
             .map
             .values()
             .map(|(_, _, _, y1)| y1)
             .max()
             .unwrap_or(&0)
-            + self.offset * 2;
+            + self.offset;
         self.size = (
-            [max_x, self.size.0].iter().min().copied().unwrap_or(0),
-            [max_y, self.size.1].iter().min().copied().unwrap_or(0),
+            [max_x + 1, self.size.0].iter().min().copied().unwrap_or(0),
+            [max_y + 1, self.size.1].iter().min().copied().unwrap_or(0),
         );
     }
 
@@ -266,7 +532,7 @@ impl Grid {
             elements::max(
                 &[
                     self.size.1 + self.offset * 2,
-                    grid.size.1 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
+                    grid.size.1 + self.offset * 2 + SPACE_IN_VERTICAL * 2,
                 ],
                 self.offset * 2,
             ),
@@ -277,7 +543,7 @@ impl Grid {
                     if !self.is_point_free(&(x, y)) {
                         continue;
                     }
-                    if self.is_block_free((x, y, x + grid.size.0, y + grid.size.1)) {
+                    if self.is_block_free((x, y, x + grid.size.0 - 1, y + grid.size.1 - 1)) {
                         point = Some((x, y));
                         break;
                     }
@@ -291,10 +557,10 @@ impl Grid {
                 let f_w = self.size.0 + grid.size.0;
                 let f_h = self.size.1 + grid.size.1;
                 if f_w as i32 - self.size.1 as i32 >= f_h as i32 - self.size.0 as i32 {
-                    self.size.0 += grid.size.0;
+                    self.size.0 += grid.size.0 - 1;
                     self.size.1 += 1;
                 } else {
-                    self.size.1 += grid.size.1;
+                    self.size.1 += grid.size.1 - 1;
                     self.size.0 += 1;
                 }
             }
@@ -395,6 +661,7 @@ fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>) -> Result<Grid, E> {
         offset: 0,
         size,
         map,
+        id: None,
     })
 }
 fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) -> Result<Grid, E> {
@@ -459,6 +726,7 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
         offset: 0,
         size,
         map,
+        id: None,
     })
 }
 
@@ -486,6 +754,7 @@ fn from_grids_into_row(grids: &[Grid]) -> Grid {
         offset: 0,
         size,
         map,
+        id: None,
     }
 }
 

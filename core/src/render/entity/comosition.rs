@@ -9,11 +9,11 @@ use crate::{
         elements,
         entity::port,
         form::{button, Button, Path, Point, Rectangle},
-        grid::{ElementCoors, Layout},
+        grid::{Cell, ElementCoors, Layout, CELL},
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 impl Render<Composition> {
     pub fn new(mut entity: Composition) -> Self {
@@ -137,6 +137,11 @@ impl Render<Composition> {
         self.view
             .container
             .set_coors(Some(relative.x(0)), Some(relative.y(0)));
+        Ok(())
+    }
+    // in - right
+    // out - left
+    pub fn setup_connection(&mut self, grid: &Grid) -> Result<(), E> {
         // Setup connections
         for conn in self.entity.connections.iter_mut() {
             if let (Some(ins), Some(outs)) = (
@@ -164,19 +169,74 @@ impl Render<Composition> {
                     let relative_inns = ins.render()?.own_relative();
                     let relative_outs = outs.render()?.own_relative();
                     let offset = port::PORT_SIDE / 2;
-                    let path = Path::new(
-                        conn.origin().sig.id.to_string(),
-                        vec![
-                            Point {
-                                x: relative_inns.x(port_in.0) + offset,
-                                y: relative_inns.y(port_in.1) + offset,
-                            },
-                            Point {
-                                x: relative_outs.x(port_out.0) + offset,
-                                y: relative_outs.y(port_out.1) + offset,
-                            },
-                        ],
+                    console_log!(
+                        "ins: {}: ({},{}); outs: {}: ({},{})",
+                        ins.origin().sig.id,
+                        relative_inns.x(port_in.0),
+                        relative_inns.y(port_in.1),
+                        outs.origin().sig.id,
+                        relative_outs.x(port_out.0),
+                        relative_outs.y(port_out.1)
                     );
+                    let a = Cell::new(
+                        relative_inns.x(port_in.0) as u32,
+                        relative_inns.y(port_in.1) as u32,
+                        grid,
+                    )?;
+                    let b = Cell::new(
+                        relative_outs.x(port_out.0) as u32,
+                        relative_outs.y(port_out.1) as u32,
+                        grid,
+                    )?;
+                    let (port_coor_left, port_coor_right) = if a.x < b.x {
+                        (
+                            (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
+                            (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
+                        )
+                    } else {
+                        (
+                            (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
+                            (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
+                        )
+                    };
+                    let (left, right) = if a.x < b.x { (a, b) } else { (b, a) };
+                    let a = (left.x, left.y);
+                    let b = (right.x, left.y);
+                    let c = (right.x, right.y);
+                    let mut coors: Vec<(u32, u32)> = vec![];
+                    // console_log!("a:{a:?}; b: {b:?}; c:{c:?}");
+                    if let Err(e) = Cell::normalize(&a, &b, grid, &mut coors) {
+                        console_log!(">>>> Error: {e}");
+                        return Ok(());
+                    }
+                    if let Err(e) = Cell::normalize(&b, &c, grid, &mut coors) {
+                        console_log!(">>>> Error: {e}");
+                        return Ok(());
+                    }
+                    fn coors_to_px(cell: &u32) -> i32 {
+                        (*cell as i32) * (CELL as i32) + (CELL as i32 / 2)
+                    }
+                    console_log!("coors: {coors:?}");
+                    let mut points = coors
+                        .iter()
+                        .map(|(x, y)| Point {
+                            x: coors_to_px(x),
+                            y: coors_to_px(y),
+                        })
+                        .collect::<Vec<Point>>();
+                    points.insert(
+                        0,
+                        Point {
+                            x: port_coor_left.0 + offset,
+                            y: port_coor_left.1 + offset,
+                        },
+                    );
+                    points.push(Point {
+                        x: port_coor_right.0 + offset,
+                        y: port_coor_right.1 + offset,
+                    });
+                    console_log!("points: {points:?}");
+                    let path = Path::new(conn.origin().sig.id.to_string(), points);
                     conn.render_mut()?.view.container.set_form(Form::Path(path));
                 } else {
                     console_log!("No ports has been found :/");
@@ -188,7 +248,7 @@ impl Render<Composition> {
 
     pub fn calc(&mut self, grid: &mut Grid, expanded: &[usize]) -> Result<(), E> {
         // Create composition grid
-        let mut composition_grid = Grid::new(1);
+        let mut composition_grid = Grid::new(3);
         // Order components by connections number
         self.entity.order();
         for composition in self.entity.compositions.iter_mut() {
@@ -258,6 +318,7 @@ impl Render<Composition> {
         if let Some(container) = self.view.elements.first_mut() {
             container.set_coors(Some(grid_size.0 as i32), None);
         }
+        self.setup_connection(&composition_grid)?;
         // Add into global
         grid.insert(&composition_grid);
         Ok(())

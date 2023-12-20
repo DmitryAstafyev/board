@@ -41,7 +41,7 @@ impl Board {
             context: None,
             width: 0,
             height: 0,
-            grid: Grid::new(1),
+            grid: Grid::new(0),
         }
     }
 

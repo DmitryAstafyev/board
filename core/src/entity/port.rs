@@ -26,8 +26,16 @@ impl Port {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Ports {
     pub ports: Vec<Representation<Port>>,
-    #[serde(skip_serializing, skip_deserializing)]
+    // #[serde(skip_serializing, skip_deserializing)]
     pub hide_invisible: bool,
+}
+impl Default for Ports {
+    fn default() -> Self {
+        Self {
+            ports: vec![],
+            hide_invisible: true,
+        }
+    }
 }
 
 impl Ports {

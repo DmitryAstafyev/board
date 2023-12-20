@@ -1,13 +1,16 @@
+use wasm_bindgen_test::console_log;
+
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
     render::{
-        elements, form::Rectangle, Container, Form, Relative, Render, Representation, Style, View,
+        elements, form::Rectangle, grid::CELL, Container, Form, Relative, Render, Representation,
+        Style, View,
     },
 };
 
 pub const PORT_SIDE: i32 = 8;
-const PORTS_VERTICAL_OFFSET: i32 = 8;
+const PORTS_VERTICAL_OFFSET: i32 = CELL as i32;
 
 impl Render<Ports> {
     pub fn new(mut entity: Ports) -> Self {
@@ -51,31 +54,25 @@ impl Render<Ports> {
         }
         let ports_in = self.entity.filter(PortType::In);
         let ports_out = self.entity.filter(PortType::Out);
-        elements::max(
-            &[
-                if self.origin().hide_invisible {
-                    ports_in
-                        .iter()
-                        .filter(|r| r.origin().visibility)
-                        .collect::<Vec<&&Representation<Port>>>()
-                        .len()
-                } else {
-                    ports_in.len()
-                },
-                if self.origin().hide_invisible {
-                    ports_out
-                        .iter()
-                        .filter(|r| r.origin().visibility)
-                        .collect::<Vec<&&Representation<Port>>>()
-                        .len()
-                } else {
-                    ports_in.len()
-                },
-            ],
-            0,
-        ) as i32
-            * (PORTS_VERTICAL_OFFSET + PORT_SIDE)
-            + PORTS_VERTICAL_OFFSET
+        let max_in = if self.origin().hide_invisible {
+            ports_in
+                .iter()
+                .filter(|r| r.origin().visibility)
+                .collect::<Vec<&&Representation<Port>>>()
+                .len()
+        } else {
+            ports_in.len()
+        };
+        let max_out = if self.origin().hide_invisible {
+            ports_out
+                .iter()
+                .filter(|r| r.origin().visibility)
+                .collect::<Vec<&&Representation<Port>>>()
+                .len()
+        } else {
+            ports_in.len()
+        };
+        elements::max(&[max_in, max_out], 0) as i32 * PORTS_VERTICAL_OFFSET + PORTS_VERTICAL_OFFSET
     }
 
     pub fn calc(&mut self, container_width: i32) -> Result<(), E> {
@@ -90,7 +87,7 @@ impl Render<Ports> {
             port.render_mut()?.calc()?;
         }
         // Order ports on a left side
-        let mut cursor: i32 = PORTS_VERTICAL_OFFSET;
+        let mut cursor: i32 = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
         for port in self
             .entity
             .filter_mut(PortType::In)
@@ -103,10 +100,10 @@ impl Render<Ports> {
                 .view
                 .container
                 .set_coors(Some(-(w / 2)), Some(cursor));
-            cursor += h + PORTS_VERTICAL_OFFSET;
+            cursor += PORTS_VERTICAL_OFFSET;
         }
         // Order ports on a right side
-        cursor = PORTS_VERTICAL_OFFSET;
+        cursor = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
         for port in self
             .entity
             .filter_mut(PortType::Out)
@@ -119,7 +116,7 @@ impl Render<Ports> {
                 .view
                 .container
                 .set_coors(Some(container_width - (w / 2)), Some(cursor));
-            cursor += h + PORTS_VERTICAL_OFFSET;
+            cursor += PORTS_VERTICAL_OFFSET;
         }
         Ok(())
     }
@@ -129,11 +126,6 @@ impl Render<Ports> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
-        // if let Some(over) = self.over_style.as_ref() {
-        //     over.apply(context);
-        // } else {
-        //     self.style.apply(context);
-        // }
         let self_relative = self.relative(relative);
         let hide = self.origin().hide_invisible;
         for port in self
