@@ -10,9 +10,9 @@ export class Hover {
     protected id: number | undefined;
     protected _onHideAction: ActionOnHide | undefined;
 
-    constructor(color: string) {
+    constructor(color: string, parent: HTMLElement) {
         this.node = document.createElement("div") as HTMLDivElement;
-        document.body.appendChild(this.node);
+        parent.appendChild(this.node);
         this.node.className = "hover";
         this.node.style.display = "none";
         this.node.style.position = "absolute";

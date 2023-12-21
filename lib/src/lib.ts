@@ -46,9 +46,6 @@ export class Board {
     protected readonly hover: {
         component: Hover;
         port: Hover;
-    } = {
-        component: new Hover(`rgba(0,0,0,0.15)`),
-        port: new Hover(`rgb(255,50,50)`),
     };
     protected readonly size: {
         height: number;
@@ -112,6 +109,10 @@ export class Board {
             );
         }
         this.parent = node;
+        this.hover = {
+            component: new Hover(`rgba(0,0,0,0.15)`, node),
+            port: new Hover(`rgb(255,50,50)`, node),
+        };
         this.id = getId();
         this.canvas = document.createElement("canvas");
         this.canvas.setAttribute("id", this.id);
@@ -148,8 +149,8 @@ export class Board {
     }
 
     protected onMouseDown(event: MouseEvent): void {
-        this.movement.x = event.clientX;
-        this.movement.y = event.clientY;
+        this.movement.x = event.offsetX;
+        this.movement.y = event.offsetY;
         this.movement.dropClick = false;
         this.movement.clickTimer = setTimeout(() => {
             this.hover.component.hide();
@@ -166,11 +167,11 @@ export class Board {
             return;
         }
         this.position.x -=
-            (this.movement.x - event.clientX) / this.position.zoom;
+            (this.movement.x - event.offsetX) / this.position.zoom;
         this.position.y -=
-            (this.movement.y - event.clientY) / this.position.zoom;
-        this.movement.x = event.clientX;
-        this.movement.y = event.clientY;
+            (this.movement.y - event.offsetY) / this.position.zoom;
+        this.movement.x = event.offsetX;
+        this.movement.y = event.offsetY;
         this.render();
     }
 
@@ -182,8 +183,8 @@ export class Board {
     }
 
     protected getTargetsOnMouse(event: MouseEvent): Types.ElementCoors[] {
-        let x = event.clientX - this.position.x * this.position.zoom;
-        let y = event.clientY - this.position.y * this.position.zoom;
+        let x = event.offsetX - this.position.x * this.position.zoom;
+        let y = event.offsetY - this.position.y * this.position.zoom;
         if (x < 0 || y < 0) {
             return [];
         }
