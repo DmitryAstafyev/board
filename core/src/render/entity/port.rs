@@ -1,5 +1,3 @@
-use wasm_bindgen_test::console_log;
-
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
@@ -95,7 +93,7 @@ impl Render<Ports> {
             .filter(|p| p.origin().visibility || !hide)
         {
             let render = port.render_mut()?;
-            let (w, h) = render.view.container.get_box_size();
+            let (w, _h) = render.view.container.get_box_size();
             render
                 .view
                 .container
@@ -111,7 +109,7 @@ impl Render<Ports> {
             .filter(|p| p.origin().visibility || !hide)
         {
             let render = port.render_mut()?;
-            let (w, h) = render.view.container.get_box_size();
+            let (w, _h) = render.view.container.get_box_size();
             render
                 .view
                 .container

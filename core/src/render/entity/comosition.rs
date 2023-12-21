@@ -13,7 +13,33 @@ use crate::{
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+
+enum Entry<'a> {
+    Component(&'a Representation<Component>),
+    Composition(&'a Representation<Composition>),
+}
+
+impl<'a> Entry<'a> {
+    pub fn ports(&self) -> &'a Representation<Ports> {
+        match self {
+            Entry::Component(c) => &c.origin().ports,
+            Entry::Composition(c) => &c.origin().ports,
+        }
+    }
+    pub fn own_relative(&self) -> Result<Relative, E> {
+        Ok(match self {
+            Entry::Component(c) => c.render()?.own_relative(),
+            Entry::Composition(c) => c.render()?.own_relative(),
+        })
+    }
+    pub fn _id(&self) -> usize {
+        match self {
+            Entry::Component(c) => c.origin().sig.id,
+            Entry::Composition(c) => c.origin().sig.id,
+        }
+    }
+}
 
 impl Render<Composition> {
     pub fn new(mut entity: Composition) -> Self {
@@ -139,45 +165,45 @@ impl Render<Composition> {
             .set_coors(Some(relative.x(0)), Some(relative.y(0)));
         Ok(())
     }
-    // in - right
-    // out - left
+
     pub fn setup_connection(&mut self, grid: &Grid) -> Result<(), E> {
+        fn find<'a>(
+            components: &'a [Representation<Component>],
+            compositions: &'a [Representation<Composition>],
+            id: &usize,
+        ) -> Option<Entry<'a>> {
+            components
+                .iter()
+                .find(|c| c.origin().sig.id == *id)
+                .map(Entry::Component)
+                .or_else(|| {
+                    compositions
+                        .iter()
+                        .find(|c| c.origin().sig.id == *id)
+                        .map(Entry::Composition)
+                })
+        }
+        let components = &self.entity.components;
+        let compositions = &self.entity.compositions;
         // Setup connections
         for conn in self.entity.connections.iter_mut() {
             if let (Some(ins), Some(outs)) = (
-                self.entity
-                    .components
-                    .iter()
-                    .find(|comp| comp.origin().sig.id == conn.origin().joint_in.component),
-                self.entity
-                    .components
-                    .iter()
-                    .find(|comp| comp.origin().sig.id == conn.origin().joint_out.component),
+                find(components, compositions, &conn.origin().joint_in.component),
+                find(components, compositions, &conn.origin().joint_out.component),
             ) {
                 if let (Some(port_in), Some(port_out)) = (
-                    ins.origin()
-                        .ports
+                    ins.ports()
                         .origin()
                         .find_visible(conn.origin().joint_in.port),
-                    outs.origin()
-                        .ports
+                    outs.ports()
                         .origin()
                         .find_visible(conn.origin().joint_out.port),
                 ) {
                     let port_in = port_in.render()?.view.container.get_coors();
                     let port_out = port_out.render()?.view.container.get_coors();
-                    let relative_inns = ins.render()?.own_relative();
-                    let relative_outs = outs.render()?.own_relative();
+                    let relative_inns = ins.own_relative()?;
+                    let relative_outs = outs.own_relative()?;
                     let offset = port::PORT_SIDE / 2;
-                    console_log!(
-                        "ins: {}: ({},{}); outs: {}: ({},{})",
-                        ins.origin().sig.id,
-                        relative_inns.x(port_in.0),
-                        relative_inns.y(port_in.1),
-                        outs.origin().sig.id,
-                        relative_outs.x(port_out.0),
-                        relative_outs.y(port_out.1)
-                    );
                     let a = Cell::new(
                         relative_inns.x(port_in.0) as u32,
                         relative_inns.y(port_in.1) as u32,
@@ -206,17 +232,16 @@ impl Render<Composition> {
                     let mut coors: Vec<(u32, u32)> = vec![];
                     // console_log!("a:{a:?}; b: {b:?}; c:{c:?}");
                     if let Err(e) = Cell::normalize(&a, &b, grid, &mut coors) {
-                        console_log!(">>>> Error: {e}");
+                        console_log!("Error: {e}");
                         return Ok(());
                     }
                     if let Err(e) = Cell::normalize(&b, &c, grid, &mut coors) {
-                        console_log!(">>>> Error: {e}");
+                        console_log!("Error: {e}");
                         return Ok(());
                     }
                     fn coors_to_px(cell: &u32) -> i32 {
                         (*cell as i32) * (CELL as i32) + (CELL as i32 / 2)
                     }
-                    console_log!("coors: {coors:?}");
                     let mut points = coors
                         .iter()
                         .map(|(x, y)| Point {
@@ -459,7 +484,7 @@ pub fn group_ports(
             let ports_in = ports.iter().map(|(l, _)| *l).collect::<Vec<usize>>();
             let ports_out = ports.iter().map(|(_, r)| *r).collect::<Vec<usize>>();
             if ports_in.is_empty() || ports_out.is_empty() {
-                console_log!(">>>>>>>>>>>>>>>>>> empty groupped ports :/");
+                return;
             }
             let joined_port_in = Port {
                 sig: sig_producer.next_for("joined port IN"),

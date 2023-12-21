@@ -88,15 +88,11 @@ impl Cell {
                     from = Some((x, a.1));
                     continue;
                 }
-                if free && from.is_some() {
-                    return Some((from.unwrap(), (x - 1, a.1)));
+                if let (Some(from), true) = (from, free) {
+                    return Some((from, (x - 1, a.1)));
                 }
             }
-            if let Some(from) = from {
-                Some((from, *b))
-            } else {
-                None
-            }
+            from.map(|from| (from, *b))
         }
         fn get_busy_in_vertical(
             a: &(u32, u32),
@@ -111,15 +107,11 @@ impl Cell {
                     from = Some((a.0, y));
                     continue;
                 }
-                if free && from.is_some() {
-                    return Some((from.unwrap(), (a.0, y - 1)));
+                if let (Some(from), true) = (from, free) {
+                    return Some((from, (a.0, y - 1)));
                 }
             }
-            if let Some(from) = from {
-                Some((from, *b))
-            } else {
-                None
-            }
+            from.map(|from| (from, *b))
         }
         fn get_closed_free_in_horizont(
             a: &(u32, u32),
@@ -129,7 +121,6 @@ impl Cell {
             let mut above: Option<u32> = None;
             let mut bellow: Option<u32> = None;
             for y in (0..a.1).rev() {
-                console_log!("checking for free (u): {:?}", (a.0, y, b.0, y));
                 if grid.is_map_block_free((a.0, y, b.0, y)) {
                     above = Some(y);
                     break;
@@ -137,7 +128,6 @@ impl Cell {
             }
 
             for y in a.1..grid.size.1 {
-                console_log!("checking for free (d): {:?}", (a.0, y, b.0, y));
                 if grid.is_map_block_free((a.0, y, b.0, y)) {
                     bellow = Some(y);
                     break;
@@ -151,10 +141,8 @@ impl Cell {
                 })
             } else if let Some(above) = above {
                 Some(((a.0, above), (b.0, above)))
-            } else if let Some(bellow) = bellow {
-                Some(((a.0, bellow), (b.0, bellow)))
             } else {
-                None
+                bellow.map(|bellow| ((a.0, bellow), (b.0, bellow)))
             }
         }
         fn get_closed_free_in_vertical(
@@ -184,10 +172,8 @@ impl Cell {
                 })
             } else if let Some(left) = left {
                 Some(((left, a.1), (left, b.1)))
-            } else if let Some(right) = right {
-                Some(((right, a.1), (right, b.1)))
             } else {
-                None
+                right.map(|right| ((right, a.1), (right, b.1)))
             }
         }
         fn push_unique(points: &mut Vec<(u32, u32)>, point: (u32, u32)) {
@@ -203,7 +189,6 @@ impl Cell {
         let mut current = *a;
         let mut checking = (*a, *b);
         push_unique(points, current);
-        console_log!("checking: a = {a:?}; b = {b:?}");
         let mut iteration = 0;
         if a.1 == b.1 {
             // Horizontal
@@ -213,7 +198,6 @@ impl Cell {
                     break;
                 }
                 if let Some(busy) = get_busy_in_horizont(&checking.0, &checking.1, grid) {
-                    console_log!("busy: {busy:?}");
                     let free = get_closed_free_in_horizont(
                         &(busy.0 .0 - 1, busy.0 .1),
                         &(busy.1 .0 + 1, busy.1 .1),
@@ -313,17 +297,6 @@ impl Grid {
         );
     }
 
-    // pub fn inject(&mut self, area_px: (u32, u32, u32, u32), id: String) {
-    //     let area = (
-    //         as_cells(area_px.0, CELL as f64),
-    //         as_cells(area_px.1, CELL as f64),
-    //         as_cells(area_px.2, CELL as f64),
-    //         as_cells(area_px.3, CELL as f64),
-    //     );
-    //     console_log!("INJECTED: {area:?}");
-    //     self.map.insert(id, area);
-    // }
-
     pub fn relative(&self, target: usize) -> Relative {
         if let Some((x, y)) = self.map.iter().find_map(|(id, (x, y, _, _))| {
             if id == &target.to_string() {
@@ -387,13 +360,11 @@ impl Grid {
         ay = ay.saturating_sub(1);
         ax1 = ax1.saturating_sub(1);
         ay1 = ay1.saturating_sub(1);
-        // console_log!("cells area: ({ax},{ay}),({ax1},{ay1})");
         let targets = self
             .map
             .iter()
             .filter_map(|(id, block)| {
                 if elements::is_area_cross(&(ax, ay, ax1, ay1), block) {
-                    // console_log!("found block ({id}): ({block:?})");
                     Some((
                         id.clone(),
                         (
@@ -408,11 +379,6 @@ impl Grid {
                 }
             })
             .collect::<Vec<ElementCoors>>();
-        // console_log!(
-        //     "Targets: {}; skipped: {}",
-        //     targets.len(),
-        //     self.map.len() - targets.len()
-        // );
         targets
     }
 
@@ -556,10 +522,10 @@ impl Grid {
             //     }
             // }
             if point.is_none() {
-                if self.size.0 < self.size.1 {
+                if self.size.0.lt(&self.size.1) {
                     self.size.1 += 1;
                     self.size.0 += (self.size.1 as f64 / self.size.0 as f64).ceil() as u32;
-                } else if self.size.0 > self.size.1 {
+                } else if self.size.1.lt(&self.size.0) {
                     self.size.0 += 1;
                     self.size.1 += (self.size.0 as f64 / self.size.1 as f64).ceil() as u32;
                 } else {
