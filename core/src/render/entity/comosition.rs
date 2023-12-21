@@ -15,6 +15,8 @@ use crate::{
 };
 use std::collections::HashMap;
 
+use super::component;
+
 enum Entry<'a> {
     Component(&'a Representation<Component>),
     Composition(&'a Representation<Composition>),
@@ -39,6 +41,23 @@ impl<'a> Entry<'a> {
             Entry::Composition(c) => c.origin().sig.id,
         }
     }
+}
+
+fn find<'a>(
+    components: &'a [Representation<Component>],
+    compositions: &'a [Representation<Composition>],
+    id: &usize,
+) -> Option<Entry<'a>> {
+    components
+        .iter()
+        .find(|c| c.origin().sig.id == *id)
+        .map(Entry::Component)
+        .or_else(|| {
+            compositions
+                .iter()
+                .find(|c| c.origin().sig.id == *id)
+                .map(Entry::Composition)
+        })
 }
 
 impl Render<Composition> {
@@ -167,22 +186,6 @@ impl Render<Composition> {
     }
 
     pub fn setup_connection(&mut self, grid: &Grid) -> Result<(), E> {
-        fn find<'a>(
-            components: &'a [Representation<Component>],
-            compositions: &'a [Representation<Composition>],
-            id: &usize,
-        ) -> Option<Entry<'a>> {
-            components
-                .iter()
-                .find(|c| c.origin().sig.id == *id)
-                .map(Entry::Component)
-                .or_else(|| {
-                    compositions
-                        .iter()
-                        .find(|c| c.origin().sig.id == *id)
-                        .map(Entry::Composition)
-                })
-        }
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
         // Setup connections
@@ -431,6 +434,36 @@ impl Render<Composition> {
         }
         for nested in self.entity.compositions.iter() {
             found = [found, nested.render()?.find(position, zoom)?].concat();
+        }
+        Ok(found)
+    }
+
+    pub fn find_ports(
+        &self,
+        owners: &[ElementCoors],
+        position: &(i32, i32),
+        zoom: f64,
+    ) -> Result<Vec<ElementCoors>, E> {
+        if self.hidden {
+            return Ok(vec![]);
+        }
+        let mut found: Vec<ElementCoors> = vec![];
+        let components = &self.entity.components;
+        let compositions = &self.entity.compositions;
+        for (id, _) in owners.iter() {
+            if let Ok(id) = id.parse::<usize>() {
+                if let Some(entry) = find(components, compositions, &id) {
+                    let relative = entry.own_relative()?;
+                    found = [
+                        found,
+                        entry.ports().render()?.find(
+                            &(relative.x_rev(position.0), relative.y_rev(position.1)),
+                            zoom,
+                        )?,
+                    ]
+                    .concat();
+                }
+            }
         }
         Ok(found)
     }

@@ -10,6 +10,12 @@ pub const CELL: u32 = 25;
 pub const SPACE_IN_VERTICAL: u32 = 3;
 pub const SPACE_IN_HORIZONT: u32 = 3;
 
+pub enum ElementType {
+    Component,
+    Port,
+    Element,
+}
+pub type TypedElementCoors = (String, ElementType, (u32, u32, u32, u32));
 pub type ElementCoors = (String, (u32, u32, u32, u32));
 
 #[derive(Debug)]
@@ -24,7 +30,7 @@ pub enum Layout<'a> {
     _GridsBox(&'a mut [Grid], u32),
 }
 
-fn as_u32(n: i32) -> u32 {
+pub fn as_u32(n: i32) -> u32 {
     (if n < 0 { 0 } else { n }) as u32
 }
 

@@ -1,9 +1,13 @@
+use wasm_bindgen_test::console_log;
+
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
     render::{
-        elements, form::Rectangle, grid::CELL, Container, Form, Relative, Render, Representation,
-        Style, View,
+        elements,
+        form::Rectangle,
+        grid::{as_u32, ElementCoors, CELL},
+        Container, Form, Relative, Render, Representation, Style, View,
     },
 };
 
@@ -135,6 +139,28 @@ impl Render<Ports> {
             port.render_mut()?.draw(context, &self_relative)?;
         }
         Ok(())
+    }
+    pub fn find(&self, position: &(i32, i32), _zoom: f64) -> Result<Vec<ElementCoors>, E> {
+        if self.hidden {
+            return Ok(vec![]);
+        }
+        let mut found: Vec<ElementCoors> = vec![];
+        for port in self.entity.ports.iter() {
+            let (x, y) = port.render()?.view.container.get_coors();
+            let area = (x, y, x + PORT_SIDE, y + PORT_SIDE);
+            if elements::is_point_in_i32(position, &area) {
+                found.push((
+                    port.origin().sig.id.to_string(),
+                    (
+                        as_u32(area.0),
+                        as_u32(area.1),
+                        as_u32(area.2),
+                        as_u32(area.3),
+                    ),
+                ));
+            }
+        }
+        Ok(found)
     }
 }
 
