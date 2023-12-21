@@ -409,6 +409,12 @@ function real() {
             const board = new Board(`div#container`);
             board.bind(root, []);
             board.render();
+            board.subjects.get().onPortHover.subscribe((event) => {
+                console.log(event);
+            });
+            board.subjects.get().onComponentHover.subscribe((event) => {
+                console.log(event);
+            });
         });
     }, 200);
 }
@@ -422,7 +428,10 @@ function dummy() {
         board.subjects.get().onPortHover.subscribe((event) => {
             console.log(event);
         });
+        board.subjects.get().onComponentHover.subscribe((event) => {
+            console.log(event);
+        });
     }, 200);
 }
 
-dummy();
+real();

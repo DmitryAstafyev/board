@@ -220,13 +220,11 @@ export class Board {
                     component[0][2][2] - component[0][2][0],
                     component[0][2][3] - component[0][2][1]
                 );
-                this.subjects
-                    .get()
-                    .onComponentHover.emit({
-                        id,
-                        x: event.offsetX,
-                        y: event.offsetY,
-                    });
+                this.subjects.get().onComponentHover.emit({
+                    id,
+                    x: event.offsetX,
+                    y: event.offsetY,
+                });
             }
         } else {
             this.hover.component.hide();
@@ -312,6 +310,7 @@ export class Board {
         }
         this.board.init(composition, Uint32Array.from([]));
         this.data.composition = id;
+        this.data.groupped = this.board.get_groupped_ports();
         this.render();
     }
 
