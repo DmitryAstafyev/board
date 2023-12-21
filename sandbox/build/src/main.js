@@ -338,16 +338,15 @@ function real() {
     }, 200);
 }
 function dummy() {
-    console.log("started");
     setTimeout(() => {
         const composition = getDummyComposition(10, 5, 2, undefined);
-        console.log(composition);
         const board = new board_1.Board(`div#container`);
         board.bind(composition, []);
         board.render();
-        console.log(board.getGrouppedPorts());
+        board.subjects.get().onPortHover.subscribe((event) => {
+            console.log(event);
+        });
     }, 200);
 }
-console.log("zero");
 dummy();
 //# sourceMappingURL=main.js.map

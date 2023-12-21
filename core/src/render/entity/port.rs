@@ -138,7 +138,7 @@ impl Render<Ports> {
         }
         Ok(())
     }
-    pub fn find(&self, position: &(i32, i32), _zoom: f64) -> Result<Vec<ElementCoors>, E> {
+    pub fn find(&self, position: &(i32, i32), relative: &Relative) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(vec![]);
         }
@@ -147,7 +147,16 @@ impl Render<Ports> {
             let (x, y) = port.render()?.view.container.get_coors();
             let area = (x, y, x + PORT_SIDE, y + PORT_SIDE);
             if elements::is_point_in(position, &area) {
-                found.push((port.origin().sig.id.to_string(), ElementType::Port, area));
+                found.push((
+                    port.origin().sig.id.to_string(),
+                    ElementType::Port,
+                    (
+                        relative.x_nozoom(area.0),
+                        relative.y_nozoom(area.1),
+                        relative.x_nozoom(area.2),
+                        relative.y_nozoom(area.3),
+                    ),
+                ));
             }
         }
         Ok(found)

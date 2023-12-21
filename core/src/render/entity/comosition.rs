@@ -455,7 +455,7 @@ impl Render<Composition> {
                         found,
                         entry.ports().render()?.find(
                             &(relative.x_rev(position.0), relative.y_rev(position.1)),
-                            zoom,
+                            &relative,
                         )?,
                     ]
                     .concat();

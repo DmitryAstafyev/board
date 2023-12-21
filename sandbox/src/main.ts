@@ -419,7 +419,9 @@ function dummy() {
         const board = new Board(`div#container`);
         board.bind(composition, []);
         board.render();
-        console.log(board.getGrouppedPorts());
+        board.subjects.get().onPortHover.subscribe((event) => {
+            console.log(event);
+        });
     }, 200);
 }
 

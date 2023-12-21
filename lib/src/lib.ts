@@ -1,4 +1,5 @@
 import { Hover } from "./hover";
+import { Subject, Subjects } from "./subscriber";
 
 import * as Core from "core";
 import * as Types from "./types";
@@ -33,12 +34,22 @@ import("core")
 
 const CLICK_DURATION = 250;
 
+export interface PortHoverEvent {
+    id: number;
+    contains: number[];
+}
 export class Board {
     protected readonly board: Core.Board;
     protected readonly canvas: HTMLCanvasElement;
     protected readonly parent: HTMLElement;
     protected readonly id: string;
-    protected readonly hover: Hover = new Hover();
+    protected readonly hover: {
+        component: Hover;
+        port: Hover;
+    } = {
+        component: new Hover(`rgba(0,0,0,0.15)`),
+        port: new Hover(`rgb(255,50,50)`),
+    };
     protected readonly size: {
         height: number;
         width: number;
@@ -70,10 +81,12 @@ export class Board {
     };
     protected data: {
         composition: number | undefined;
+        groupped: [number, number[]][];
         root: Types.Composition | undefined;
         history: number[];
     } = {
         composition: undefined,
+        groupped: [],
         root: undefined,
         history: [],
     };
@@ -118,6 +131,12 @@ export class Board {
         this.parent.addEventListener("mousedown", this.onMouseDown);
         this.parent.addEventListener("wheel", this.onWheel);
         this.parent.addEventListener("click", this.onClick);
+        this.hover.component.onHide(() => {
+            this.subjects.get().onComponentHoverOver.emit();
+        });
+        this.hover.port.onHide(() => {
+            this.subjects.get().onPortHoverOver.emit();
+        });
     }
 
     protected setSize(): void {
@@ -133,7 +152,8 @@ export class Board {
         this.movement.y = event.clientY;
         this.movement.dropClick = false;
         this.movement.clickTimer = setTimeout(() => {
-            this.hover.hide();
+            this.hover.component.hide();
+            this.hover.port.hide();
             this.movement.processing = true;
             this.movement.dropClick = true;
             window.addEventListener("mousemove", this.onMouseMove);
@@ -180,20 +200,49 @@ export class Board {
             return;
         }
         const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
-        if (targets.length === 1) {
-            this.hover.show(
-                targets[0][2][0] + this.position.x * this.position.zoom,
-                targets[0][2][1] + this.position.y * this.position.zoom,
-                targets[0][2][2] - targets[0][2][0],
-                targets[0][2][3] - targets[0][2][1]
-            );
+        const component = targets.filter((t) => t[1] === "Unknown");
+        if (component.length === 1) {
+            const id = parseInt(component[0][0], 10);
+            if (!this.hover.component.isActive(id)) {
+                this.hover.component.show(
+                    id,
+                    component[0][2][0] + this.position.x * this.position.zoom,
+                    component[0][2][1] + this.position.y * this.position.zoom,
+                    component[0][2][2] - component[0][2][0],
+                    component[0][2][3] - component[0][2][1]
+                );
+                this.subjects.get().onComponentHover.emit(id);
+            }
         } else {
-            this.hover.hide();
+            this.hover.component.hide();
+        }
+        const port = targets.filter((t) => t[1] === "Port");
+        if (port.length === 1) {
+            const id = parseInt(port[0][0], 10);
+            if (!this.hover.port.isActive(id)) {
+                this.hover.port.show(
+                    id,
+                    port[0][2][0] + this.position.x * this.position.zoom,
+                    port[0][2][1] + this.position.y * this.position.zoom,
+                    port[0][2][2] - port[0][2][0],
+                    port[0][2][3] - port[0][2][1]
+                );
+                const groupped = this.data.groupped.find(
+                    (groupped) => groupped[0] === id
+                );
+                this.subjects.get().onPortHover.emit({
+                    id,
+                    contains: groupped === undefined ? [] : groupped[1],
+                });
+            }
+        } else {
+            this.hover.port.hide();
         }
     }
 
     protected onHoverOver(event: MouseEvent): void {
-        this.hover.hide();
+        this.hover.component.hide();
+        this.hover.port.hide();
     }
 
     protected onWheel(event: WheelEvent): void {
@@ -201,12 +250,14 @@ export class Board {
         this.position.zoom =
             this.position.zoom < 0.1 ? 0.1 : this.position.zoom;
         this.position.zoom = this.position.zoom > 2 ? 2 : this.position.zoom;
-        this.hover.hide();
+        this.hover.component.hide();
+        this.hover.port.hide();
         this.render();
     }
 
     protected onClick(event: MouseEvent): void {
-        this.hover.hide();
+        this.hover.component.hide();
+        this.hover.port.hide();
         clearTimeout(this.movement.clickTimer);
         if (this.movement.processing || this.movement.dropClick) {
             return;
@@ -247,6 +298,20 @@ export class Board {
         this.render();
     }
 
+    public readonly subjects: Subjects<{
+        onComponentHover: Subject<number>;
+        onComponentClick: Subject<number>;
+        onPortHover: Subject<PortHoverEvent>;
+        onComponentHoverOver: Subject<void>;
+        onPortHoverOver: Subject<void>;
+    }> = new Subjects({
+        onComponentHover: new Subject<number>(),
+        onComponentClick: new Subject<number>(),
+        onPortHover: new Subject<PortHoverEvent>(),
+        onComponentHoverOver: new Subject<void>(),
+        onPortHoverOver: new Subject<void>(),
+    });
+
     public destroy(): void {
         this.parent.removeEventListener("mousedown", this.onMouseDown);
         this.parent.removeEventListener("wheel", this.onWheel);
@@ -254,13 +319,16 @@ export class Board {
         this.parent.removeEventListener("mouseleave", this.onHoverOver);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
-        this.hover.destroy();
+        this.hover.component.destroy();
+        this.hover.port.destroy();
+        this.subjects.destroy();
     }
 
     public bind(composition: Types.Composition, expanded: number[]) {
         this.board.init(composition, Uint32Array.from(expanded));
         this.data.composition = composition.sig.id;
         this.data.root = composition;
+        this.data.groupped = this.getGrouppedPorts();
     }
 
     public render() {
