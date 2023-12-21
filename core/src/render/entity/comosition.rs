@@ -9,13 +9,11 @@ use crate::{
         elements,
         entity::port,
         form::{button, Button, Path, Point, Rectangle},
-        grid::{Cell, ElementCoors, Layout, CELL},
+        grid::{Cell, ElementCoors, ElementType, Layout, CELL},
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
 };
 use std::collections::HashMap;
-
-use super::component;
 
 enum Entry<'a> {
     Component(&'a Representation<Component>),
@@ -233,7 +231,6 @@ impl Render<Composition> {
                     let b = (right.x, left.y);
                     let c = (right.x, right.y);
                     let mut coors: Vec<(u32, u32)> = vec![];
-                    // console_log!("a:{a:?}; b: {b:?}; c:{c:?}");
                     if let Err(e) = Cell::normalize(&a, &b, grid, &mut coors) {
                         console_log!("Error: {e}");
                         return Ok(());
@@ -427,9 +424,9 @@ impl Render<Composition> {
         for el in self.view.elements.iter() {
             let (x, y) = el.form.get_coors_with_zoom(&relative);
             let (w, h) = el.form.get_box_size();
-            let area = (x as u32, y as u32, (x + w) as u32, (y + h) as u32);
-            if elements::is_point_in(&(position.0 as u32, position.1 as u32), &area) {
-                found.push((el.id(), area));
+            let area = (x, y, (x + w), (y + h));
+            if elements::is_point_in(position, &area) {
+                found.push((el.id(), ElementType::Element, area));
             }
         }
         for nested in self.entity.compositions.iter() {
@@ -450,7 +447,7 @@ impl Render<Composition> {
         let mut found: Vec<ElementCoors> = vec![];
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
-        for (id, _) in owners.iter() {
+        for (id, _, _) in owners.iter() {
             if let Ok(id) = id.parse::<usize>() {
                 if let Some(entry) = find(components, compositions, &id) {
                     let relative = entry.own_relative()?;
@@ -466,6 +463,17 @@ impl Render<Composition> {
             }
         }
         Ok(found)
+    }
+
+    pub fn get_groupped_ports(&self) -> Result<Vec<(usize, Vec<usize>)>, E> {
+        let mut ports: Vec<(usize, Vec<usize>)> = vec![];
+        for component in self.entity.components.iter() {
+            ports = [ports, component.origin().ports.origin().get_groupped()].concat();
+        }
+        for composition in self.entity.compositions.iter() {
+            ports = [ports, composition.origin().ports.origin().get_groupped()].concat();
+        }
+        Ok(ports)
     }
 }
 

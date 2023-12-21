@@ -113,7 +113,7 @@ impl Board {
                 &relative,
                 &targets
                     .iter()
-                    .map(|(id, _)| id.parse::<usize>().unwrap())
+                    .map(|(id, _, _)| id.parse::<usize>().unwrap())
                     .collect(),
             ) {
                 self.context = Some(context);
@@ -179,6 +179,12 @@ impl Board {
         } else {
             Err(E::NoCanvasContext)?
         }
+    }
+
+    #[wasm_bindgen]
+    pub fn get_groupped_ports(&self) -> Result<JsValue, String> {
+        let ports: Vec<(usize, Vec<usize>)> = self.render.get_groupped_ports()?;
+        serde_wasm_bindgen::to_value(&ports).map_err(|e| e.to_string())
     }
 }
 

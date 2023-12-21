@@ -414,20 +414,13 @@ function real() {
 }
 
 function dummy() {
-    console.log("started");
     setTimeout(() => {
-        console.log("point 0");
         const composition = getDummyComposition(10, 5, 2, undefined);
-        console.log("point 1");
-        console.log(composition);
         const board = new Board(`div#container`);
-        console.log("point 2");
         board.bind(composition, []);
-        console.log("point 3");
         board.render();
-        console.log("point 4");
+        console.log(board.getGrouppedPorts());
     }, 200);
 }
-console.log("zero");
 
 dummy();

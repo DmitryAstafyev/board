@@ -113,4 +113,15 @@ impl Ports {
     pub fn add(&mut self, port: Representation<Port>) {
         self.ports.push(port);
     }
+
+    pub fn get_groupped(&self) -> Vec<(usize, Vec<usize>)> {
+        let mut ports: Vec<(usize, Vec<usize>)> = vec![];
+        self.ports.iter().for_each(|p| {
+            if p.origin().contains.is_empty() {
+                return;
+            }
+            ports.push((p.origin().sig.id, p.origin().contains.clone()));
+        });
+        ports
+    }
 }

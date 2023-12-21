@@ -1,5 +1,5 @@
-//                         [ID    , [x     , y     , x1    , y1    ]]
-export type ElementCoors = [string, [number, number, number, number]];
+//                         [ID    , Type, [x     , y     , x1    , y1    ]]
+export type ElementCoors = [string, string, [number, number, number, number]];
 
 export interface Signature {
     id: number;

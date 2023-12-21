@@ -182,10 +182,10 @@ export class Board {
         const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
         if (targets.length === 1) {
             this.hover.show(
-                targets[0][1][0] + this.position.x * this.position.zoom,
-                targets[0][1][1] + this.position.y * this.position.zoom,
-                targets[0][1][2] - targets[0][1][0],
-                targets[0][1][3] - targets[0][1][1]
+                targets[0][2][0] + this.position.x * this.position.zoom,
+                targets[0][2][1] + this.position.y * this.position.zoom,
+                targets[0][2][2] - targets[0][2][0],
+                targets[0][2][3] - targets[0][2][1]
             );
         } else {
             this.hover.hide();
@@ -265,5 +265,9 @@ export class Board {
 
     public render() {
         this.board.render(this.position.x, this.position.y, this.position.zoom);
+    }
+
+    public getGrouppedPorts(): [number, number[]][] {
+        return this.board.get_groupped_ports() as [number, number[]][];
     }
 }

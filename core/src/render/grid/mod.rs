@@ -2,6 +2,7 @@ use crate::{
     error::E,
     render::{elements, Form, Relative},
 };
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::console_log;
@@ -10,13 +11,14 @@ pub const CELL: u32 = 25;
 pub const SPACE_IN_VERTICAL: u32 = 3;
 pub const SPACE_IN_HORIZONT: u32 = 3;
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ElementType {
+    Unknown,
     Component,
     Port,
     Element,
 }
-pub type TypedElementCoors = (String, ElementType, (u32, u32, u32, u32));
-pub type ElementCoors = (String, (u32, u32, u32, u32));
+pub type ElementCoors = (String, ElementType, (i32, i32, i32, i32));
 
 #[derive(Debug)]
 pub enum Layout<'a> {
@@ -373,11 +375,12 @@ impl Grid {
                 if elements::is_area_cross(&(ax, ay, ax1, ay1), block) {
                     Some((
                         id.clone(),
+                        ElementType::Unknown,
                         (
-                            (block.0 as f64 * cell) as u32,
-                            (block.1 as f64 * cell) as u32,
-                            ((block.2 + 1) as f64 * cell) as u32,
-                            ((block.3 + 1) as f64 * cell) as u32,
+                            (block.0 as f64 * cell) as i32,
+                            (block.1 as f64 * cell) as i32,
+                            ((block.2 + 1) as f64 * cell) as i32,
+                            ((block.3 + 1) as f64 * cell) as i32,
                         ),
                     ))
                 } else {
@@ -444,8 +447,8 @@ impl Grid {
         for (id, (ax, ay, ax1, ay1)) in self.map.iter() {
             if &self_id != id
                 && elements::is_point_in(
-                    point,
-                    &(as_u32(*ax as i32), as_u32(*ay as i32), *ax1, *ay1),
+                    &(point.0 as i32, point.1 as i32),
+                    &(*ax as i32, *ay as i32, *ax1 as i32, *ay1 as i32),
                 )
             {
                 return false;
@@ -459,8 +462,8 @@ impl Grid {
         for (id, (ax, ay, ax1, ay1)) in self.map.iter() {
             if &self_id != id
                 && elements::is_point_in(
-                    point,
-                    &(as_u32(*ax as i32), as_u32(*ay as i32), *ax1, *ay1),
+                    &(point.0 as i32, point.1 as i32),
+                    &(*ax as i32, *ay as i32, *ax1 as i32, *ay1 as i32),
                 )
             {
                 return false;

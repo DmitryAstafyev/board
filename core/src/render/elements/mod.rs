@@ -1,12 +1,6 @@
 pub mod relative;
 
-pub fn is_point_in(point: &(u32, u32), area: &(u32, u32, u32, u32)) -> bool {
-    let (x, y) = point;
-    let (a_x, a_y, a_x1, a_y1) = area;
-    !(x < a_x || x > a_x1 || y < a_y || y > a_y1)
-}
-
-pub fn is_point_in_i32(point: &(i32, i32), area: &(i32, i32, i32, i32)) -> bool {
+pub fn is_point_in(point: &(i32, i32), area: &(i32, i32, i32, i32)) -> bool {
     let (x, y) = point;
     let (a_x, a_y, a_x1, a_y1) = area;
     !(x < a_x || x > a_x1 || y < a_y || y > a_y1)
