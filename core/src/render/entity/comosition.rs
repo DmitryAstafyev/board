@@ -439,7 +439,6 @@ impl Render<Composition> {
         &self,
         owners: &[ElementCoors],
         position: &(i32, i32),
-        zoom: f64,
     ) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(vec![]);
