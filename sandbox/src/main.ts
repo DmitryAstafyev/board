@@ -430,4 +430,4 @@ function dummy() {
 }
 console.log("zero");
 
-dummy();
+real();

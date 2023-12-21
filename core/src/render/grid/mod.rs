@@ -231,6 +231,7 @@ impl Cell {
                     break;
                 }
             }
+            // normalize_horizont(points, grid);
         } else {
             // Vertical
             loop {
@@ -522,24 +523,12 @@ impl Grid {
         // Looking for point to insert grid
         let mut point: Option<(u32, u32)> = None;
         self.size = (
-            elements::max(
-                &[
-                    self.size.0 + self.offset * 2,
-                    grid.size.0 + self.offset * 2 + SPACE_IN_HORIZONT * 2,
-                ],
-                self.offset * 2,
-            ),
-            elements::max(
-                &[
-                    self.size.1 + self.offset * 2,
-                    grid.size.1 + self.offset * 2 + SPACE_IN_VERTICAL * 2,
-                ],
-                self.offset * 2,
-            ),
+            elements::max(&[self.size.0, grid.size.0], self.offset * 2),
+            elements::max(&[self.size.1, grid.size.1], self.offset * 2),
         );
         while point.is_none() {
-            for x in 0..self.size.0 {
-                for y in 0..self.size.1 {
+            for y in 0..self.size.1 {
+                for x in 0..self.size.0 {
                     if !self.is_point_free(&(x, y)) {
                         continue;
                     }
@@ -552,17 +541,41 @@ impl Grid {
                     break;
                 }
             }
+            // for x in 0..self.size.0 {
+            //     for y in 0..self.size.1 {
+            //         if !self.is_point_free(&(x, y)) {
+            //             continue;
+            //         }
+            //         if self.is_block_free((x, y, x + grid.size.0 - 1, y + grid.size.1 - 1)) {
+            //             point = Some((x, y));
+            //             break;
+            //         }
+            //     }
+            //     if point.is_some() {
+            //         break;
+            //     }
+            // }
             if point.is_none() {
-                // Point isn't found. Grid doesn't have enought space. Increase space
-                let f_w = self.size.0 + grid.size.0;
-                let f_h = self.size.1 + grid.size.1;
-                if f_w as i32 - self.size.1 as i32 >= f_h as i32 - self.size.0 as i32 {
-                    self.size.0 += grid.size.0 - 1;
+                if self.size.0 < self.size.1 {
                     self.size.1 += 1;
-                } else {
-                    self.size.1 += grid.size.1 - 1;
+                    self.size.0 += (self.size.1 as f64 / self.size.0 as f64).ceil() as u32;
+                } else if self.size.0 > self.size.1 {
                     self.size.0 += 1;
+                    self.size.1 += (self.size.0 as f64 / self.size.1 as f64).ceil() as u32;
+                } else {
+                    self.size.0 += 1;
+                    self.size.1 += 1;
                 }
+                // // Point isn't found. Grid doesn't have enought space. Increase space
+                // let f_w = self.size.0 + grid.size.0;
+                // let f_h = self.size.1 + grid.size.1;
+                // if f_w as i32 - self.size.1 as i32 >= f_h as i32 - self.size.0 as i32 {
+                //     self.size.0 += grid.size.0 / 2;
+                //     self.size.1 += 1;
+                // } else {
+                //     self.size.1 += grid.size.1 / 2;
+                //     self.size.0 += 1;
+                // }
             }
         }
         // Merge grid

@@ -235,7 +235,6 @@ impl Render<Composition> {
                         x: port_coor_right.0 + offset,
                         y: port_coor_right.1 + offset,
                     });
-                    console_log!("points: {points:?}");
                     let path = Path::new(conn.origin().sig.id.to_string(), points);
                     conn.render_mut()?.view.container.set_form(Form::Path(path));
                 } else {
