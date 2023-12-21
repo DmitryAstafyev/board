@@ -37,6 +37,14 @@ const CLICK_DURATION = 250;
 export interface PortHoverEvent {
     id: number;
     contains: number[];
+    x: number;
+    y: number;
+}
+
+export interface HoverMouseEvent {
+    id: number;
+    x: number;
+    y: number;
 }
 export class Board {
     protected readonly board: Core.Board;
@@ -212,7 +220,13 @@ export class Board {
                     component[0][2][2] - component[0][2][0],
                     component[0][2][3] - component[0][2][1]
                 );
-                this.subjects.get().onComponentHover.emit(id);
+                this.subjects
+                    .get()
+                    .onComponentHover.emit({
+                        id,
+                        x: event.offsetX,
+                        y: event.offsetY,
+                    });
             }
         } else {
             this.hover.component.hide();
@@ -234,6 +248,8 @@ export class Board {
                 this.subjects.get().onPortHover.emit({
                     id,
                     contains: groupped === undefined ? [] : groupped[1],
+                    x: event.offsetX,
+                    y: event.offsetY,
                 });
             }
         } else {
@@ -300,13 +316,13 @@ export class Board {
     }
 
     public readonly subjects: Subjects<{
-        onComponentHover: Subject<number>;
+        onComponentHover: Subject<HoverMouseEvent>;
         onComponentClick: Subject<number>;
         onPortHover: Subject<PortHoverEvent>;
         onComponentHoverOver: Subject<void>;
         onPortHoverOver: Subject<void>;
     }> = new Subjects({
-        onComponentHover: new Subject<number>(),
+        onComponentHover: new Subject<HoverMouseEvent>(),
         onComponentClick: new Subject<number>(),
         onPortHover: new Subject<PortHoverEvent>(),
         onComponentHoverOver: new Subject<void>(),
