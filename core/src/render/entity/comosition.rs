@@ -464,6 +464,68 @@ impl Render<Composition> {
         Ok(found)
     }
 
+    pub fn get_coors_by_ids(
+        &self,
+        ids: &[usize],
+        relative: &Relative,
+    ) -> Result<Vec<ElementCoors>, E> {
+        if self.hidden {
+            return Ok(vec![]);
+        }
+        fn scan(
+            found: &mut Vec<ElementCoors>,
+            ports: &Representation<Ports>,
+            ids: &[usize],
+            own_relative: Relative,
+            relative: &Relative,
+        ) -> Result<(), E> {
+            ports
+                .render()?
+                .entity
+                .ports
+                .iter()
+                .filter(|p| ids.contains(&p.origin().sig.id))
+                .for_each(|p| {
+                    if let Ok(render) = p.render() {
+                        let view = &render.view.container;
+                        let coors = view.get_coors();
+                        let size = view.get_box_size();
+                        found.push((
+                            p.origin().sig.id.to_string(),
+                            ElementType::Port,
+                            (
+                                relative.x(own_relative.x(coors.0)),
+                                relative.y(own_relative.y(coors.1)),
+                                relative.x(own_relative.x(coors.0 + size.0)),
+                                relative.y(own_relative.y(coors.1 + size.1)),
+                            ),
+                        ));
+                    }
+                });
+            Ok(())
+        }
+        let mut found: Vec<ElementCoors> = vec![];
+        for component in self.entity.components.iter() {
+            scan(
+                &mut found,
+                &component.origin().ports,
+                ids,
+                component.render()?.own_relative(),
+                relative,
+            )?;
+        }
+        for composition in self.entity.compositions.iter() {
+            scan(
+                &mut found,
+                &composition.origin().ports,
+                ids,
+                composition.render()?.own_relative(),
+                relative,
+            )?;
+        }
+        Ok(found)
+    }
+
     pub fn get_groupped_ports(&self) -> Result<Vec<(usize, Vec<usize>)>, E> {
         let mut ports: Vec<(usize, Vec<usize>)> = vec![];
         for component in self.entity.components.iter() {
@@ -473,6 +535,21 @@ impl Render<Composition> {
             ports = [ports, composition.origin().ports.origin().get_groupped()].concat();
         }
         Ok(ports)
+    }
+
+    pub fn get_connection_info(&self, port: usize) -> Option<(usize, usize)> {
+        self.entity
+            .connections
+            .iter()
+            .find(|c| c.origin().joint_in.port == port || c.origin().joint_out.port == port)
+            .map(|c| {
+                let origin = c.origin();
+                if origin.joint_in.port == port {
+                    (origin.joint_out.port, origin.joint_out.component)
+                } else {
+                    (origin.joint_in.port, origin.joint_in.component)
+                }
+            })
     }
 }
 

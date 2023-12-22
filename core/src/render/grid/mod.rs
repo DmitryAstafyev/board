@@ -319,6 +319,28 @@ impl Grid {
         }
     }
 
+    pub fn get_coors_by_ids(&self, ids: &[usize], relative: &Relative) -> Vec<ElementCoors> {
+        let mut found: Vec<ElementCoors> = vec![];
+        self.map.iter().for_each(|(id, area)| {
+            if let Ok(id) = id.parse::<usize>() {
+                if !ids.contains(&id) {
+                    return;
+                }
+                found.push((
+                    id.to_string(),
+                    ElementType::Component,
+                    (
+                        relative.x((area.0 * CELL) as i32),
+                        relative.y((area.1 * CELL) as i32),
+                        relative.x(((area.2 + 1) * CELL) as i32),
+                        relative.y(((area.3 + 1) * CELL) as i32),
+                    ),
+                ));
+            }
+        });
+        found
+    }
+
     pub fn point(
         &self,
         position: (i32, i32),

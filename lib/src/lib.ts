@@ -1,4 +1,5 @@
 import { Hover } from "./hover";
+import { Connection } from "./connection";
 import { Subject, Subjects } from "./subscriber";
 
 import * as Core from "core";
@@ -55,6 +56,7 @@ export class Board {
         component: Hover;
         port: Hover;
     };
+    protected connection: Connection;
     protected readonly size: {
         height: number;
         width: number;
@@ -121,6 +123,7 @@ export class Board {
             component: new Hover(`rgba(0,0,0,0.15)`, node),
             port: new Hover(`rgb(255,50,50)`, node),
         };
+        this.connection = new Connection(node);
         this.id = getId();
         this.canvas = document.createElement("canvas");
         this.canvas.setAttribute("id", this.id);
@@ -243,6 +246,38 @@ export class Board {
                 const groupped = this.data.groupped.find(
                     (groupped) => groupped[0] === id
                 );
+                const connection = this.getConnectionInfo(id);
+                if (connection !== undefined) {
+                    const coors = this.getCoorsByIds([
+                        connection.port,
+                        connection.component,
+                    ]);
+                    const port = coors.find((coor) => coor[1] === "Port");
+                    const component = coors.find(
+                        (coor) => coor[1] === "Component"
+                    );
+                    if (port !== undefined && component !== undefined) {
+                        this.connection.show(
+                            {
+                                left: port[2][0],
+                                top: port[2][1],
+                                width: port[2][2] - port[2][0],
+                                height: port[2][3] - port[2][1],
+                            },
+                            {
+                                left: component[2][0],
+                                top: component[2][1],
+                                width: component[2][2] - component[2][0],
+                                height: component[2][3] - component[2][1],
+                            }
+                        );
+                    } else {
+                        this.connection.hide();
+                    }
+                    console.log(`Connection coors: ${JSON.stringify(coors)}`);
+                } else {
+                    this.connection.hide();
+                }
                 this.subjects.get().onPortHover.emit({
                     id,
                     contains: groupped === undefined ? [] : groupped[1],
@@ -252,6 +287,7 @@ export class Board {
             }
         } else {
             this.hover.port.hide();
+            this.connection.hide();
         }
     }
 
@@ -353,5 +389,29 @@ export class Board {
 
     public getGrouppedPorts(): [number, number[]][] {
         return this.board.get_groupped_ports() as [number, number[]][];
+    }
+
+    public getCoorsByIds(ids: number[]): Types.ElementCoors[] {
+        return this.board.get_coors_by_ids(
+            this.position.x,
+            this.position.y,
+            this.position.zoom,
+            Uint32Array.from(ids)
+        );
+    }
+
+    public getConnectionInfo(
+        port: number
+    ): { port: number; component: number } | undefined {
+        const info: [number, number] | undefined | string =
+            this.board.get_connection_info(port);
+        if (typeof info === "string") {
+            console.error(info);
+            return undefined;
+        }
+        if (info === undefined || info === null) {
+            return undefined;
+        }
+        return { port: info[0], component: info[1] };
     }
 }

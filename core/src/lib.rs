@@ -146,6 +146,27 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn get_coors_by_ids(
+        &self,
+        x: i32,
+        y: i32,
+        zoom: f64,
+        ids: Vec<usize>,
+    ) -> Result<JsValue, String> {
+        let relative = Relative::new(x, y, Some(zoom));
+        let ports = self.render.get_coors_by_ids(&ids, &relative)?;
+        let components = self.grid.get_coors_by_ids(&ids, &relative);
+        let elements = [components, ports].concat();
+        serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_connection_info(&self, port: usize) -> Result<JsValue, String> {
+        let result = self.render.get_connection_info(port);
+        serde_wasm_bindgen::to_value(&result).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
     pub fn draw_by_id(
         &mut self,
         id: usize,
