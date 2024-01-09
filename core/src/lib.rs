@@ -4,15 +4,15 @@ extern crate wasm_bindgen;
 mod entity;
 mod error;
 mod render;
-
 use entity::{
     dummy::{Dummy, SignatureProducer},
     Composition, Signature,
 };
 use error::E;
-use render::{Grid, Relative, Render, Style};
+use render::{options::Options, Grid, Relative, Render, Style};
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_test::console_log;
 use web_sys::CanvasRenderingContext2d;
 
 #[wasm_bindgen]
@@ -22,6 +22,7 @@ pub struct Board {
     width: u32,
     height: u32,
     grid: Grid,
+    options: Options,
 }
 
 #[wasm_bindgen]
@@ -36,8 +37,11 @@ impl Board {
                 RangeInclusive::new(ports, ports + ports),
             ),
         );
+        let options = Options::default();
+        let render = Render::<Composition>::new(composition, &options);
         Self {
-            render: Render::<Composition>::new(composition),
+            options,
+            render,
             context: None,
             width: 0,
             height: 0,
@@ -46,9 +50,18 @@ impl Board {
     }
 
     #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
+    pub fn new(options: JsValue) -> Self {
+        let options = match serde_wasm_bindgen::from_value::<Options>(options) {
+            Ok(options) => options,
+            Err(err) => {
+                console_log!("Fail to parse options: {err}; default will be used.");
+                Options::default()
+            }
+        };
+        let render = Render::<Composition>::new(Composition::new(Signature::fake()), &options);
         Self {
-            render: Render::<Composition>::new(Composition::new(Signature::fake())),
+            options,
+            render,
             context: None,
             width: 0,
             height: 0,
@@ -60,9 +73,9 @@ impl Board {
     pub fn init(&mut self, composition: JsValue, expanded: Vec<usize>) -> Result<(), String> {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
-        self.render = Render::<Composition>::new(composition);
+        self.render = Render::<Composition>::new(composition, &self.options);
         self.grid = Grid::new(0);
-        Ok(self.render.calc(&mut self.grid, &expanded)?)
+        Ok(self.render.calc(&mut self.grid, &expanded, &self.options)?)
     }
 
     #[wasm_bindgen]
@@ -115,6 +128,7 @@ impl Board {
                     .iter()
                     .map(|(id, _, _)| id.parse::<usize>().unwrap())
                     .collect(),
+                &self.options,
             ) {
                 self.context = Some(context);
                 Err(e)?
@@ -190,6 +204,7 @@ impl Board {
                     None
                 },
                 id,
+                &self.options,
             ) {
                 self.context = Some(context);
                 Err(e)?
@@ -206,12 +221,6 @@ impl Board {
     pub fn get_groupped_ports(&self) -> Result<JsValue, String> {
         let ports: Vec<(usize, Vec<usize>)> = self.render.get_groupped_ports()?;
         serde_wasm_bindgen::to_value(&ports).map_err(|e| e.to_string())
-    }
-}
-
-impl Default for Board {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

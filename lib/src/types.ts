@@ -68,3 +68,41 @@ export function getComposition(
     }
     return undefined;
 }
+
+export enum PortsRepresentation {
+    Blocks,
+    Labels,
+}
+
+export interface PortsOptions {
+    representation: PortsRepresentation;
+    grouping: boolean;
+}
+
+export enum ConnectionsAlign {
+    Streamlined,
+    Straight,
+}
+
+export interface ConnectionsOptions {
+    align: ConnectionsAlign;
+    hide: boolean;
+}
+
+export interface Options {
+    ports: PortsOptions;
+    connections: ConnectionsOptions;
+}
+
+export function getDefaultsOptions(): Options {
+    return {
+        ports: {
+            representation: PortsRepresentation.Blocks,
+            grouping: true,
+        },
+        connections: {
+            align: ConnectionsAlign.Streamlined,
+            hide: false,
+        },
+    };
+}

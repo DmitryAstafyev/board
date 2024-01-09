@@ -98,7 +98,7 @@ export class Board {
         history: [],
     };
 
-    constructor(parent: string | HTMLElement) {
+    constructor(parent: string | HTMLElement, options: Types.Options) {
         const node: HTMLElement | null = (() => {
             if (typeof parent === "string") {
                 return document.querySelector(parent);
@@ -129,7 +129,7 @@ export class Board {
         this.canvas.setAttribute("id", this.id);
         this.parent.appendChild(this.canvas);
         this.setSize();
-        this.board = new wasm.core.Board();
+        this.board = new wasm.core.Board(options);
         this.board.bind(this.id);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);

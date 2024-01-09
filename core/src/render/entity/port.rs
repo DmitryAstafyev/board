@@ -5,6 +5,7 @@ use crate::{
         elements,
         form::Rectangle,
         grid::{ElementCoors, ElementType, CELL},
+        options::Options,
         Container, Form, Relative, Render, Representation, Style, View,
     },
 };
@@ -13,13 +14,13 @@ pub const PORT_SIDE: i32 = 8;
 const PORTS_VERTICAL_OFFSET: i32 = CELL as i32;
 
 impl Render<Ports> {
-    pub fn new(mut entity: Ports) -> Self {
+    pub fn new(mut entity: Ports, options: &Options) -> Self {
         entity.ports = entity
             .ports
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(port) = r {
-                    Representation::Render(Render::<Port>::new(port))
+                    Representation::Render(Render::<Port>::new(port, options))
                 } else {
                     r
                 }
@@ -75,7 +76,7 @@ impl Render<Ports> {
         elements::max(&[max_in, max_out], 0) as i32 * PORTS_VERTICAL_OFFSET + PORTS_VERTICAL_OFFSET
     }
 
-    pub fn calc(&mut self, container_width: i32) -> Result<(), E> {
+    pub fn calc(&mut self, container_width: i32, options: &Options) -> Result<(), E> {
         let hide = self.origin().hide_invisible;
         // Calc ports
         for port in self
@@ -84,7 +85,7 @@ impl Render<Ports> {
             .iter_mut()
             .filter(|p| p.origin().visibility || !hide)
         {
-            port.render_mut()?.calc()?;
+            port.render_mut()?.calc(options)?;
         }
         // Order ports on a left side
         let mut cursor: i32 = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
@@ -125,6 +126,7 @@ impl Render<Ports> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
+        options: &Options,
     ) -> Result<(), E> {
         let self_relative = self.relative(relative);
         let hide = self.origin().hide_invisible;
@@ -134,7 +136,7 @@ impl Render<Ports> {
             .iter_mut()
             .filter(|p| p.origin().visibility || !hide)
         {
-            port.render_mut()?.draw(context, &self_relative)?;
+            port.render_mut()?.draw(context, &self_relative, options)?;
         }
         Ok(())
     }
@@ -164,7 +166,7 @@ impl Render<Ports> {
 }
 
 impl Render<Port> {
-    pub fn new(entity: Port) -> Self {
+    pub fn new(entity: Port, options: &Options) -> Self {
         let id = entity.sig.id;
         Self {
             entity,
@@ -189,7 +191,7 @@ impl Render<Port> {
         }
     }
 
-    pub fn calc(&mut self) -> Result<(), E> {
+    pub fn calc(&mut self, options: &Options) -> Result<(), E> {
         Ok(())
     }
 
@@ -197,6 +199,7 @@ impl Render<Port> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
+        options: &Options,
     ) -> Result<(), E> {
         // if let Some(over) = self.over_style.as_ref() {
         //     over.apply(context);

@@ -2,6 +2,7 @@ pub mod elements;
 pub mod entity;
 pub mod form;
 pub mod grid;
+pub mod options;
 pub mod representation;
 pub mod style;
 

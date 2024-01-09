@@ -10,6 +10,7 @@ use crate::{
         entity::port,
         form::{button, Button, Path, Point, Rectangle},
         grid::{Cell, ElementCoors, ElementType, Layout, CELL},
+        options::Options,
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
 };
@@ -59,7 +60,7 @@ fn find<'a>(
 }
 
 impl Render<Composition> {
-    pub fn new(mut entity: Composition) -> Self {
+    pub fn new(mut entity: Composition, options: &Options) -> Self {
         let mut sig_producer = SignatureProducer::new(100000000);
         let (added_connections, mut added_ports) =
             group_ports(&entity.connections, &mut sig_producer);
@@ -83,7 +84,7 @@ impl Render<Composition> {
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(component) = r {
-                    Representation::Render(Render::<Component>::new(component))
+                    Representation::Render(Render::<Component>::new(component, options))
                 } else {
                     r
                 }
@@ -94,7 +95,7 @@ impl Render<Composition> {
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(composition) = r {
-                    Representation::Render(Render::<Composition>::new(composition))
+                    Representation::Render(Render::<Composition>::new(composition, options))
                 } else {
                     r
                 }
@@ -112,7 +113,7 @@ impl Render<Composition> {
             })
             .collect::<Vec<Representation<Connection>>>();
         entity.ports = if let Representation::Origin(ports) = entity.ports {
-            Representation::Render(Render::<Ports>::new(ports))
+            Representation::Render(Render::<Ports>::new(ports, options))
         } else {
             entity.ports
         };
@@ -270,7 +271,12 @@ impl Render<Composition> {
         Ok(())
     }
 
-    pub fn calc(&mut self, grid: &mut Grid, expanded: &[usize]) -> Result<(), E> {
+    pub fn calc(
+        &mut self,
+        grid: &mut Grid,
+        expanded: &[usize],
+        options: &Options,
+    ) -> Result<(), E> {
         // Create composition grid
         let mut composition_grid = Grid::new(3);
         // Order components by connections number
@@ -279,19 +285,20 @@ impl Render<Composition> {
             if expanded.contains(&composition.origin().sig.id) {
                 composition
                     .render_mut()?
-                    .calc(&mut composition_grid, expanded)?;
+                    .calc(&mut composition_grid, expanded, options)?;
                 composition.render_mut()?.show();
             } else {
                 self.entity
                     .components
                     .push(Representation::Render(Render::<Component>::new(
-                        composition.origin().to_component(),
+                        composition.origin().to_component(options),
+                        options,
                     )));
                 composition.render_mut()?.hide();
             }
         }
         for component in self.entity.components.iter_mut() {
-            component.render_mut()?.calc()?;
+            component.render_mut()?.calc(options)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
         let mut dependencies: Vec<(usize, usize)> = vec![];
@@ -336,7 +343,7 @@ impl Render<Composition> {
         self.entity
             .ports
             .render_mut()?
-            .calc(self.view.container.get_box_size().0)?;
+            .calc(self.view.container.get_box_size().0, options)?;
         // Add composition as itself into grid
         composition_grid.insert_self(self.entity.sig.id);
         if let Some(container) = self.view.elements.first_mut() {
@@ -353,6 +360,7 @@ impl Render<Composition> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
         targets: &Vec<usize>,
+        options: &Options,
     ) -> Result<(), E> {
         if !targets.contains(&self.entity.sig.id) || self.hidden {
             return Ok(());
@@ -362,14 +370,14 @@ impl Render<Composition> {
         self.entity
             .ports
             .render_mut()?
-            .draw(context, &self_relative)?;
+            .draw(context, &self_relative, options)?;
         for component in self
             .entity
             .components
             .iter_mut()
             .filter(|comp| targets.contains(&comp.origin().sig.id))
         {
-            component.render_mut()?.draw(context, relative)?;
+            component.render_mut()?.draw(context, relative, options)?;
         }
         for composition in self
             .entity
@@ -377,7 +385,9 @@ impl Render<Composition> {
             .iter_mut()
             .filter(|comp| targets.contains(&comp.origin().sig.id))
         {
-            composition.render_mut()?.draw(context, relative, targets)?;
+            composition
+                .render_mut()?
+                .draw(context, relative, targets, options)?;
         }
         for connection in self.entity.connections.iter_mut().filter(|conn| {
             targets.contains(&conn.origin().joint_in.component)
@@ -401,6 +411,7 @@ impl Render<Composition> {
         relative: &Relative,
         style: Option<Style>,
         id: usize,
+        options: &Options,
     ) -> Result<(), E> {
         if let Some(component) = self
             .entity
@@ -409,7 +420,7 @@ impl Render<Composition> {
             .find(|comp| comp.origin().sig.id == id)
         {
             component.render_mut()?.set_over_style(style);
-            component.render_mut()?.draw(context, relative)?;
+            component.render_mut()?.draw(context, relative, options)?;
         }
         grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())

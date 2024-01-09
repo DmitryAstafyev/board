@@ -1,6 +1,6 @@
 use crate::{
     entity::{Component, Connection, Ports, Signature},
-    render::{Render, Representation},
+    render::{options::Options, Render, Representation},
 };
 use serde::{Deserialize, Serialize};
 
@@ -42,10 +42,13 @@ impl Composition {
         });
     }
 
-    pub fn to_component(&self) -> Component {
+    pub fn to_component(&self, options: &Options) -> Component {
         Component {
             sig: self.sig.clone(),
-            ports: Representation::Render(Render::<Ports>::new(self.ports.origin().clone())),
+            ports: Representation::Render(Render::<Ports>::new(
+                self.ports.origin().clone(),
+                options,
+            )),
             composition: true,
         }
     }

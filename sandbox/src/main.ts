@@ -7,6 +7,8 @@ import {
     PortType,
     Signature,
     Representation,
+    Options,
+    getDefaultsOptions,
 } from "board";
 
 enum Types {
@@ -406,7 +408,7 @@ function real() {
             console.log(root);
             // console.log(JSON.stringify(root));
             // console.log(elements);
-            const board = new Board(`div#container`);
+            const board = new Board(`div#container`, getDefaultsOptions());
             board.bind(root, []);
             board.render();
             board.subjects.get().onPortHover.subscribe((event) => {
@@ -422,7 +424,7 @@ function real() {
 function dummy() {
     setTimeout(() => {
         const composition = getDummyComposition(10, 5, 2, undefined);
-        const board = new Board(`div#container`);
+        const board = new Board(`div#container`, getDefaultsOptions());
         board.bind(composition, []);
         board.render();
         board.subjects.get().onPortHover.subscribe((event) => {

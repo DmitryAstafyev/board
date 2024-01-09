@@ -331,7 +331,7 @@ function real() {
             console.log(root);
             // console.log(JSON.stringify(root));
             // console.log(elements);
-            const board = new board_1.Board(`div#container`);
+            const board = new board_1.Board(`div#container`, (0, board_1.getDefaultsOptions)());
             board.bind(root, []);
             board.render();
             board.subjects.get().onPortHover.subscribe((event) => {
@@ -346,7 +346,7 @@ function real() {
 function dummy() {
     setTimeout(() => {
         const composition = getDummyComposition(10, 5, 2, undefined);
-        const board = new board_1.Board(`div#container`);
+        const board = new board_1.Board(`div#container`, (0, board_1.getDefaultsOptions)());
         board.bind(composition, []);
         board.render();
         board.subjects.get().onPortHover.subscribe((event) => {

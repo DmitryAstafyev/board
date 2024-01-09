@@ -2,8 +2,8 @@ use crate::{
     entity::{Component, Ports},
     error::E,
     render::{
-        elements, form::GridRectangle, Container, Form, Relative, Render, Representation, Style,
-        View,
+        elements, form::GridRectangle, options::Options, Container, Form, Relative, Render,
+        Representation, Style, View,
     },
 };
 
@@ -11,9 +11,9 @@ const MIN_HEIGHT: i32 = 64;
 const MIN_WIDTH: i32 = 64;
 
 impl Render<Component> {
-    pub fn new(mut entity: Component) -> Self {
+    pub fn new(mut entity: Component, options: &Options) -> Self {
         entity.ports = if let Representation::Origin(ports) = entity.ports {
-            Representation::Render(Render::<Ports>::new(ports))
+            Representation::Render(Render::<Ports>::new(ports, options))
         } else {
             entity.ports
         };
@@ -46,7 +46,7 @@ impl Render<Component> {
         }
     }
 
-    pub fn calc(&mut self) -> Result<(), E> {
+    pub fn calc(&mut self, options: &Options) -> Result<(), E> {
         // Set self size
         self.view.container.set_box_size(
             None,
@@ -59,7 +59,7 @@ impl Render<Component> {
         self.entity
             .ports
             .render_mut()?
-            .calc(self.view.container.get_box_size().0)?;
+            .calc(self.view.container.get_box_size().0, options)?;
         Ok(())
     }
 
@@ -67,13 +67,14 @@ impl Render<Component> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
+        options: &Options,
     ) -> Result<(), E> {
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
         self.entity
             .ports
             .render_mut()?
-            .draw(context, &self_relative)?;
+            .draw(context, &self_relative, options)?;
         let _ = context.stroke_text(
             &self.origin().sig.id.to_string(),
             relative.x(self.view.container.get_coors().0) as f64,
