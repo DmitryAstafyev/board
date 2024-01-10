@@ -306,6 +306,25 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
         parent,
     };
 }
+function getLabeledPortsOptions() {
+    return {
+        ports: {
+            representation: board_1.PortsRepresentation.Labels,
+            grouping: true,
+        },
+        connections: {
+            align: board_1.ConnectionsAlign.Streamlined,
+            hide: true,
+        },
+        grid: {
+            padding: 3,
+            cell_size_px: 25,
+            cells_space_vertical: 3,
+            cells_space_horizontal: 3,
+            visible: false,
+        },
+    };
+}
 function real() {
     setTimeout(() => {
         Promise.resolve().then(() => require("../resources/example.json")).then((data) => {
@@ -331,7 +350,7 @@ function real() {
             console.log(root);
             // console.log(JSON.stringify(root));
             // console.log(elements);
-            const board = new board_1.Board(`div#container`, (0, board_1.getDefaultsOptions)());
+            const board = new board_1.Board(`div#container`, getLabeledPortsOptions());
             board.bind(root, []);
             board.render();
             board.subjects.get().onPortHover.subscribe((event) => {
@@ -346,7 +365,7 @@ function real() {
 function dummy() {
     setTimeout(() => {
         const composition = getDummyComposition(10, 5, 2, undefined);
-        const board = new board_1.Board(`div#container`, (0, board_1.getDefaultsOptions)());
+        const board = new board_1.Board(`div#container`, getLabeledPortsOptions());
         board.bind(composition, []);
         board.render();
         board.subjects.get().onPortHover.subscribe((event) => {

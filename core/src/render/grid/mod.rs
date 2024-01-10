@@ -1,6 +1,6 @@
 use crate::{
     error::E,
-    render::{elements, Form, Relative},
+    render::{elements, options::GridOptions, Form, Relative},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -28,8 +28,8 @@ pub enum Layout<'a> {
     _WithFormsBySides((Vec<&'a Form>, Vec<&'a Form>, Vec<&'a Form>)),
     // From other grids into row
     _GridsRow(&'a [Grid]),
-    // Order grids into one box: Grid[], offset_by_each_side
-    _GridsBox(&'a mut [Grid], u32),
+    // Order grids into one box: Grid[],
+    _GridsBox(&'a mut [Grid]),
 }
 
 pub fn as_u32(n: i32) -> u32 {
@@ -75,6 +75,7 @@ impl Cell {
                 left: false,
             });
         }
+        console_log!("({x},{y}): {left:?}, {right:?}");
         Err(E::Other("Fail to detect start point".to_string()))
     }
     pub fn normalize(
@@ -255,8 +256,7 @@ impl Cell {
 }
 #[derive(Debug, Clone)]
 pub struct Grid {
-    // Offset from each side
-    pub offset: u32,
+    pub options: GridOptions,
     // Total grid size
     pub size: (u32, u32),
     // Cells map <EntityID, Occupied area <(x, y, x1, y1)>>
@@ -265,23 +265,23 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn new(offset: u32) -> Self {
+    pub fn new(options: &GridOptions) -> Self {
         Grid {
-            offset,
-            size: (offset * 2, offset * 2),
+            options: options.clone(),
+            size: (options.padding * 2, options.padding * 2),
             map: HashMap::new(),
             id: None,
         }
     }
 
-    pub fn from(layout: Layout<'_>) -> Result<Self, E> {
+    pub fn from(layout: Layout<'_>, options: &GridOptions) -> Result<Self, E> {
         Ok(match layout {
             Layout::_WithFormsBySides((left, center, right)) => {
-                with_forms_by_sides(left, center, right)?
+                with_forms_by_sides(left, center, right, options)?
             }
-            Layout::Pair(a, b) => forms_as_pair(a, b)?,
-            Layout::_GridsRow(grids) => from_grids_into_row(grids),
-            Layout::_GridsBox(grids, offset) => from_grids_into_box(grids, offset),
+            Layout::Pair(a, b) => forms_as_pair(a, b, options)?,
+            Layout::_GridsRow(grids) => from_grids_into_row(grids, options),
+            Layout::_GridsBox(grids) => from_grids_into_box(grids, options),
         })
     }
 
@@ -416,7 +416,7 @@ impl Grid {
     fn is_block_free(&self, target: (u32, u32, u32, u32)) -> bool {
         let (mut x, mut y, mut x1, mut y1) = target;
         // Check space
-        if self.size.0 - self.offset < x1 || self.size.1 - self.offset < y1 {
+        if self.size.0 - self.options.padding < x1 || self.size.1 - self.options.padding < y1 {
             return false;
         }
         // Extend box to consider necessary spaces
@@ -458,10 +458,10 @@ impl Grid {
     }
 
     fn is_point_free(&self, point: &(u32, u32)) -> bool {
-        if point.0 < self.offset
-            || point.0 > self.size.0 + self.offset * 2
-            || point.1 < self.offset
-            || point.1 > self.size.1 + self.offset * 2
+        if point.0 < self.options.padding
+            || point.0 > self.size.0 + self.options.padding * 2
+            || point.1 < self.options.padding
+            || point.1 > self.size.1 + self.options.padding * 2
         {
             return false;
         }
@@ -501,14 +501,14 @@ impl Grid {
             .map(|(_, _, x1, _)| x1)
             .max()
             .unwrap_or(&0)
-            + self.offset;
+            + self.options.padding;
         let max_y = self
             .map
             .values()
             .map(|(_, _, _, y1)| y1)
             .max()
             .unwrap_or(&0)
-            + self.offset;
+            + self.options.padding;
         self.size = (
             [max_x + 1, self.size.0].iter().min().copied().unwrap_or(0),
             [max_y + 1, self.size.1].iter().min().copied().unwrap_or(0),
@@ -520,8 +520,8 @@ impl Grid {
         // Looking for point to insert grid
         let mut point: Option<(u32, u32)> = None;
         self.size = (
-            elements::max(&[self.size.0, grid.size.0], self.offset * 2),
-            elements::max(&[self.size.1, grid.size.1], self.offset * 2),
+            elements::max(&[self.size.0, grid.size.0], self.options.padding * 2),
+            elements::max(&[self.size.1, grid.size.1], self.options.padding * 2),
         );
         while point.is_none() {
             for y in 0..self.size.1 {
@@ -622,7 +622,7 @@ fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
     Ok(data)
 }
 
-fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>) -> Result<Grid, E> {
+fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<Grid, E> {
     let on_left = get_sizes(a)?;
     let on_right = get_sizes(b)?;
     let mut map: HashMap<String, (u32, u32, u32, u32)> = HashMap::new();
@@ -667,14 +667,21 @@ fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>) -> Result<Grid, E> {
         };
         size.0 += max_w;
     }
+    let mut options = options.clone();
+    options.padding = 0;
     Ok(Grid {
-        offset: 0,
+        options,
         size,
         map,
         id: None,
     })
 }
-fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) -> Result<Grid, E> {
+fn with_forms_by_sides(
+    left: Vec<&Form>,
+    center: Vec<&Form>,
+    right: Vec<&Form>,
+    options: &GridOptions,
+) -> Result<Grid, E> {
     let on_left = get_sizes(left)?;
     let on_center = get_sizes(center)?;
     let on_right = get_sizes(right)?;
@@ -732,15 +739,17 @@ fn with_forms_by_sides(left: Vec<&Form>, center: Vec<&Form>, right: Vec<&Form>) 
     } else {
         (rows - 1) * SPACE_IN_HORIZONT
     };
+    let mut options = options.clone();
+    options.padding = 0;
     Ok(Grid {
-        offset: 0,
+        options,
         size,
         map,
         id: None,
     })
 }
 
-fn from_grids_into_row(grids: &[Grid]) -> Grid {
+fn from_grids_into_row(grids: &[Grid], options: &GridOptions) -> Grid {
     let mut map: HashMap<String, (u32, u32, u32, u32)> = HashMap::new();
     let mut size: (u32, u32) = (0, 0);
     grids.iter().for_each(|grid| {
@@ -760,18 +769,20 @@ fn from_grids_into_row(grids: &[Grid]) -> Grid {
     if size.0 > 0 {
         size.0 -= SPACE_IN_HORIZONT;
     }
+    let mut options = options.clone();
+    options.padding = 0;
     Grid {
-        offset: 0,
+        options,
         size,
         map,
         id: None,
     }
 }
 
-fn from_grids_into_box(grids: &mut [Grid], offset: u32) -> Grid {
+fn from_grids_into_box(grids: &mut [Grid], options: &GridOptions) -> Grid {
     // Sort from biggest to smallest
     grids.sort_by(|a, b| (b.size.0 * b.size.1).cmp(&(a.size.0 * a.size.1)));
-    let mut packed = Grid::new(offset);
+    let mut packed = Grid::new(options);
     // Merge grids
     grids.iter().for_each(|grid| {
         packed.insert(grid);

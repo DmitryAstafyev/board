@@ -8,8 +8,8 @@ pub enum PortsRepresentation {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Ports {
-    representation: PortsRepresentation,
-    grouping: bool,
+    pub representation: PortsRepresentation,
+    pub grouping: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -20,14 +20,24 @@ pub enum ConnectionsAlign {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Connections {
-    align: ConnectionsAlign,
-    hide: bool,
+    pub align: ConnectionsAlign,
+    pub hide: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct GridOptions {
+    pub cell_size_px: u32,
+    pub cells_space_vertical: u32,
+    pub cells_space_horizontal: u32,
+    pub visible: bool,
+    pub padding: u32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Options {
-    ports: Ports,
-    connections: Connections,
+    pub ports: Ports,
+    pub connections: Connections,
+    pub grid: GridOptions,
 }
 
 impl Default for Options {
@@ -40,6 +50,13 @@ impl Default for Options {
             connections: Connections {
                 align: ConnectionsAlign::Streamlined,
                 hide: false,
+            },
+            grid: GridOptions {
+                padding: 3,
+                cell_size_px: 25,
+                cells_space_vertical: 3,
+                cells_space_horizontal: 3,
+                visible: true,
             },
         }
     }

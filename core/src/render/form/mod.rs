@@ -1,11 +1,13 @@
 pub mod button;
 pub mod grid_rectangle;
+pub mod label;
 pub mod path;
 pub mod rectangle;
 
 use crate::{error::E, render::Relative, render::Style};
 pub use button::Button;
 pub use grid_rectangle::GridRectangle;
+pub use label::Label;
 pub use path::{Path, Point};
 pub use rectangle::Rectangle;
 
@@ -62,6 +64,7 @@ pub enum Form {
     Rectangle(Rectangle),
     Path(Path),
     Button(Button),
+    Label(Label),
 }
 
 impl Form {
@@ -71,6 +74,7 @@ impl Form {
             Self::GridRectangle(figure) => figure.get_box_size(),
             Self::Path(figure) => figure.get_box_size(),
             Self::Button(figure) => figure.get_box_size(),
+            Self::Label(figure) => figure.get_box_size(),
         }
     }
     pub fn set_box_size(&mut self, w: Option<i32>, h: Option<i32>) {
@@ -79,6 +83,7 @@ impl Form {
             Self::GridRectangle(figure) => figure.set_box_size(w, h),
             Self::Path(_) => { /* Ignore */ }
             Self::Button(_) => { /* Ignore */ }
+            Self::Label(_) => { /* Ignore */ }
         }
     }
     pub fn set_coors(&mut self, x: Option<i32>, y: Option<i32>) {
@@ -87,6 +92,7 @@ impl Form {
             Self::GridRectangle(figure) => figure.set_coors(x, y),
             Self::Path(_) => { /* Ignore */ }
             Self::Button(figure) => figure.set_coors(x, y),
+            Self::Label(figure) => figure.set_coors(x, y),
         }
     }
     pub fn get_coors(&self) -> (i32, i32) {
@@ -98,6 +104,7 @@ impl Form {
                 (0, 0)
             }
             Self::Button(figure) => figure.get_coors(),
+            Self::Label(figure) => figure.get_coors(),
         }
     }
     pub fn get_coors_with_zoom(&self, relative: &Relative) -> (i32, i32) {
@@ -107,6 +114,7 @@ impl Form {
                 (0, 0)
             }
             Self::Button(figure) => figure.get_coors_with_zoom(relative),
+            Self::Label(figure) => figure.get_coors_with_zoom(relative),
         }
     }
     pub fn cells(&self) -> Result<(u32, u32), E> {
@@ -115,6 +123,7 @@ impl Form {
             Self::GridRectangle(figure) => Ok(figure.cells),
             Self::Path(_) => Err(E::NotGridForm),
             Self::Button(_) => Err(E::NotGridForm),
+            Self::Label(_) => Err(E::NotGridForm),
         }
     }
     pub fn id(&self) -> String {
@@ -123,6 +132,7 @@ impl Form {
             Self::GridRectangle(figure) => figure.id.clone(),
             Self::Path(figure) => figure.id.clone(),
             Self::Button(figure) => figure.id.clone(),
+            Self::Label(figure) => figure.id.clone(),
         }
     }
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
@@ -131,6 +141,7 @@ impl Form {
             Self::GridRectangle(figure) => figure.render(context, relative),
             Self::Path(figure) => figure.render(context, relative),
             Self::Button(figure) => figure.render(context, relative),
+            Self::Label(figure) => figure.render(context, relative),
         }
     }
 }

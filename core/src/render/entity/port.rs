@@ -1,11 +1,13 @@
+use wasm_bindgen_test::console_log;
+
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
     render::{
         elements,
-        form::Rectangle,
+        form::{label, Label, Rectangle},
         grid::{ElementCoors, ElementType, CELL},
-        options::Options,
+        options::{self, Options},
         Container, Form, Relative, Render, Representation, Style, View,
     },
 };
@@ -77,6 +79,7 @@ impl Render<Ports> {
     }
 
     pub fn calc(&mut self, container_width: i32, options: &Options) -> Result<(), E> {
+        console_log!("{options:?}");
         let hide = self.origin().hide_invisible;
         // Calc ports
         for port in self
@@ -168,22 +171,52 @@ impl Render<Ports> {
 impl Render<Port> {
     pub fn new(entity: Port, options: &Options) -> Self {
         let id = entity.sig.id;
+        let label = if entity.contains.is_empty() {
+            id.to_string()
+        } else if let (1, Some(id)) = (entity.contains.len(), entity.contains.first()) {
+            id.to_string()
+        } else {
+            format!("{} ports", entity.contains.len())
+        };
+        let align = match entity.port_type {
+            PortType::Out => label::Align::Left,
+            PortType::In => label::Align::Right,
+        };
         Self {
             entity,
             view: View {
-                container: Container {
-                    form: Form::Rectangle(Rectangle {
-                        x: 0,
-                        y: 0,
-                        w: PORT_SIDE,
-                        h: PORT_SIDE,
-                        id: id.to_string(),
-                    }),
-                    style: Style {
-                        stroke_style: String::from("rgb(0,0,0)"),
-                        fill_style: String::from("rgb(50,50,50)"),
+                container: match options.ports.representation {
+                    options::PortsRepresentation::Blocks => Container {
+                        form: Form::Rectangle(Rectangle {
+                            x: 0,
+                            y: 0,
+                            w: PORT_SIDE,
+                            h: PORT_SIDE,
+                            id: id.to_string(),
+                        }),
+                        style: Style {
+                            stroke_style: String::from("rgb(0,0,0)"),
+                            fill_style: String::from("rgb(50,50,50)"),
+                        },
+                        hover: None,
                     },
-                    hover: None,
+                    options::PortsRepresentation::Labels => Container {
+                        form: Form::Label(Label {
+                            x: 0,
+                            y: 0,
+                            w: 0,
+                            h: 0,
+                            id: id.to_string(),
+                            padding: 4,
+                            label,
+                            align,
+                        }),
+                        style: Style {
+                            stroke_style: String::from("rgb(0,0,0)"),
+                            fill_style: String::from("rgb(220,220,220)"),
+                        },
+                        hover: None,
+                    },
                 },
                 elements: vec![],
             },

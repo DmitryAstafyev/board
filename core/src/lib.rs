@@ -39,13 +39,16 @@ impl Board {
         );
         let options = Options::default();
         let render = Render::<Composition>::new(composition, &options);
+        let mut grid_options = options.grid.clone();
+        grid_options.padding = 0;
+        let grid = Grid::new(&grid_options);
         Self {
             options,
             render,
             context: None,
             width: 0,
             height: 0,
-            grid: Grid::new(0),
+            grid,
         }
     }
 
@@ -59,13 +62,16 @@ impl Board {
             }
         };
         let render = Render::<Composition>::new(Composition::new(Signature::fake()), &options);
+        let mut grid_options = options.grid.clone();
+        grid_options.padding = 0;
+        let grid = Grid::new(&grid_options);
         Self {
             options,
             render,
             context: None,
             width: 0,
             height: 0,
-            grid: Grid::new(0),
+            grid,
         }
     }
 
@@ -74,7 +80,9 @@ impl Board {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
         self.render = Render::<Composition>::new(composition, &self.options);
-        self.grid = Grid::new(0);
+        let mut grid_options = self.options.grid.clone();
+        grid_options.padding = 0;
+        self.grid = Grid::new(&grid_options);
         Ok(self.render.calc(&mut self.grid, &expanded, &self.options)?)
     }
 

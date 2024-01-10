@@ -70,8 +70,8 @@ export function getComposition(
 }
 
 export enum PortsRepresentation {
-    Blocks,
-    Labels,
+    Blocks = "Blocks",
+    Labels = "Labels",
 }
 
 export interface PortsOptions {
@@ -80,8 +80,8 @@ export interface PortsOptions {
 }
 
 export enum ConnectionsAlign {
-    Streamlined,
-    Straight,
+    Streamlined = "Streamlined",
+    Straight = "Straight",
 }
 
 export interface ConnectionsOptions {
@@ -89,9 +89,17 @@ export interface ConnectionsOptions {
     hide: boolean;
 }
 
+export interface GridOptions {
+    cell_size_px: number;
+    cells_space_vertical: number;
+    cells_space_horizontal: number;
+    visible: boolean;
+    padding: number;
+}
 export interface Options {
     ports: PortsOptions;
     connections: ConnectionsOptions;
+    grid: GridOptions;
 }
 
 export function getDefaultsOptions(): Options {
@@ -103,6 +111,13 @@ export function getDefaultsOptions(): Options {
         connections: {
             align: ConnectionsAlign.Streamlined,
             hide: false,
+        },
+        grid: {
+            padding: 3,
+            cell_size_px: 25,
+            cells_space_vertical: 3,
+            cells_space_horizontal: 3,
+            visible: true,
         },
     };
 }

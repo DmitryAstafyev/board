@@ -278,7 +278,7 @@ impl Render<Composition> {
         options: &Options,
     ) -> Result<(), E> {
         // Create composition grid
-        let mut composition_grid = Grid::new(3);
+        let mut composition_grid = Grid::new(&options.grid);
         // Order components by connections number
         self.entity.order();
         for composition in self.entity.compositions.iter_mut() {
@@ -319,15 +319,18 @@ impl Render<Composition> {
         for (a_id, b_id) in dependencies {
             let a = get_forms_by_ids(&self.entity.components, &[a_id])?;
             let b = get_forms_by_ids(&self.entity.components, &[b_id])?;
-            let component_grid = Grid::from(Layout::Pair(a, b))?;
+            let component_grid = Grid::from(Layout::Pair(a, b), &options.grid)?;
             composition_grid.insert(&component_grid);
         }
         for component in self.entity.components.iter() {
             if !located.contains(&component.origin().sig.id) {
-                let component_grid = Grid::from(Layout::Pair(
-                    get_forms_by_ids(&self.entity.components, &[component.origin().sig.id])?,
-                    [].to_vec(),
-                ))?;
+                let component_grid = Grid::from(
+                    Layout::Pair(
+                        get_forms_by_ids(&self.entity.components, &[component.origin().sig.id])?,
+                        [].to_vec(),
+                    ),
+                    &options.grid,
+                )?;
                 composition_grid.insert(&component_grid);
             }
         }

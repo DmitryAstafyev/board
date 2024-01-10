@@ -9,6 +9,8 @@ import {
     Representation,
     Options,
     getDefaultsOptions,
+    PortsRepresentation,
+    ConnectionsAlign,
 } from "board";
 
 enum Types {
@@ -383,6 +385,26 @@ function getDummyComposition(
     };
 }
 
+function getLabeledPortsOptions(): Options {
+    return {
+        ports: {
+            representation: PortsRepresentation.Labels,
+            grouping: true,
+        },
+        connections: {
+            align: ConnectionsAlign.Streamlined,
+            hide: true,
+        },
+        grid: {
+            padding: 3,
+            cell_size_px: 25,
+            cells_space_vertical: 3,
+            cells_space_horizontal: 3,
+            visible: false,
+        },
+    };
+}
+
 function real() {
     setTimeout(() => {
         import("../resources/example.json").then((data: any) => {
@@ -408,7 +430,7 @@ function real() {
             console.log(root);
             // console.log(JSON.stringify(root));
             // console.log(elements);
-            const board = new Board(`div#container`, getDefaultsOptions());
+            const board = new Board(`div#container`, getLabeledPortsOptions());
             board.bind(root, []);
             board.render();
             board.subjects.get().onPortHover.subscribe((event) => {
@@ -424,7 +446,7 @@ function real() {
 function dummy() {
     setTimeout(() => {
         const composition = getDummyComposition(10, 5, 2, undefined);
-        const board = new Board(`div#container`, getDefaultsOptions());
+        const board = new Board(`div#container`, getLabeledPortsOptions());
         board.bind(composition, []);
         board.render();
         board.subjects.get().onPortHover.subscribe((event) => {
