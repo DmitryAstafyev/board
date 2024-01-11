@@ -1,5 +1,3 @@
-use wasm_bindgen_test::console_log;
-
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
@@ -79,7 +77,6 @@ impl Render<Ports> {
     }
 
     pub fn calc(&mut self, container_width: i32, options: &Options) -> Result<(), E> {
-        console_log!("{options:?}");
         let hide = self.origin().hide_invisible;
         // Calc ports
         for port in self
@@ -90,37 +87,73 @@ impl Render<Ports> {
         {
             port.render_mut()?.calc(options)?;
         }
-        // Order ports on a left side
-        let mut cursor: i32 = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
-        for port in self
-            .entity
-            .filter_mut(PortType::In)
-            .iter_mut()
-            .filter(|p| p.origin().visibility || !hide)
-        {
-            let render = port.render_mut()?;
-            let (w, _h) = render.view.container.get_box_size();
-            render
-                .view
-                .container
-                .set_coors(Some(-(w / 2)), Some(cursor));
-            cursor += PORTS_VERTICAL_OFFSET;
-        }
-        // Order ports on a right side
-        cursor = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
-        for port in self
-            .entity
-            .filter_mut(PortType::Out)
-            .iter_mut()
-            .filter(|p| p.origin().visibility || !hide)
-        {
-            let render = port.render_mut()?;
-            let (w, _h) = render.view.container.get_box_size();
-            render
-                .view
-                .container
-                .set_coors(Some(container_width - (w / 2)), Some(cursor));
-            cursor += PORTS_VERTICAL_OFFSET;
+        match options.ports.representation {
+            options::PortsRepresentation::Blocks => {
+                // Order ports on a left side
+                let mut cursor: i32 = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
+                for port in self
+                    .entity
+                    .filter_mut(PortType::In)
+                    .iter_mut()
+                    .filter(|p| p.origin().visibility || !hide)
+                {
+                    let render = port.render_mut()?;
+                    let (w, _h) = render.view.container.get_box_size();
+                    render
+                        .view
+                        .container
+                        .set_coors(Some(-(w / 2)), Some(cursor));
+                    cursor += PORTS_VERTICAL_OFFSET;
+                }
+                // Order ports on a right side
+                cursor = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
+                for port in self
+                    .entity
+                    .filter_mut(PortType::Out)
+                    .iter_mut()
+                    .filter(|p| p.origin().visibility || !hide)
+                {
+                    let render = port.render_mut()?;
+                    let (w, _h) = render.view.container.get_box_size();
+                    render
+                        .view
+                        .container
+                        .set_coors(Some(container_width - (w / 2)), Some(cursor));
+                    cursor += PORTS_VERTICAL_OFFSET;
+                }
+            }
+            options::PortsRepresentation::Labels => {
+                // Order ports on a left side
+                let label_height = (CELL as f64 * 0.7).floor() as i32;
+                let step_between = CELL as i32 - label_height;
+                let start_from = (step_between as f64 / 2.0).floor() as i32;
+                let mut cursor: i32 = start_from;
+                for port in self
+                    .entity
+                    .filter_mut(PortType::In)
+                    .iter_mut()
+                    .filter(|p| p.origin().visibility || !hide)
+                {
+                    let render = port.render_mut()?;
+                    render.view.container.set_coors(Some(0), Some(cursor));
+                    cursor += step_between + label_height;
+                }
+                // Order ports on a right side
+                cursor = start_from;
+                for port in self
+                    .entity
+                    .filter_mut(PortType::Out)
+                    .iter_mut()
+                    .filter(|p| p.origin().visibility || !hide)
+                {
+                    let render = port.render_mut()?;
+                    render
+                        .view
+                        .container
+                        .set_coors(Some(container_width), Some(cursor));
+                    cursor += step_between + label_height;
+                }
+            }
         }
         Ok(())
     }
@@ -150,7 +183,8 @@ impl Render<Ports> {
         let mut found: Vec<ElementCoors> = vec![];
         for port in self.entity.ports.iter() {
             let (x, y) = port.render()?.view.container.get_coors();
-            let area = (x, y, x + PORT_SIDE, y + PORT_SIDE);
+            let (w, h) = port.render()?.view.container.get_box_size();
+            let area = (x, y, x + w, y + h);
             if elements::is_point_in(position, &area) {
                 found.push((
                     port.origin().sig.id.to_string(),

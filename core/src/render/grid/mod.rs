@@ -8,8 +8,6 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_test::console_log;
 
 pub const CELL: u32 = 25;
-pub const SPACE_IN_VERTICAL: u32 = 3;
-pub const SPACE_IN_HORIZONT: u32 = 3;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ElementType {
@@ -420,18 +418,18 @@ impl Grid {
             return false;
         }
         // Extend box to consider necessary spaces
-        x = if x > SPACE_IN_HORIZONT {
-            x - SPACE_IN_HORIZONT
+        x = if x > self.options.cells_space_horizontal {
+            x - self.options.cells_space_horizontal
         } else {
             0
         };
-        y = if y > SPACE_IN_VERTICAL {
-            y - SPACE_IN_VERTICAL
+        y = if y > self.options.cells_space_vertical {
+            y - self.options.cells_space_vertical
         } else {
             0
         };
-        x1 += SPACE_IN_HORIZONT;
-        y1 += SPACE_IN_VERTICAL;
+        x1 += self.options.cells_space_horizontal;
+        y1 += self.options.cells_space_vertical;
         let extd_target = (x, y, x1, y1);
         // Check crossing
         for (_, (ax, ay, ax1, ay1)) in self.map.iter() {
@@ -586,11 +584,18 @@ impl Grid {
         self.cut_unused_space();
     }
 
+    pub fn as_px(&self, cells: u32) -> i32 {
+        (CELL * cells) as i32
+    }
+
     pub fn draw(
         &self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
+        if !self.options.visible {
+            return Ok(());
+        }
         context.set_stroke_style(&JsValue::from_str("rgb(150, 150, 150)"));
         context.begin_path();
         let w = (self.size.0 * CELL) as i32;
@@ -634,7 +639,7 @@ fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<
                 id.to_string(),
                 (0, cursor_by_y, w - 1, cursor_by_y + (h - 1)),
             );
-            cursor_by_y += h + SPACE_IN_VERTICAL;
+            cursor_by_y += h + options.cells_space_vertical;
             if size.0 < *w {
                 size.0 = *w;
                 if *w > 3 {
@@ -642,9 +647,9 @@ fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<
                 }
             }
         });
-        size.1 = cursor_by_y - SPACE_IN_VERTICAL;
+        size.1 = cursor_by_y - options.cells_space_vertical;
         if !on_right.is_empty() {
-            size.0 += SPACE_IN_HORIZONT;
+            size.0 += options.cells_space_horizontal;
         }
     };
     if !on_right.is_empty() {
@@ -655,13 +660,13 @@ fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<
                 id.to_string(),
                 (size.0, cursor_by_y, size.0 + (w - 1), cursor_by_y + (h - 1)),
             );
-            cursor_by_y += h + SPACE_IN_VERTICAL;
+            cursor_by_y += h + options.cells_space_vertical;
             if max_w < *w {
                 max_w = *w;
             }
         });
-        size.1 = if cursor_by_y - SPACE_IN_VERTICAL > size.1 {
-            cursor_by_y - SPACE_IN_VERTICAL
+        size.1 = if cursor_by_y - options.cells_space_vertical > size.1 {
+            cursor_by_y - options.cells_space_vertical
         } else {
             size.1
         };
@@ -691,16 +696,16 @@ fn with_forms_by_sides(
     let mut cursor_by_y: u32 = 0;
     on_left.iter().for_each(|(id, (w, h))| {
         map.insert(id.to_string(), (0, cursor_by_y, *w, cursor_by_y + h));
-        cursor_by_y += h + SPACE_IN_VERTICAL;
+        cursor_by_y += h + options.cells_space_vertical;
     });
     if cursor_by_y > 0 {
-        size.1 = cursor_by_y - SPACE_IN_VERTICAL;
+        size.1 = cursor_by_y - options.cells_space_vertical;
     }
     // Put center
     let mut cursor_by_x = *on_left.iter().map(|(_, (w, _))| w).max().unwrap_or(&0);
     size.0 = cursor_by_x;
     if cursor_by_x > 0 {
-        cursor_by_x += SPACE_IN_HORIZONT;
+        cursor_by_x += options.cells_space_horizontal;
     }
     cursor_by_y = 0;
     on_center.iter().for_each(|(id, (w, h))| {
@@ -708,16 +713,16 @@ fn with_forms_by_sides(
             id.to_string(),
             (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
         );
-        cursor_by_y += h + SPACE_IN_VERTICAL;
+        cursor_by_y += h + options.cells_space_vertical;
     });
-    if cursor_by_y > 0 && cursor_by_y - SPACE_IN_VERTICAL > size.1 {
-        size.1 = cursor_by_y - SPACE_IN_VERTICAL;
+    if cursor_by_y > 0 && cursor_by_y - options.cells_space_vertical > size.1 {
+        size.1 = cursor_by_y - options.cells_space_vertical;
     }
     // Put right side
     let center_width = *on_center.iter().map(|(_, (w, _))| w).max().unwrap_or(&0);
     size.0 += center_width;
     if center_width > 0 {
-        cursor_by_x += center_width + SPACE_IN_HORIZONT;
+        cursor_by_x += center_width + options.cells_space_horizontal;
     }
     cursor_by_y = 0;
     on_right.iter().for_each(|(id, (w, h))| {
@@ -725,10 +730,10 @@ fn with_forms_by_sides(
             id.to_string(),
             (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
         );
-        cursor_by_y += h + SPACE_IN_VERTICAL;
+        cursor_by_y += h + options.cells_space_vertical;
     });
-    if cursor_by_y > 0 && cursor_by_y - SPACE_IN_VERTICAL > size.1 {
-        size.1 = cursor_by_y - SPACE_IN_VERTICAL;
+    if cursor_by_y > 0 && cursor_by_y - options.cells_space_vertical > size.1 {
+        size.1 = cursor_by_y - options.cells_space_vertical;
     }
     size.0 += *on_right.iter().map(|(_, (w, _))| w).max().unwrap_or(&0);
     let rows = if on_right.is_empty() { 0 } else { 1 }
@@ -737,7 +742,7 @@ fn with_forms_by_sides(
     size.0 += if rows == 0 {
         0
     } else {
-        (rows - 1) * SPACE_IN_HORIZONT
+        (rows - 1) * options.cells_space_horizontal
     };
     let mut options = options.clone();
     options.padding = 0;
@@ -758,7 +763,7 @@ fn from_grids_into_row(grids: &[Grid], options: &GridOptions) -> Grid {
         });
         size.0 += grid.size.0
             + if grid.size.0 > 0 {
-                SPACE_IN_HORIZONT
+                options.cells_space_horizontal
             } else {
                 0
             };
@@ -767,7 +772,7 @@ fn from_grids_into_row(grids: &[Grid], options: &GridOptions) -> Grid {
         }
     });
     if size.0 > 0 {
-        size.0 -= SPACE_IN_HORIZONT;
+        size.0 -= options.cells_space_horizontal;
     }
     let mut options = options.clone();
     options.padding = 0;

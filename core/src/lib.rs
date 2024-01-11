@@ -162,7 +162,14 @@ impl Board {
         let relative = Relative::new(x, y, Some(zoom));
         let ids = self.grid.point((target_x, target_y), around, &relative);
         let inner = self.render.find(&(target_x, target_y), zoom)?;
-        let ports = self.render.find_ports(&ids, &(target_x, target_y))?;
+        let ports = self.render.find_ports(
+            &self.grid.point(
+                (target_x, target_y),
+                self.grid.as_px(self.options.grid.cells_space_horizontal),
+                &relative,
+            ),
+            &(target_x, target_y),
+        )?;
         let elements = [ids, inner, ports].concat();
         serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())
     }

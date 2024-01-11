@@ -1,4 +1,4 @@
-use crate::render::Relative;
+use crate::render::{grid::CELL, Relative};
 
 const PADDING_IN_HORIZONT: u32 = 8;
 
@@ -56,16 +56,18 @@ impl Label {
             64.0
         };
         let mut x = relative.x(self.x) as f64;
+        self.h = relative.zoom((CELL as f64 * 0.7).floor() as i32);
         let y = (relative.y(self.y) + self.padding) as f64;
         if matches!(self.align, Align::Right) {
             x -= w + PADDING_IN_HORIZONT as f64 + self.padding as f64;
         } else {
             x += self.padding as f64;
         }
-        context.fill_rect(x, y, w + PADDING_IN_HORIZONT as f64, 18.0);
-        context.stroke_rect(x, y, w + PADDING_IN_HORIZONT as f64, 18.0);
-        let _ = context.stroke_text(&self.label, x + 3.0, y + 12.0);
+        context.set_text_baseline("top");
+        context.set_font(&format!("{}px serif", self.h - 6));
+        context.fill_rect(x, y, w + PADDING_IN_HORIZONT as f64, self.h as f64);
+        context.stroke_rect(x, y, w + PADDING_IN_HORIZONT as f64, self.h as f64);
+        let _ = context.stroke_text(&self.label, x + 3.0, y + 3.0);
         self.w = w as i32 + PADDING_IN_HORIZONT as i32;
-        self.h = 18;
     }
 }
