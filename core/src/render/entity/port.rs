@@ -129,7 +129,6 @@ impl Render<Ports> {
                 // let start_from = (step_between as f64 / 2.0).ceil() as i32;
                 let start_from = 0;
                 let mut cursor: i32 = start_from;
-
                 for port in self
                     .entity
                     .filter_mut(PortType::In)

@@ -1,6 +1,6 @@
 use crate::render::{grid::CELL, Relative};
 
-const PADDING_IN_HORIZONT: u32 = 8;
+const TEXT_PADDING: u32 = 3;
 
 #[derive(Debug)]
 pub enum Align {
@@ -33,38 +33,38 @@ impl Label {
     }
     pub fn get_coors(&self) -> (i32, i32) {
         match self.align {
-            Align::Left => (self.x, self.y),
-            Align::Right => (self.x - (self.w + (PADDING_IN_HORIZONT / 2) as i32), self.y),
+            Align::Left => (self.x + self.padding, self.y),
+            Align::Right => (self.x - self.w - self.padding, self.y),
         }
     }
     pub fn get_coors_with_zoom(&self, relative: &Relative) -> (i32, i32) {
         match self.align {
-            Align::Left => (relative.zoom(self.x), relative.zoom(self.y)),
+            Align::Left => (relative.zoom(self.x + self.padding), relative.zoom(self.y)),
             Align::Right => (
-                relative.zoom(self.x) - (self.w + (PADDING_IN_HORIZONT / 2) as i32),
+                relative.zoom(self.x + self.padding) - self.w,
                 relative.zoom(self.y),
             ),
         }
     }
+    // Take into account self.w already condiser zooming, because it's calculated by
+    // render and already reflects zoom-factor.
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
-        let w = if let Ok(metric) = context.measure_text(&self.label) {
-            metric.width()
+        let text_padding = relative.zoom(TEXT_PADDING as i32) as f64;
+        self.w = if let Ok(metric) = context.measure_text(&self.label) {
+            metric.width() as i32
         } else {
-            64.0
-        };
-        let mut x = relative.x(self.x) as f64;
+            64
+        } + (text_padding as i32) * 2;
         self.h = relative.zoom((CELL as f64 * 0.7).floor() as i32);
-        let y = (relative.y(self.y) + self.padding) as f64;
-        if matches!(self.align, Align::Right) {
-            x -= w + PADDING_IN_HORIZONT as f64 + self.padding as f64;
-        } else {
-            x += self.padding as f64;
-        }
+        let x = match self.align {
+            Align::Left => relative.x(self.x + self.padding),
+            Align::Right => relative.x(self.x - self.padding) - self.w,
+        } as f64;
+        let y = relative.y(self.y) as f64;
         context.set_text_baseline("top");
         context.set_font(&format!("{}px serif", self.h - 6));
-        context.fill_rect(x, y, w + PADDING_IN_HORIZONT as f64, self.h as f64);
-        context.stroke_rect(x, y, w + PADDING_IN_HORIZONT as f64, self.h as f64);
-        let _ = context.stroke_text(&self.label, x + 3.0, y + 3.0);
-        self.w = w as i32 + PADDING_IN_HORIZONT as i32;
+        context.fill_rect(x, y, self.w as f64, self.h as f64);
+        context.stroke_rect(x, y, self.w as f64, self.h as f64);
+        let _ = context.stroke_text(&self.label, x + text_padding, y + text_padding);
     }
 }

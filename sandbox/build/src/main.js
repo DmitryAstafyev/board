@@ -376,5 +376,5 @@ function dummy() {
         });
     }, 200);
 }
-dummy();
+real();
 //# sourceMappingURL=main.js.map
