@@ -124,10 +124,12 @@ impl Render<Ports> {
             }
             options::PortsRepresentation::Labels => {
                 // Order ports on a left side
-                let label_height = (CELL as f64 * 0.7).floor() as i32;
+                let label_height = (CELL as f64 * 0.7).ceil() as i32;
                 let step_between = CELL as i32 - label_height;
-                let start_from = (step_between as f64 / 2.0).floor() as i32;
+                // let start_from = (step_between as f64 / 2.0).ceil() as i32;
+                let start_from = 0;
                 let mut cursor: i32 = start_from;
+
                 for port in self
                     .entity
                     .filter_mut(PortType::In)

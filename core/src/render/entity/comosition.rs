@@ -184,7 +184,7 @@ impl Render<Composition> {
         Ok(())
     }
 
-    pub fn setup_connection(&mut self, grid: &Grid) -> Result<(), E> {
+    pub fn setup_connections(&mut self, grid: &Grid) -> Result<(), E> {
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
         // Setup connections
@@ -205,7 +205,8 @@ impl Render<Composition> {
                     let port_out = port_out.render()?.view.container.get_coors();
                     let relative_inns = ins.own_relative()?;
                     let relative_outs = outs.own_relative()?;
-                    let offset = port::PORT_SIDE / 2;
+                    // let offset = port::PORT_SIDE / 2;
+                    // let offset = (CELL / 2) as i32;
                     let a = Cell::new(
                         relative_inns.x(port_in.0) as u32,
                         relative_inns.y(port_in.1) as u32,
@@ -216,17 +217,17 @@ impl Render<Composition> {
                         relative_outs.y(port_out.1) as u32,
                         grid,
                     )?;
-                    let (port_coor_left, port_coor_right) = if a.x < b.x {
-                        (
-                            (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
-                            (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
-                        )
-                    } else {
-                        (
-                            (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
-                            (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
-                        )
-                    };
+                    // let (port_coor_left, port_coor_right) = if a.x < b.x {
+                    //     (
+                    //         (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
+                    //         (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
+                    //     )
+                    // } else {
+                    //     (
+                    //         (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
+                    //         (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
+                    //     )
+                    // };
                     let (left, right) = if a.x < b.x { (a, b) } else { (b, a) };
                     let a = (left.x, left.y);
                     let b = (right.x, left.y);
@@ -241,28 +242,30 @@ impl Render<Composition> {
                         return Ok(());
                     }
                     fn coors_to_px(cell: &u32) -> i32 {
-                        (*cell as i32) * (CELL as i32) + (CELL as i32 / 2)
+                        (*cell as i32 * CELL as i32) + ((CELL as f64) / 2.0).ceil() as i32
+                        // (*cell as i32) * (CELL as i32) + (CELL as i32 / 2)
                     }
-                    let mut points = coors
+                    let points = coors
                         .iter()
                         .map(|(x, y)| Point {
                             x: coors_to_px(x),
                             y: coors_to_px(y),
                         })
                         .collect::<Vec<Point>>();
-                    points.insert(
-                        0,
-                        Point {
-                            x: port_coor_left.0 + offset,
-                            y: port_coor_left.1 + offset,
-                        },
-                    );
-                    points.push(Point {
-                        x: port_coor_right.0 + offset,
-                        y: port_coor_right.1 + offset,
-                    });
+                    // points.insert(
+                    //     0,
+                    //     Point {
+                    //         x: port_coor_left.0 + offset,
+                    //         y: port_coor_left.1 + offset,
+                    //     },
+                    // );
+                    // points.push(Point {
+                    //     x: port_coor_right.0 + offset,
+                    //     y: port_coor_right.1 + offset,
+                    // });
                     let path = Path::new(conn.origin().sig.id.to_string(), points);
                     conn.render_mut()?.view.container.set_form(Form::Path(path));
+                    break;
                 } else {
                     console_log!("No ports has been found :/");
                 }
@@ -352,7 +355,7 @@ impl Render<Composition> {
         if let Some(container) = self.view.elements.first_mut() {
             container.set_coors(Some(grid_size.0 as i32), None);
         }
-        self.setup_connection(&composition_grid)?;
+        self.setup_connections(&composition_grid)?;
         // Add into global
         grid.insert(&composition_grid);
         Ok(())

@@ -34,10 +34,7 @@ impl Label {
     pub fn get_coors(&self) -> (i32, i32) {
         match self.align {
             Align::Left => (self.x, self.y),
-            Align::Right => (
-                self.x - (self.w + (PADDING_IN_HORIZONT / 2) as i32),
-                self.y + 2,
-            ),
+            Align::Right => (self.x - (self.w + (PADDING_IN_HORIZONT / 2) as i32), self.y),
         }
     }
     pub fn get_coors_with_zoom(&self, relative: &Relative) -> (i32, i32) {
@@ -45,7 +42,7 @@ impl Label {
             Align::Left => (relative.zoom(self.x), relative.zoom(self.y)),
             Align::Right => (
                 relative.zoom(self.x) - (self.w + (PADDING_IN_HORIZONT / 2) as i32),
-                relative.zoom(self.y + 2),
+                relative.zoom(self.y),
             ),
         }
     }
