@@ -73,7 +73,7 @@ impl Cell {
                 left: false,
             });
         }
-        console_log!("({x},{y}): {left:?}, {right:?}");
+        // console_log!("({x},{y}): {left:?}, {right:?}");
         Err(E::Other("Fail to detect start point".to_string()))
     }
     pub fn normalize(

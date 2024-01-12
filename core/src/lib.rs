@@ -169,6 +169,7 @@ impl Board {
                 &relative,
             ),
             &(target_x, target_y),
+            zoom,
         )?;
         let elements = [ids, inner, ports].concat();
         serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())

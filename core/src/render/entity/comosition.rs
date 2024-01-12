@@ -456,6 +456,7 @@ impl Render<Composition> {
         &self,
         owners: &[ElementCoors],
         position: &(i32, i32),
+        zoom: f64,
     ) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(vec![]);
@@ -466,11 +467,12 @@ impl Render<Composition> {
         for (id, _, _) in owners.iter() {
             if let Ok(id) = id.parse::<usize>() {
                 if let Some(entry) = find(components, compositions, &id) {
-                    let relative = entry.own_relative()?;
+                    let mut relative = entry.own_relative()?;
+                    relative.set_zoom(zoom);
                     found = [
                         found,
                         entry.ports().render()?.find(
-                            &(relative.x_rev(position.0), relative.y_rev(position.1)),
+                            &(position.0 - relative.x(0), position.1 - relative.y(0)),
                             &relative,
                         )?,
                     ]

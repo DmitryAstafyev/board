@@ -274,7 +274,7 @@ export class Board {
                     } else {
                         this.connection.hide();
                     }
-                    console.log(`Connection coors: ${JSON.stringify(coors)}`);
+                    // console.log(`Connection coors: ${JSON.stringify(coors)}`);
                 } else {
                     this.connection.hide();
                 }

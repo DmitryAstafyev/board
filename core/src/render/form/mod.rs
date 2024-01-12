@@ -49,6 +49,9 @@ impl Container {
     pub fn get_coors(&self) -> (i32, i32) {
         self.form.get_coors()
     }
+    pub fn get_coors_with_zoom(&self, relative: &Relative) -> (i32, i32) {
+        self.form.get_coors_with_zoom(relative)
+    }
     pub fn id(&self) -> String {
         self.form.id()
     }

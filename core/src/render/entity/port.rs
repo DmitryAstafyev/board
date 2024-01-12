@@ -181,9 +181,16 @@ impl Render<Ports> {
         if self.hidden {
             return Ok(vec![]);
         }
+        // Take into account: position already considers zoom-factor.
+        // That's why we need consider zoom-factor only for areas.
+        // With width and height a little more complicated situation:
+        // these props are calculated during render and it means: height
+        // width also already consider zoom factor
         let mut found: Vec<ElementCoors> = vec![];
         for port in self.entity.ports.iter() {
-            let (x, y) = port.render()?.view.container.get_coors();
+            // let (x, y) = port.render()?.view.container.get_coors();
+            // let (x, y) = (relative.zoom(x), relative.zoom(y));
+            let (x, y) = port.render()?.view.container.get_coors_with_zoom(relative);
             let (w, h) = port.render()?.view.container.get_box_size();
             let area = (x, y, x + w, y + h);
             if elements::is_point_in(position, &area) {
@@ -191,10 +198,10 @@ impl Render<Ports> {
                     port.origin().sig.id.to_string(),
                     ElementType::Port,
                     (
-                        relative.x_nozoom(area.0),
-                        relative.y_nozoom(area.1),
-                        relative.x_nozoom(area.2),
-                        relative.y_nozoom(area.3),
+                        relative.x(0) + x,
+                        relative.y(0) + y,
+                        relative.x(0) + x + w,
+                        relative.y(0) + y + h,
                     ),
                 ));
             }
@@ -242,7 +249,7 @@ impl Render<Port> {
                             w: 0,
                             h: 0,
                             id: id.to_string(),
-                            padding: 4,
+                            padding: 3,
                             label,
                             align,
                         }),
