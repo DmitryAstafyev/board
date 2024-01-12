@@ -50,6 +50,8 @@ impl Button {
         }
     }
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+        context.set_text_baseline("middle");
+        context.set_font("12px serif");
         let w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width()
         } else {

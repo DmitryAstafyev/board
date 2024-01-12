@@ -75,10 +75,12 @@ impl Render<Component> {
             .ports
             .render_mut()?
             .draw(context, &self_relative, options)?;
+        context.set_text_baseline("bottom");
+        context.set_font(&format!("{}px serif", relative.zoom(12)));
         let _ = context.stroke_text(
             &self.origin().sig.id.to_string(),
             relative.x(self.view.container.get_coors().0) as f64,
-            relative.y(self.view.container.get_coors().1 - 4) as f64,
+            relative.y(self.view.container.get_coors().1 - 3) as f64,
         );
         Ok(())
     }

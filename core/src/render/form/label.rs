@@ -50,19 +50,19 @@ impl Label {
     // render and already reflects zoom-factor.
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         let text_padding = relative.zoom(TEXT_PADDING as i32) as f64;
+        self.h = relative.zoom((CELL as f64 * 0.7).floor() as i32);
+        context.set_text_baseline("top");
+        context.set_font(&format!("{}px serif", self.h - 6));
         self.w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width() as i32
         } else {
             64
         } + (text_padding as i32) * 2;
-        self.h = relative.zoom((CELL as f64 * 0.7).floor() as i32);
         let x = match self.align {
             Align::Left => relative.x(self.x + self.padding),
             Align::Right => relative.x(self.x - self.padding) - self.w,
         } as f64;
         let y = relative.y(self.y) as f64;
-        context.set_text_baseline("top");
-        context.set_font(&format!("{}px serif", self.h - 6));
         context.fill_rect(x, y, self.w as f64, self.h as f64);
         context.stroke_rect(x, y, self.w as f64, self.h as f64);
         let _ = context.stroke_text(&self.label, x + text_padding, y + text_padding);
