@@ -126,8 +126,8 @@ impl Render<Ports> {
                 // Order ports on a left side
                 let label_height = (CELL as f64 * 0.7).ceil() as i32;
                 let step_between = CELL as i32 - label_height;
-                // let start_from = (step_between as f64 / 2.0).ceil() as i32;
-                let start_from = 0;
+                let start_from = (step_between as f64 / 2.0).ceil() as i32;
+                // let start_from = 0;
                 let mut cursor: i32 = start_from;
                 for port in self
                     .entity
@@ -188,8 +188,6 @@ impl Render<Ports> {
         // width also already consider zoom factor
         let mut found: Vec<ElementCoors> = vec![];
         for port in self.entity.ports.iter() {
-            // let (x, y) = port.render()?.view.container.get_coors();
-            // let (x, y) = (relative.zoom(x), relative.zoom(y));
             let (x, y) = port.render()?.view.container.get_coors_with_zoom(relative);
             let (w, h) = port.render()?.view.container.get_box_size();
             let area = (x, y, x + w, y + h);

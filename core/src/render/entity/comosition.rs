@@ -252,20 +252,8 @@ impl Render<Composition> {
                             y: coors_to_px(y),
                         })
                         .collect::<Vec<Point>>();
-                    // points.insert(
-                    //     0,
-                    //     Point {
-                    //         x: port_coor_left.0 + offset,
-                    //         y: port_coor_left.1 + offset,
-                    //     },
-                    // );
-                    // points.push(Point {
-                    //     x: port_coor_right.0 + offset,
-                    //     y: port_coor_right.1 + offset,
-                    // });
                     let path = Path::new(conn.origin().sig.id.to_string(), points);
                     conn.render_mut()?.view.container.set_form(Form::Path(path));
-                    break;
                 } else {
                     console_log!("No ports has been found :/");
                 }
@@ -373,10 +361,6 @@ impl Render<Composition> {
         }
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
-        self.entity
-            .ports
-            .render_mut()?
-            .draw(context, &self_relative, options)?;
         for component in self
             .entity
             .components
@@ -401,6 +385,10 @@ impl Render<Composition> {
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }
+        self.entity
+            .ports
+            .render_mut()?
+            .draw(context, &self_relative, options)?;
         context.set_text_baseline("bottom");
         context.set_font(&format!("{}px serif", relative.zoom(12)));
         let _ = context.stroke_text(
