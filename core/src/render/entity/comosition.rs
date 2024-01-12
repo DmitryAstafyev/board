@@ -497,16 +497,16 @@ impl Render<Composition> {
                 .for_each(|p| {
                     if let Ok(render) = p.render() {
                         let view = &render.view.container;
-                        let coors = view.get_coors();
-                        let size = view.get_box_size();
+                        let (x, y) = view.get_coors_with_zoom(relative);
+                        let (w, h) = view.get_box_size();
                         found.push((
                             p.origin().sig.id.to_string(),
                             ElementType::Port,
                             (
-                                relative.x(own_relative.x(coors.0)),
-                                relative.y(own_relative.y(coors.1)),
-                                relative.x(own_relative.x(coors.0 + size.0)),
-                                relative.y(own_relative.y(coors.1 + size.1)),
+                                relative.x(own_relative.x(0)) + x,
+                                relative.y(own_relative.y(0)) + y,
+                                relative.x(own_relative.x(0)) + x + w,
+                                relative.y(own_relative.y(0)) + y + h,
                             ),
                         ));
                     }
