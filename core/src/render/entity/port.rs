@@ -249,7 +249,7 @@ impl Render<Port> {
                             w: 0,
                             h: 0,
                             id: id.to_string(),
-                            padding: 3,
+                            padding: 4,
                             label,
                             align,
                         }),

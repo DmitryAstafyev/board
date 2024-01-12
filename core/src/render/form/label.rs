@@ -41,7 +41,7 @@ impl Label {
         match self.align {
             Align::Left => (relative.zoom(self.x + self.padding), relative.zoom(self.y)),
             Align::Right => (
-                relative.zoom(self.x + self.padding) - self.w,
+                relative.zoom(self.x - self.padding) - self.w,
                 relative.zoom(self.y),
             ),
         }
