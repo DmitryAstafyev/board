@@ -321,7 +321,7 @@ function getLabeledPortsOptions() {
             cell_size_px: 25,
             cells_space_vertical: 3,
             cells_space_horizontal: 6,
-            visible: true,
+            visible: false,
         },
     };
 }

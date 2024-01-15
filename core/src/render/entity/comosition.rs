@@ -343,7 +343,7 @@ impl Render<Composition> {
         if let Some(container) = self.view.elements.first_mut() {
             container.set_coors(Some(grid_size.0 as i32), None);
         }
-        self.setup_connections(&composition_grid)?;
+        // self.setup_connections(&composition_grid)?;
         // Add into global
         grid.insert(&composition_grid);
         Ok(())
