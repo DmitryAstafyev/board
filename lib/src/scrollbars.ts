@@ -29,11 +29,11 @@ export class ScrollBars {
     protected readonly current: {
         x: number;
         y: number;
-        dragging: boolean;
+        locked: boolean;
     } = {
         x: 0,
         y: 0,
-        dragging: false,
+        locked: false,
     };
     public scroll: Subject<ScrollEvent> = new Subject();
 
@@ -93,12 +93,14 @@ export class ScrollBars {
         return this.current.y;
     }
 
-    public dragging(dragging: boolean) {
-        this.current.dragging = dragging;
+    public locked(locked: boolean) {
+        this.current.locked = locked;
     }
 
     onScroll(event: Event) {
-        if (this.current.dragging) {
+        if (this.current.locked) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
             return;
         }
         this.current.x =

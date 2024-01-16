@@ -90,6 +90,11 @@ export class Board extends Subscriber {
         clickTimer: -1,
         dropClick: false,
     };
+    protected keyboard: {
+        alt: boolean;
+    } = {
+        alt: false,
+    };
     protected data: {
         composition: number | undefined;
         groupped: [number, number[]][];
@@ -145,12 +150,16 @@ export class Board extends Subscriber {
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onWheel = this.onWheel.bind(this);
         this.onClick = this.onClick.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
         this.onScroll = this.onScroll.bind(this);
         this.parent.addEventListener("mousemove", this.onHover);
         this.parent.addEventListener("mouseleave", this.onHoverOver);
         this.parent.addEventListener("mousedown", this.onMouseDown);
         this.parent.addEventListener("wheel", this.onWheel);
         this.parent.addEventListener("click", this.onClick);
+        window.addEventListener("keydown", this.onKeyDown);
+        window.addEventListener("keyup", this.onKeyUp);
         this.hover.component.onHide(() => {
             this.subjects.get().onComponentHoverOver.emit();
         });
@@ -168,6 +177,18 @@ export class Board extends Subscriber {
         this.canvas.height = size.height;
     }
 
+    protected onKeyDown(event: KeyboardEvent) {
+        if (event.key === "Alt") {
+            this.keyboard.alt = true;
+            this.scroll.locked(true);
+        }
+    }
+
+    protected onKeyUp(_event: KeyboardEvent) {
+        this.keyboard.alt = false;
+        this.scroll.locked(false);
+    }
+
     protected onMouseDown(event: MouseEvent): void {
         this.movement.x = event.offsetX;
         this.movement.y = event.offsetY;
@@ -181,7 +202,7 @@ export class Board extends Subscriber {
             this.hover.port.hide();
             this.movement.processing = true;
             this.movement.dropClick = true;
-            this.scroll.dragging(true);
+            this.scroll.locked(true);
             window.addEventListener("mousemove", this.onMouseMove);
             window.addEventListener("mouseup", this.onMouseUp);
         }, CLICK_DURATION);
@@ -219,7 +240,7 @@ export class Board extends Subscriber {
 
     protected onMouseUp(_event: MouseEvent): void {
         this.movement.processing = false;
-        this.scroll.dragging(false);
+        this.scroll.locked(false);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
         clearTimeout(this.movement.clickTimer);
@@ -346,6 +367,9 @@ export class Board extends Subscriber {
     }
 
     protected onWheel(event: WheelEvent): void {
+        if (!this.keyboard.alt) {
+            return;
+        }
         this.position.zoom += event.deltaY > 0 ? 0.05 : -0.05;
         this.position.zoom =
             this.position.zoom < 0.1 ? 0.1 : this.position.zoom;
@@ -427,6 +451,8 @@ export class Board extends Subscriber {
         this.parent.removeEventListener("mouseleave", this.onHoverOver);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
+        window.removeEventListener("keydown", this.onKeyDown);
+        window.removeEventListener("keyup", this.onKeyUp);
         this.hover.component.destroy();
         this.hover.port.destroy();
         this.subjects.destroy();
