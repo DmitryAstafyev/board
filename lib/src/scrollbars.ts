@@ -81,6 +81,8 @@ export class ScrollBars {
     public moveTo(x: number, y: number) {
         this.parent.scrollLeft = x;
         this.parent.scrollTop = y;
+        this.current.x = x;
+        this.current.y = y;
     }
 
     public x(): number {
@@ -99,12 +101,6 @@ export class ScrollBars {
         if (this.current.dragging) {
             return;
         }
-        // if (this.tracking.manual) {
-        //     event.preventDefault();
-        //     event.stopImmediatePropagation();
-        //     return;
-        // }
-        console.log(`scroll`);
         this.current.x =
             this.parent.scrollLeft + this.container.width >= this.canvas.zWidth
                 ? this.canvas.zWidth - this.container.width

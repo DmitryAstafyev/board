@@ -79,12 +79,14 @@ export class Board extends Subscriber {
         x: number;
         y: number;
         processing: boolean;
+        scrolling: boolean;
         clickTimer: any;
         dropClick: boolean;
     } = {
         x: 0,
         y: 0,
         processing: false,
+        scrolling: false,
         clickTimer: -1,
         dropClick: false,
     };
@@ -170,12 +172,16 @@ export class Board extends Subscriber {
         this.movement.x = event.offsetX;
         this.movement.y = event.offsetY;
         this.movement.dropClick = false;
+        this.movement.scrolling = false;
         this.movement.clickTimer = setTimeout(() => {
+            if (this.movement.scrolling) {
+                return;
+            }
             this.hover.component.hide();
             this.hover.port.hide();
             this.movement.processing = true;
             this.movement.dropClick = true;
-            // this.scroll.dragging(true);
+            this.scroll.dragging(true);
             window.addEventListener("mousemove", this.onMouseMove);
             window.addEventListener("mouseup", this.onMouseUp);
         }, CLICK_DURATION);
@@ -202,15 +208,18 @@ export class Board extends Subscriber {
                 : this.position.y;
         this.movement.x = event.offsetX;
         this.movement.y = event.offsetY;
-        // this.scroll.moveTo(-this.position.x, -this.position.y);
-        // this.canvas.style.left = `${-this.position.x}px`;
-        // this.canvas.style.top = `${-this.position.y}px`;
+        this.scroll.moveTo(
+            -this.position.x * this.position.zoom,
+            -this.position.y * this.position.zoom
+        );
+        this.canvas.style.left = `${-this.position.x * this.position.zoom}px`;
+        this.canvas.style.top = `${-this.position.y * this.position.zoom}px`;
         this.render();
     }
 
     protected onMouseUp(_event: MouseEvent): void {
         this.movement.processing = false;
-        // this.scroll.dragging(false);
+        this.scroll.dragging(false);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
         clearTimeout(this.movement.clickTimer);
@@ -231,6 +240,7 @@ export class Board extends Subscriber {
     }
 
     protected onScroll(event: ScrollEvent) {
+        this.movement.scrolling = true;
         this.position.x = -event.x / this.position.zoom;
         this.position.y = -event.y / this.position.zoom;
         this.canvas.style.left = `${event.x}px`;
