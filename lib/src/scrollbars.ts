@@ -9,23 +9,31 @@ export class ScrollBars {
     protected readonly canvas: {
         width: number;
         height: number;
+        zWidth: number;
+        zHeight: number;
     } = {
         width: 0,
         height: 0,
+        zWidth: 0,
+        zHeight: 0,
     };
     protected readonly container: {
         width: number;
         height: number;
+        zoom: number;
     } = {
         width: 0,
         height: 0,
+        zoom: 0,
     };
     protected readonly current: {
         x: number;
         y: number;
+        dragging: boolean;
     } = {
         x: 0,
         y: 0,
+        dragging: false,
     };
     public scroll: Subject<ScrollEvent> = new Subject();
 
@@ -58,7 +66,21 @@ export class ScrollBars {
         this.canvas.height = canvas[1];
         this.container.width = container.width;
         this.container.height = container.height;
+        this.canvas.zWidth = this.canvas.width * this.container.zoom;
+        this.canvas.zHeight = this.canvas.height * this.container.zoom;
         this.update();
+    }
+
+    public setZoom(zoom: number) {
+        this.container.zoom = zoom;
+        this.canvas.zWidth = this.canvas.width * this.container.zoom;
+        this.canvas.zHeight = this.canvas.height * this.container.zoom;
+        this.update();
+    }
+
+    public moveTo(x: number, y: number) {
+        this.parent.scrollLeft = x;
+        this.parent.scrollTop = y;
     }
 
     public x(): number {
@@ -69,14 +91,27 @@ export class ScrollBars {
         return this.current.y;
     }
 
-    onScroll(_event: Event) {
+    public dragging(dragging: boolean) {
+        this.current.dragging = dragging;
+    }
+
+    onScroll(event: Event) {
+        if (this.current.dragging) {
+            return;
+        }
+        // if (this.tracking.manual) {
+        //     event.preventDefault();
+        //     event.stopImmediatePropagation();
+        //     return;
+        // }
+        console.log(`scroll`);
         this.current.x =
-            this.parent.scrollLeft + this.container.width >= this.canvas.width
-                ? this.canvas.width - this.container.width
+            this.parent.scrollLeft + this.container.width >= this.canvas.zWidth
+                ? this.canvas.zWidth - this.container.width
                 : this.parent.scrollLeft;
         this.current.y =
-            this.parent.scrollTop + this.container.height >= this.canvas.height
-                ? this.canvas.height - this.container.height
+            this.parent.scrollTop + this.container.height >= this.canvas.zHeight
+                ? this.canvas.zHeight - this.container.height
                 : this.parent.scrollTop;
         this.scroll.emit({
             x: this.current.x,
@@ -85,7 +120,7 @@ export class ScrollBars {
     }
 
     update() {
-        this.filler.style.width = `${this.canvas.width}px`;
-        this.filler.style.height = `${this.canvas.height}px`;
+        this.filler.style.width = `${this.canvas.zWidth}px`;
+        this.filler.style.height = `${this.canvas.zHeight}px`;
     }
 }

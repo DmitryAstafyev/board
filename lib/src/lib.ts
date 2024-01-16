@@ -175,13 +175,13 @@ export class Board extends Subscriber {
             this.hover.port.hide();
             this.movement.processing = true;
             this.movement.dropClick = true;
+            // this.scroll.dragging(true);
             window.addEventListener("mousemove", this.onMouseMove);
             window.addEventListener("mouseup", this.onMouseUp);
         }, CLICK_DURATION);
     }
 
     protected onMouseMove(event: MouseEvent): void {
-        return;
         if (!this.movement.processing) {
             return;
         }
@@ -189,13 +189,28 @@ export class Board extends Subscriber {
             (this.movement.x - event.offsetX) / this.position.zoom;
         this.position.y -=
             (this.movement.y - event.offsetY) / this.position.zoom;
+        this.position.x = this.position.x > 0 ? 0 : this.position.x;
+        this.position.y = this.position.y > 0 ? 0 : this.position.y;
+        const canvas = this.board.get_size();
+        this.position.x =
+            -this.position.x > canvas[0] - this.size.width / this.position.zoom
+                ? -(canvas[0] - this.size.width / this.position.zoom)
+                : this.position.x;
+        this.position.y =
+            -this.position.y > canvas[1] - this.size.height / this.position.zoom
+                ? -(canvas[1] - this.size.height / this.position.zoom)
+                : this.position.y;
         this.movement.x = event.offsetX;
         this.movement.y = event.offsetY;
+        // this.scroll.moveTo(-this.position.x, -this.position.y);
+        // this.canvas.style.left = `${-this.position.x}px`;
+        // this.canvas.style.top = `${-this.position.y}px`;
         this.render();
     }
 
-    protected onMouseUp(event: MouseEvent): void {
+    protected onMouseUp(_event: MouseEvent): void {
         this.movement.processing = false;
+        // this.scroll.dragging(false);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
         clearTimeout(this.movement.clickTimer);
@@ -216,11 +231,10 @@ export class Board extends Subscriber {
     }
 
     protected onScroll(event: ScrollEvent) {
-        this.position.x = -event.x;
-        this.position.y = -event.y;
+        this.position.x = -event.x / this.position.zoom;
+        this.position.y = -event.y / this.position.zoom;
         this.canvas.style.left = `${event.x}px`;
         this.canvas.style.top = `${event.y}px`;
-        this.canvas.style.position = "absolute";
         this.render();
     }
 
@@ -326,6 +340,7 @@ export class Board extends Subscriber {
         this.position.zoom =
             this.position.zoom < 0.1 ? 0.1 : this.position.zoom;
         this.position.zoom = this.position.zoom > 2 ? 2 : this.position.zoom;
+        this.scroll.setZoom(this.position.zoom);
         this.hover.component.hide();
         this.hover.port.hide();
         this.render();
@@ -373,6 +388,7 @@ export class Board extends Subscriber {
         this.data.composition = id;
         this.data.groupped = this.board.get_groupped_ports();
         this.setSize();
+        this.scroll.setZoom(this.position.zoom);
         this.scroll.setSize(
             this.board.get_size() as [number, number],
             this.size
@@ -410,6 +426,7 @@ export class Board extends Subscriber {
     public bind(composition: Types.Composition, expanded: number[]) {
         this.board.init(composition, Uint32Array.from(expanded));
         this.setSize();
+        this.scroll.setZoom(this.position.zoom);
         this.scroll.setSize(
             this.board.get_size() as [number, number],
             this.size
