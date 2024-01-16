@@ -149,6 +149,7 @@ impl Board {
             Err(E::NoCanvasContext)?
         }
     }
+
     #[wasm_bindgen]
     pub fn who(
         &self,
@@ -238,36 +239,9 @@ impl Board {
         let ports: Vec<(usize, Vec<usize>)> = self.render.get_groupped_ports()?;
         serde_wasm_bindgen::to_value(&ports).map_err(|e| e.to_string())
     }
-}
 
-// #[wasm_bindgen]
-// pub fn dummy(canvas_el_id: &str, components: usize, ports: usize) {
-//     panic::set_hook(Box::new(console_error_panic_hook::hook));
-//     let document = web_sys::window().unwrap().document().unwrap();
-//     let canvas = document.get_element_by_id(canvas_el_id).unwrap();
-//     let canvas: web_sys::HtmlCanvasElement = canvas
-//         .dyn_into::<web_sys::HtmlCanvasElement>()
-//         .map_err(|_| ())
-//         .unwrap();
-//     let mut context = canvas
-//         .get_context("2d")
-//         .unwrap()
-//         .unwrap()
-//         .dyn_into::<web_sys::CanvasRenderingContext2d>()
-//         .unwrap();
-//     let mut producer = SignatureProducer::new();
-//     let mut composition = Composition::dummy(
-//         &mut producer,
-//         (
-//             RangeInclusive::new(components, components + components / 5),
-//             RangeInclusive::new(ports, ports + ports),
-//         ),
-//     );
-//     let mut render = Render::<Composition>::new(composition);
-//     if let Err(err) = render.calc() {
-//         console_log!("Opps, error: {err}");
-//     }
-//     if let Err(err) = render.draw(&mut context, &Relative::new(50, 50)) {
-//         console_log!("Opps, error: {err}");
-//     }
-// }
+    #[wasm_bindgen]
+    pub fn get_size(&mut self) -> Result<JsValue, String> {
+        serde_wasm_bindgen::to_value(&self.grid.get_size_px()).map_err(|e| e.to_string())
+    }
+}

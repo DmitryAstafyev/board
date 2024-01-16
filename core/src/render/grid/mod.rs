@@ -255,7 +255,7 @@ impl Cell {
 #[derive(Debug, Clone)]
 pub struct Grid {
     pub options: GridOptions,
-    // Total grid size
+    // Total grid size (in cells)
     pub size: (u32, u32),
     // Cells map <EntityID, Occupied area <(x, y, x1, y1)>>
     pub map: HashMap<String, (u32, u32, u32, u32)>,

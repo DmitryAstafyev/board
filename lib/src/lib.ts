@@ -1,6 +1,7 @@
 import { Hover } from "./hover";
 import { Connection } from "./connection";
-import { Subject, Subjects } from "./subscriber";
+import { ScrollBars, ScrollEvent } from "./scrollbars";
+import { Subject, Subjects, Subscriber } from "./subscriber";
 
 import * as Core from "core";
 import * as Types from "./types";
@@ -47,10 +48,11 @@ export interface HoverMouseEvent {
     x: number;
     y: number;
 }
-export class Board {
+export class Board extends Subscriber {
     protected readonly board: Core.Board;
     protected readonly canvas: HTMLCanvasElement;
     protected readonly parent: HTMLElement;
+    protected readonly scroll: ScrollBars;
     protected readonly id: string;
     protected readonly hover: {
         component: Hover;
@@ -99,6 +101,7 @@ export class Board {
     };
 
     constructor(parent: string | HTMLElement, options: Types.Options) {
+        super();
         const node: HTMLElement | null = (() => {
             if (typeof parent === "string") {
                 return document.querySelector(parent);
@@ -124,9 +127,11 @@ export class Board {
             port: new Hover(`rgb(255,50,50)`, node),
         };
         this.connection = new Connection(node);
+        this.scroll = new ScrollBars(node);
         this.id = getId();
         this.canvas = document.createElement("canvas");
         this.canvas.setAttribute("id", this.id);
+        this.canvas.style.position = "absolute";
         this.parent.appendChild(this.canvas);
         this.setSize();
         this.board = new wasm.core.Board(options);
@@ -138,6 +143,7 @@ export class Board {
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onWheel = this.onWheel.bind(this);
         this.onClick = this.onClick.bind(this);
+        this.onScroll = this.onScroll.bind(this);
         this.parent.addEventListener("mousemove", this.onHover);
         this.parent.addEventListener("mouseleave", this.onHoverOver);
         this.parent.addEventListener("mousedown", this.onMouseDown);
@@ -149,6 +155,7 @@ export class Board {
         this.hover.port.onHide(() => {
             this.subjects.get().onPortHoverOver.emit();
         });
+        this.register(this.scroll.scroll.subscribe(this.onScroll));
     }
 
     protected setSize(): void {
@@ -174,6 +181,7 @@ export class Board {
     }
 
     protected onMouseMove(event: MouseEvent): void {
+        return;
         if (!this.movement.processing) {
             return;
         }
@@ -207,6 +215,15 @@ export class Board {
             );
     }
 
+    protected onScroll(event: ScrollEvent) {
+        this.position.x = -event.x;
+        this.position.y = -event.y;
+        this.canvas.style.left = `${event.x}px`;
+        this.canvas.style.top = `${event.y}px`;
+        this.canvas.style.position = "absolute";
+        this.render();
+    }
+
     protected onHover(event: MouseEvent): void {
         if (this.movement.processing) {
             return;
@@ -218,8 +235,12 @@ export class Board {
             if (!this.hover.component.isActive(id)) {
                 this.hover.component.show(
                     id,
-                    component[0][2][0] + this.position.x * this.position.zoom,
-                    component[0][2][1] + this.position.y * this.position.zoom,
+                    component[0][2][0] +
+                        this.scroll.x() +
+                        this.position.x * this.position.zoom,
+                    component[0][2][1] +
+                        this.scroll.y() +
+                        this.position.y * this.position.zoom,
                     component[0][2][2] - component[0][2][0],
                     component[0][2][3] - component[0][2][1]
                 );
@@ -238,8 +259,12 @@ export class Board {
             if (!this.hover.port.isActive(id)) {
                 this.hover.port.show(
                     id,
-                    port[0][2][0] + this.position.x * this.position.zoom,
-                    port[0][2][1] + this.position.y * this.position.zoom,
+                    port[0][2][0] +
+                        this.scroll.x() +
+                        this.position.x * this.position.zoom,
+                    port[0][2][1] +
+                        this.scroll.y() +
+                        this.position.y * this.position.zoom,
                     port[0][2][2] - port[0][2][0],
                     port[0][2][3] - port[0][2][1]
                 );
@@ -347,6 +372,11 @@ export class Board {
         this.board.init(composition, Uint32Array.from([]));
         this.data.composition = id;
         this.data.groupped = this.board.get_groupped_ports();
+        this.setSize();
+        this.scroll.setSize(
+            this.board.get_size() as [number, number],
+            this.size
+        );
         this.render();
     }
 
@@ -374,10 +404,16 @@ export class Board {
         this.hover.component.destroy();
         this.hover.port.destroy();
         this.subjects.destroy();
+        this.unsubscribe();
     }
 
     public bind(composition: Types.Composition, expanded: number[]) {
         this.board.init(composition, Uint32Array.from(expanded));
+        this.setSize();
+        this.scroll.setSize(
+            this.board.get_size() as [number, number],
+            this.size
+        );
         this.data.composition = composition.sig.id;
         this.data.root = composition;
         this.data.groupped = this.getGrouppedPorts();
