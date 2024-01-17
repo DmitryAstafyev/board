@@ -1,5 +1,7 @@
 import { Subject } from "./subscriber";
 
+import * as DOM from "./dom";
+
 export interface ScrollEvent {
     x: number;
     y: number;
@@ -35,6 +37,20 @@ export class ScrollBars {
         y: 0,
         locked: false,
     };
+
+    protected onScroll(event: Event) {
+        if (this.current.locked) {
+            DOM.stop(event);
+        } else {
+            this.calc();
+        }
+    }
+
+    protected update() {
+        this.filler.style.width = `${this.canvas.zWidth}px`;
+        this.filler.style.height = `${this.canvas.zHeight}px`;
+    }
+
     public scroll: Subject<ScrollEvent> = new Subject();
 
     constructor(protected readonly parent: HTMLElement) {
@@ -56,6 +72,25 @@ export class ScrollBars {
         this.scroll.destroy();
         this.parent.removeEventListener("scroll", this.onScroll);
         this.filler.parentNode?.removeChild(this.filler);
+    }
+
+    public calc() {
+        const x = this.current.x;
+        const y = this.current.y;
+        this.current.x =
+            this.parent.scrollLeft + this.container.width >= this.canvas.zWidth
+                ? this.canvas.zWidth - this.container.width
+                : this.parent.scrollLeft;
+        this.current.y =
+            this.parent.scrollTop + this.container.height >= this.canvas.zHeight
+                ? this.canvas.zHeight - this.container.height
+                : this.parent.scrollTop;
+        if (x !== this.current.x || y !== this.current.y) {
+            this.scroll.emit({
+                x: this.current.x,
+                y: this.current.y,
+            });
+        }
     }
 
     public setSize(
@@ -95,30 +130,5 @@ export class ScrollBars {
 
     public locked(locked: boolean) {
         this.current.locked = locked;
-    }
-
-    onScroll(event: Event) {
-        if (this.current.locked) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            return;
-        }
-        this.current.x =
-            this.parent.scrollLeft + this.container.width >= this.canvas.zWidth
-                ? this.canvas.zWidth - this.container.width
-                : this.parent.scrollLeft;
-        this.current.y =
-            this.parent.scrollTop + this.container.height >= this.canvas.zHeight
-                ? this.canvas.zHeight - this.container.height
-                : this.parent.scrollTop;
-        this.scroll.emit({
-            x: this.current.x,
-            y: this.current.y,
-        });
-    }
-
-    update() {
-        this.filler.style.width = `${this.canvas.zWidth}px`;
-        this.filler.style.height = `${this.canvas.zHeight}px`;
     }
 }

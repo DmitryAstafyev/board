@@ -5,6 +5,7 @@ import { Subject, Subjects, Subscriber } from "./subscriber";
 
 import * as Core from "core";
 import * as Types from "./types";
+import * as DOM from "./dom";
 
 export * from "./types";
 
@@ -369,15 +370,10 @@ export class Board extends Subscriber {
     protected onWheel(event: WheelEvent): void {
         if (!this.keyboard.alt) {
             return;
+        } else {
+            DOM.stop(event);
+            this.zoom(event.deltaY);
         }
-        this.position.zoom += event.deltaY > 0 ? 0.05 : -0.05;
-        this.position.zoom =
-            this.position.zoom < 0.1 ? 0.1 : this.position.zoom;
-        this.position.zoom = this.position.zoom > 2 ? 2 : this.position.zoom;
-        this.scroll.setZoom(this.position.zoom);
-        this.hover.component.hide();
-        this.hover.port.hide();
-        this.render();
     }
 
     protected onClick(event: MouseEvent): void {
@@ -407,6 +403,24 @@ export class Board extends Subscriber {
                 this.goToComposition(parseInt(targets[0][0], 10));
             }
         }
+    }
+
+    protected zoom(deltaY: number) {
+        this.position.zoom += deltaY > 0 ? 0.05 : -0.05;
+        this.position.zoom =
+            this.position.zoom < 0.1 ? 0.1 : this.position.zoom;
+        this.position.zoom = this.position.zoom > 2 ? 2 : this.position.zoom;
+        this.scroll.setZoom(this.position.zoom);
+        this.scroll.moveTo(
+            -this.position.x * this.position.zoom,
+            -this.position.y * this.position.zoom
+        );
+        this.canvas.style.left = `${-this.position.x * this.position.zoom}px`;
+        this.canvas.style.top = `${-this.position.y * this.position.zoom}px`;
+        this.hover.component.hide();
+        this.hover.port.hide();
+        this.render();
+        this.scroll.calc();
     }
 
     protected goToComposition(id: number) {
