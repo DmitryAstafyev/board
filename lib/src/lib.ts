@@ -330,14 +330,14 @@ export class Board extends Subscriber {
                     if (port !== undefined && component !== undefined) {
                         this.connection.show(
                             {
-                                left: port[2][0],
-                                top: port[2][1],
+                                left: port[2][0] + this.scroll.x(),
+                                top: port[2][1] + this.scroll.y(),
                                 width: port[2][2] - port[2][0],
                                 height: port[2][3] - port[2][1],
                             },
                             {
-                                left: component[2][0],
-                                top: component[2][1],
+                                left: component[2][0] + this.scroll.x(),
+                                top: component[2][1] + this.scroll.y(),
                                 width: component[2][2] - component[2][0],
                                 height: component[2][3] - component[2][1],
                             }
