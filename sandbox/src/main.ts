@@ -392,8 +392,8 @@ function getLabeledPortsOptions(): Options {
             grouping: true,
         },
         connections: {
-            align: ConnectionsAlign.Streamlined,
-            hide: true,
+            align: ConnectionsAlign.Straight,
+            hide: false,
         },
         grid: {
             padding: 3,

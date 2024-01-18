@@ -253,8 +253,13 @@ export class Board extends Subscriber {
         if (x < 0 || y < 0) {
             return [];
         }
+        this.board.set_view_state(
+            this.position.x,
+            this.position.y,
+            this.position.zoom
+        );
         return this.board
-            .who(this.position.x, this.position.y, x, y, 2, this.position.zoom)
+            .who(x, y, 2)
             .filter(
                 (element: Types.ElementCoors) =>
                     element[0] !== this.data.composition?.toString()
@@ -345,7 +350,6 @@ export class Board extends Subscriber {
                     } else {
                         this.connection.hide();
                     }
-                    // console.log(`Connection coors: ${JSON.stringify(coors)}`);
                 } else {
                     this.connection.hide();
                 }
@@ -398,9 +402,15 @@ export class Board extends Subscriber {
                 );
                 return;
             } else if (targets.length === 1) {
-                this.data.composition !== undefined &&
-                    this.data.history.push(this.data.composition);
-                this.goToComposition(parseInt(targets[0][0], 10));
+                const element = targets[0] as Types.ElementCoors;
+                const targetId = parseInt(element[0], 10);
+                if (element[1] === "Port") {
+                    this.board.toggle_port(targetId);
+                } else {
+                    this.data.composition !== undefined &&
+                        this.data.history.push(this.data.composition);
+                    this.goToComposition(targetId);
+                }
             }
         }
     }
@@ -487,7 +497,12 @@ export class Board extends Subscriber {
     }
 
     public render() {
-        this.board.render(this.position.x, this.position.y, this.position.zoom);
+        this.board.set_view_state(
+            this.position.x,
+            this.position.y,
+            this.position.zoom
+        );
+        this.board.render();
     }
 
     public getGrouppedPorts(): [number, number[]][] {
@@ -495,12 +510,12 @@ export class Board extends Subscriber {
     }
 
     public getCoorsByIds(ids: number[]): Types.ElementCoors[] {
-        return this.board.get_coors_by_ids(
+        this.board.set_view_state(
             this.position.x,
             this.position.y,
-            this.position.zoom,
-            Uint32Array.from(ids)
+            this.position.zoom
         );
+        return this.board.get_coors_by_ids(Uint32Array.from(ids));
     }
 
     public getConnectionInfo(

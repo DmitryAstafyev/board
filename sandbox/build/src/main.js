@@ -313,8 +313,8 @@ function getLabeledPortsOptions() {
             grouping: true,
         },
         connections: {
-            align: board_1.ConnectionsAlign.Streamlined,
-            hide: true,
+            align: board_1.ConnectionsAlign.Straight,
+            hide: false,
         },
         grid: {
             padding: 3,

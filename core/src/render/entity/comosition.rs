@@ -7,12 +7,12 @@ use crate::{
     error::E,
     render::{
         elements,
-        entity::port,
         form::{button, Button, Path, Point, Rectangle},
         grid::{Cell, ElementCoors, ElementType, Layout, CELL},
-        options::Options,
+        options::{ConnectionsAlign, Options},
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
+    state::State,
 };
 use std::collections::HashMap;
 
@@ -184,10 +184,9 @@ impl Render<Composition> {
         Ok(())
     }
 
-    pub fn setup_connections(&mut self, grid: &Grid) -> Result<(), E> {
+    pub fn setup_connections(&mut self, grid: &Grid, options: &Options) -> Result<(), E> {
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
-        // Setup connections
         for conn in self.entity.connections.iter_mut() {
             if let (Some(ins), Some(outs)) = (
                 find(components, compositions, &conn.origin().joint_in.component),
@@ -205,53 +204,68 @@ impl Render<Composition> {
                     let port_out = port_out.render()?.view.container.get_coors();
                     let relative_inns = ins.own_relative()?;
                     let relative_outs = outs.own_relative()?;
-                    // let offset = port::PORT_SIDE / 2;
-                    // let offset = (CELL / 2) as i32;
-                    let a = Cell::new(
-                        relative_inns.x(port_in.0) as u32,
-                        relative_inns.y(port_in.1) as u32,
-                        grid,
-                    )?;
-                    let b = Cell::new(
-                        relative_outs.x(port_out.0) as u32,
-                        relative_outs.y(port_out.1) as u32,
-                        grid,
-                    )?;
-                    // let (port_coor_left, port_coor_right) = if a.x < b.x {
-                    //     (
-                    //         (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
-                    //         (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
-                    //     )
-                    // } else {
-                    //     (
-                    //         (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
-                    //         (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
-                    //     )
-                    // };
-                    let (left, right) = if a.x < b.x { (a, b) } else { (b, a) };
-                    let a = (left.x, left.y);
-                    let b = (right.x, left.y);
-                    let c = (right.x, right.y);
-                    let mut coors: Vec<(u32, u32)> = vec![];
-                    if let Err(e) = Cell::normalize(&a, &b, grid, &mut coors) {
-                        console_log!("Error: {e}");
-                        return Ok(());
-                    }
-                    if let Err(e) = Cell::normalize(&b, &c, grid, &mut coors) {
-                        console_log!("Error: {e}");
-                        return Ok(());
-                    }
-                    fn coors_to_px(cell: &u32) -> i32 {
-                        (*cell as i32 * CELL as i32) + ((CELL as f64) / 2.0).ceil() as i32
-                        // (*cell as i32) * (CELL as i32) + (CELL as i32 / 2)
-                    }
-                    let points = coors
-                        .iter()
-                        .map(|(x, y)| Point {
-                            x: coors_to_px(x),
-                            y: coors_to_px(y),
-                        })
-                        .collect::<Vec<Point>>();
+                    let points: Vec<Point> = match options.connections.align {
+                        ConnectionsAlign::Straight => {
+                            vec![
+                                Point {
+                                    x: relative_inns.x(port_in.0),
+                                    y: relative_inns.y(port_in.1),
+                                },
+                                Point {
+                                    x: relative_outs.x(port_out.0),
+                                    y: relative_outs.y(port_out.1),
+                                },
+                            ]
+                        }
+                        ConnectionsAlign::Streamlined => {
+                            // let offset = port::PORT_SIDE / 2;
+                            // let offset = (CELL / 2) as i32;
+                            let a = Cell::new(
+                                relative_inns.x(port_in.0) as u32,
+                                relative_inns.y(port_in.1) as u32,
+                                grid,
+                            )?;
+                            let b = Cell::new(
+                                relative_outs.x(port_out.0) as u32,
+                                relative_outs.y(port_out.1) as u32,
+                                grid,
+                            )?;
+                            // let (port_coor_left, port_coor_right) = if a.x < b.x {
+                            //     (
+                            //         (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
+                            //         (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
+                            //     )
+                            // } else {
+                            //     (
+                            //         (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
+                            //         (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
+                            //     )
+                            // };
+                            let (left, right) = if a.x < b.x { (a, b) } else { (b, a) };
+                            let a = (left.x, left.y);
+                            let b = (right.x, left.y);
+                            let c = (right.x, right.y);
+                            let mut coors: Vec<(u32, u32)> = vec![];
+                            if let Err(e) = Cell::normalize(&a, &b, grid, &mut coors) {
+                                console_log!("Error: {e}");
+                                return Ok(());
+                            }
+                            if let Err(e) = Cell::normalize(&b, &c, grid, &mut coors) {
+                                console_log!("Error: {e}");
+                                return Ok(());
+                            }
+                            fn coors_to_px(cell: &u32) -> i32 {
+                                (*cell as i32 * CELL as i32) + ((CELL as f64) / 2.0).ceil() as i32
+                            }
+                            coors
+                                .iter()
+                                .map(|(x, y)| Point {
+                                    x: coors_to_px(x),
+                                    y: coors_to_px(y),
+                                })
+                                .collect::<Vec<Point>>()
+                        }
+                    };
                     let path = Path::new(conn.origin().sig.id.to_string(), points);
                     conn.render_mut()?.view.container.set_form(Form::Path(path));
                 } else {
@@ -343,7 +357,7 @@ impl Render<Composition> {
         if let Some(container) = self.view.elements.first_mut() {
             container.set_coors(Some(grid_size.0 as i32), None);
         }
-        // self.setup_connections(&composition_grid)?;
+        self.setup_connections(&composition_grid, options)?;
         // Add into global
         grid.insert(&composition_grid);
         Ok(())
@@ -355,6 +369,7 @@ impl Render<Composition> {
         relative: &Relative,
         targets: &Vec<usize>,
         options: &Options,
+        state: &State,
     ) -> Result<(), E> {
         if !targets.contains(&self.entity.sig.id) || self.hidden {
             return Ok(());
@@ -377,11 +392,15 @@ impl Render<Composition> {
         {
             composition
                 .render_mut()?
-                .draw(context, relative, targets, options)?;
+                .draw(context, relative, targets, options, state)?;
         }
         for connection in self.entity.connections.iter_mut().filter(|conn| {
-            targets.contains(&conn.origin().joint_in.component)
-                || targets.contains(&conn.origin().joint_out.component)
+            (targets.contains(&conn.origin().joint_in.component)
+                || targets.contains(&conn.origin().joint_out.component))
+                && (state.is_port_selected(&conn.origin().joint_in.port)
+                    || state.is_port_selected(&conn.origin().joint_out.port)
+                    || state.is_component_selected(&conn.origin().joint_in.component)
+                    || state.is_component_selected(&conn.origin().joint_out.component))
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }

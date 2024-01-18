@@ -4,12 +4,15 @@ extern crate wasm_bindgen;
 mod entity;
 mod error;
 mod render;
+mod state;
+
 use entity::{
     dummy::{Dummy, SignatureProducer},
     Composition, Signature,
 };
 use error::E;
 use render::{options::Options, Grid, Relative, Render, Style};
+use state::State;
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
@@ -23,6 +26,7 @@ pub struct Board {
     height: u32,
     grid: Grid,
     options: Options,
+    state: State,
 }
 
 #[wasm_bindgen]
@@ -49,6 +53,7 @@ impl Board {
             width: 0,
             height: 0,
             grid,
+            state: State::new(),
         }
     }
 
@@ -72,6 +77,7 @@ impl Board {
             width: 0,
             height: 0,
             grid,
+            state: State::new(),
         }
     }
 
@@ -124,11 +130,15 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn render(&mut self, x: i32, y: i32, zoom: f64) -> Result<(), String> {
+    pub fn render(&mut self) -> Result<(), String> {
         if let Some(mut context) = self.context.take() {
             context.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
-            let targets = self.grid.viewport((x, y), (self.width, self.height), zoom);
-            let relative = Relative::new(x, y, Some(zoom));
+            let targets = self.grid.viewport(
+                (self.state.x, self.state.y),
+                (self.width, self.height),
+                self.state.zoom,
+            );
+            let relative = self.state.get_view_relative();
             if let Err(e) = self.render.draw(
                 &mut context,
                 &relative,
@@ -137,6 +147,7 @@ impl Board {
                     .map(|(id, _, _)| id.parse::<usize>().unwrap())
                     .collect(),
                 &self.options,
+                &self.state,
             ) {
                 self.context = Some(context);
                 Err(e)?
@@ -151,18 +162,10 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn who(
-        &self,
-        x: i32,
-        y: i32,
-        target_x: i32,
-        target_y: i32,
-        around: i32,
-        zoom: f64,
-    ) -> Result<JsValue, String> {
-        let relative = Relative::new(x, y, Some(zoom));
+    pub fn who(&self, target_x: i32, target_y: i32, around: i32) -> Result<JsValue, String> {
+        let relative = self.state.get_view_relative();
         let ids = self.grid.point((target_x, target_y), around, &relative);
-        let inner = self.render.find(&(target_x, target_y), zoom)?;
+        let inner = self.render.find(&(target_x, target_y), self.state.zoom)?;
         let ports = self.render.find_ports(
             &self.grid.point(
                 (target_x, target_y),
@@ -170,21 +173,15 @@ impl Board {
                 &relative,
             ),
             &(target_x, target_y),
-            zoom,
+            self.state.zoom,
         )?;
         let elements = [ids, inner, ports].concat();
         serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
-    pub fn get_coors_by_ids(
-        &self,
-        x: i32,
-        y: i32,
-        zoom: f64,
-        ids: Vec<usize>,
-    ) -> Result<JsValue, String> {
-        let relative = Relative::new(x, y, Some(zoom));
+    pub fn get_coors_by_ids(&self, ids: Vec<usize>) -> Result<JsValue, String> {
+        let relative = self.state.get_view_relative();
         let ports = self.render.get_coors_by_ids(&ids, &relative)?;
         let components = self.grid.get_coors_by_ids(&ids, &relative);
         let elements = [components, ports].concat();
@@ -203,15 +200,12 @@ impl Board {
         id: usize,
         stroke_style: Option<String>,
         fill_style: Option<String>,
-        x: i32,
-        y: i32,
-        zoom: f64,
     ) -> Result<(), String> {
         if let Some(mut context) = self.context.take() {
             if let Err(e) = self.render.draw_by_id(
                 &self.grid,
                 &mut context,
-                &Relative::new(x, y, Some(zoom)),
+                &self.state.get_view_relative(),
                 if let (Some(stroke_style), Some(fill_style)) = (stroke_style, fill_style) {
                     Some(Style {
                         stroke_style,
@@ -243,5 +237,58 @@ impl Board {
     #[wasm_bindgen]
     pub fn get_size(&mut self) -> Result<JsValue, String> {
         serde_wasm_bindgen::to_value(&self.grid.get_size_px()).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn set_view_state(&mut self, x: i32, y: i32, zoom: f64) {
+        self.state.set_view_state(x, y, zoom);
+    }
+
+    #[wasm_bindgen]
+    pub fn toggle_component(&mut self, id: usize) -> Result<(), String> {
+        self.state.toggle_component(id);
+        self.render()
+    }
+
+    #[wasm_bindgen]
+    pub fn toggle_port(&mut self, id: usize) -> Result<(), String> {
+        self.state.toggle_port(id);
+        self.render()
+    }
+
+    #[wasm_bindgen]
+    pub fn insert_component(&mut self, id: usize) -> Result<(), String> {
+        if self.state.insert_component(id) {
+            self.render()
+        } else {
+            Ok(())
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn remove_component(&mut self, id: usize) -> Result<(), String> {
+        if self.state.remove_component(id) {
+            self.render()
+        } else {
+            Ok(())
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn insert_port(&mut self, id: usize) -> Result<(), String> {
+        if self.state.insert_port(id) {
+            self.render()
+        } else {
+            Ok(())
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn remove_port(&mut self, id: usize) -> Result<(), String> {
+        if self.state.remove_port(id) {
+            self.render()
+        } else {
+            Ok(())
+        }
     }
 }
