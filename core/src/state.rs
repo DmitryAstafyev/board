@@ -43,11 +43,13 @@ impl State {
         }
     }
 
-    pub fn toggle_port(&mut self, id: usize) {
+    pub fn toggle_port(&mut self, id: usize) -> bool {
         if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, port)| *port == &id) {
             let _ = self.ports.remove(i);
+            false
         } else {
             self.ports.push(id);
+            true
         }
     }
 
@@ -98,5 +100,9 @@ impl State {
 
     pub fn is_component_selected(&self, id: &usize) -> bool {
         self.components.contains(id)
+    }
+
+    pub fn is_any_port_selected(&self, ids: Vec<&usize>) -> bool {
+        ids.iter().any(|id| self.ports.contains(id))
     }
 }

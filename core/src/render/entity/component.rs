@@ -5,6 +5,7 @@ use crate::{
         elements, form::GridRectangle, options::Options, Container, Form, Relative, Render,
         Representation, Style, View,
     },
+    state::State,
 };
 
 const MIN_HEIGHT: i32 = 64;
@@ -76,13 +77,25 @@ impl Render<Component> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
         options: &Options,
+        state: &State,
     ) -> Result<(), E> {
+        if state.is_component_selected(&self.entity.sig.id) {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(0,0,0)"),
+                fill_style: String::from("rgb(100,150,100)"),
+            };
+        } else {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(30,30,30)"),
+                fill_style: String::from("rgb(250,250,250)"),
+            };
+        }
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
         self.entity
             .ports
             .render_mut()?
-            .draw(context, &self_relative, options)?;
+            .draw(context, &self_relative, options, state)?;
         context.set_text_baseline("bottom");
         context.set_font(&format!("{}px serif", relative.zoom(12)));
         let _ = context.stroke_text(

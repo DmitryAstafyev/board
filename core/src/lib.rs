@@ -216,6 +216,7 @@ impl Board {
                 },
                 id,
                 &self.options,
+                &self.state,
             ) {
                 self.context = Some(context);
                 Err(e)?
@@ -252,7 +253,38 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn toggle_port(&mut self, id: usize) -> Result<(), String> {
-        self.state.toggle_port(id);
+        if let Some(connection) = self.render.origin().find_connection_by_port(id) {
+            let rel_port = if connection.joint_in.port == id {
+                connection.joint_out.port
+            } else {
+                connection.joint_in.port
+            };
+            if self.state.toggle_port(id) {
+                // Added
+                self.state.insert_port(rel_port);
+                self.state.insert_component(connection.joint_out.component);
+                self.state.insert_component(connection.joint_in.component);
+            } else {
+                // Removed
+                self.state.remove_port(rel_port);
+                if !self.state.is_any_port_selected(
+                    self.render
+                        .origin()
+                        .get_all_connected_ports_by_component(connection.joint_in.component),
+                ) {
+                    self.state.remove_component(connection.joint_in.component);
+                }
+                if !self.state.is_any_port_selected(
+                    self.render
+                        .origin()
+                        .get_all_connected_ports_by_component(connection.joint_out.component),
+                ) {
+                    self.state.remove_component(connection.joint_out.component);
+                }
+            }
+        } else {
+            self.state.toggle_port(id);
+        }
         self.render()
     }
 

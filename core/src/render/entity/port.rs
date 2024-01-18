@@ -1,3 +1,5 @@
+use wasm_bindgen_test::console_log;
+
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
@@ -8,6 +10,7 @@ use crate::{
         options::{self, Options},
         Container, Form, Relative, Render, Representation, Style, View,
     },
+    state::State,
 };
 
 pub const PORT_SIDE: i32 = 8;
@@ -170,6 +173,7 @@ impl Render<Ports> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
         options: &Options,
+        state: &State,
     ) -> Result<(), E> {
         let self_relative = self.relative(relative);
         let hide = self.origin().hide_invisible;
@@ -179,7 +183,8 @@ impl Render<Ports> {
             .iter_mut()
             .filter(|p| p.origin().visibility || !hide)
         {
-            port.render_mut()?.draw(context, &self_relative, options)?;
+            port.render_mut()?
+                .draw(context, &self_relative, options, state)?;
         }
         Ok(())
     }
@@ -284,13 +289,20 @@ impl Render<Port> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
-        options: &Options,
+        _options: &Options,
+        state: &State,
     ) -> Result<(), E> {
-        // if let Some(over) = self.over_style.as_ref() {
-        //     over.apply(context);
-        // } else {
-        //     self.style.apply(context);
-        // }
+        if state.is_port_selected(&self.entity.sig.id) {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(0,0,0)"),
+                fill_style: String::from("rgb(150,250,150)"),
+            };
+        } else {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(50,50,50)"),
+                fill_style: String::from("rgb(240,240,240)"),
+            };
+        }
         self.view.render(context, relative);
         Ok(())
     }

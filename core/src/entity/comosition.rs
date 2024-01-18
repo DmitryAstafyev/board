@@ -52,4 +52,24 @@ impl Composition {
             composition: true,
         }
     }
+
+    pub fn find_connection_by_port(&self, port_id: usize) -> Option<&Connection> {
+        self.connections
+            .iter()
+            .find(|conn| {
+                conn.origin().joint_in.port == port_id || conn.origin().joint_out.port == port_id
+            })
+            .map(|rep| rep.origin())
+    }
+
+    pub fn get_all_connected_ports_by_component(&self, component_id: usize) -> Vec<&usize> {
+        self.connections
+            .iter()
+            .filter(|conn| {
+                conn.origin().joint_in.component == component_id
+                    || conn.origin().joint_out.component == component_id
+            })
+            .flat_map(|conn| [&conn.origin().joint_in.port, &conn.origin().joint_out.port])
+            .collect::<Vec<&usize>>()
+    }
 }

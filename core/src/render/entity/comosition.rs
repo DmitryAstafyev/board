@@ -380,7 +380,9 @@ impl Render<Composition> {
             .iter_mut()
             .filter(|comp| targets.contains(&comp.origin().sig.id))
         {
-            component.render_mut()?.draw(context, relative, options)?;
+            component
+                .render_mut()?
+                .draw(context, relative, options, state)?;
         }
         for composition in self
             .entity
@@ -396,16 +398,15 @@ impl Render<Composition> {
             (targets.contains(&conn.origin().joint_in.component)
                 || targets.contains(&conn.origin().joint_out.component))
                 && (state.is_port_selected(&conn.origin().joint_in.port)
-                    || state.is_port_selected(&conn.origin().joint_out.port)
-                    || state.is_component_selected(&conn.origin().joint_in.component)
-                    || state.is_component_selected(&conn.origin().joint_out.component))
+                    || state.is_port_selected(&conn.origin().joint_out.port)/*|| state.is_component_selected(&conn.origin().joint_in.component)
+                || state.is_component_selected(&conn.origin().joint_out.component)*/)
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }
         self.entity
             .ports
             .render_mut()?
-            .draw(context, &self_relative, options)?;
+            .draw(context, &self_relative, options, state)?;
         context.set_text_baseline("bottom");
         context.set_font(&format!("{}px serif", relative.zoom(12)));
         let _ = context.stroke_text(
@@ -425,6 +426,7 @@ impl Render<Composition> {
         style: Option<Style>,
         id: usize,
         options: &Options,
+        state: &State,
     ) -> Result<(), E> {
         if let Some(component) = self
             .entity
@@ -433,7 +435,9 @@ impl Render<Composition> {
             .find(|comp| comp.origin().sig.id == id)
         {
             component.render_mut()?.set_over_style(style);
-            component.render_mut()?.draw(context, relative, options)?;
+            component
+                .render_mut()?
+                .draw(context, relative, options, state)?;
         }
         grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
