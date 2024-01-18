@@ -278,6 +278,7 @@ impl Render<Composition> {
 
     pub fn calc(
         &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
         grid: &mut Grid,
         expanded: &[usize],
         options: &Options,
@@ -288,9 +289,12 @@ impl Render<Composition> {
         self.entity.order();
         for composition in self.entity.compositions.iter_mut() {
             if expanded.contains(&composition.origin().sig.id) {
-                composition
-                    .render_mut()?
-                    .calc(&mut composition_grid, expanded, options)?;
+                composition.render_mut()?.calc(
+                    context,
+                    &mut composition_grid,
+                    expanded,
+                    options,
+                )?;
                 composition.render_mut()?.show();
             } else {
                 self.entity
@@ -303,7 +307,7 @@ impl Render<Composition> {
             }
         }
         for component in self.entity.components.iter_mut() {
-            component.render_mut()?.calc(options)?;
+            component.render_mut()?.calc(context, options)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
         let mut dependencies: Vec<(usize, usize)> = vec![];
@@ -348,10 +352,11 @@ impl Render<Composition> {
             .container
             .set_box_size(Some(grid_size.0 as i32), Some(grid_height_px as i32));
         // Calc ports
-        self.entity
-            .ports
-            .render_mut()?
-            .calc(self.view.container.get_box_size().0, options)?;
+        self.entity.ports.render_mut()?.calc(
+            context,
+            self.view.container.get_box_size().0,
+            options,
+        )?;
         // Add composition as itself into grid
         composition_grid.insert_self(self.entity.sig.id);
         if let Some(container) = self.view.elements.first_mut() {

@@ -82,18 +82,7 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn init(&mut self, composition: JsValue, expanded: Vec<usize>) -> Result<(), String> {
-        let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
-            .map_err(|e| E::Serde(e.to_string()))?;
-        self.render = Render::<Composition>::new(composition, &self.options);
-        let mut grid_options = self.options.grid.clone();
-        grid_options.padding = 0;
-        self.grid = Grid::new(&grid_options);
-        Ok(self.render.calc(&mut self.grid, &expanded, &self.options)?)
-    }
-
-    #[wasm_bindgen]
-    pub fn bind(&mut self, canvas_el_id: &str) -> Result<(), String> {
+    pub fn attach(&mut self, canvas_el_id: &str) -> Result<(), String> {
         let document = web_sys::window()
             .ok_or(E::Dom("Window object isn't found".to_string()))?
             .document()
@@ -130,34 +119,45 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn bind(&mut self, composition: JsValue, expanded: Vec<usize>) -> Result<(), String> {
+        let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
+            .map_err(|e| E::Serde(e.to_string()))?;
+        self.render = Render::<Composition>::new(composition, &self.options);
+        let mut grid_options = self.options.grid.clone();
+        grid_options.padding = 0;
+        self.grid = Grid::new(&grid_options);
+        Ok(self.render.calc(
+            self.context.as_mut().ok_or(E::NoCanvasContext)?,
+            &mut self.grid,
+            &expanded,
+            &self.options,
+        )?)
+    }
+
+    #[wasm_bindgen]
     pub fn render(&mut self) -> Result<(), String> {
-        if let Some(mut context) = self.context.take() {
-            context.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
-            let targets = self.grid.viewport(
-                (self.state.x, self.state.y),
-                (self.width, self.height),
-                self.state.zoom,
-            );
-            let relative = self.state.get_view_relative();
-            if let Err(e) = self.render.draw(
-                &mut context,
-                &relative,
-                &targets
-                    .iter()
-                    .map(|(id, _, _)| id.parse::<usize>().unwrap())
-                    .collect(),
-                &self.options,
-                &self.state,
-            ) {
-                self.context = Some(context);
-                Err(e)?
-            } else {
-                let _ = self.grid.draw(&mut context, &relative);
-                self.context = Some(context);
-                Ok(())
-            }
+        let cx = self.context.as_mut().ok_or(E::NoCanvasContext)?;
+        cx.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
+        let targets = self.grid.viewport(
+            (self.state.x, self.state.y),
+            (self.width, self.height),
+            self.state.zoom,
+        );
+        let relative = self.state.get_view_relative();
+        if let Err(e) = self.render.draw(
+            cx,
+            &relative,
+            &targets
+                .iter()
+                .map(|(id, _, _)| id.parse::<usize>().unwrap())
+                .collect(),
+            &self.options,
+            &self.state,
+        ) {
+            Err(e)?
         } else {
-            Err(E::NoCanvasContext)?
+            let _ = self.grid.draw(cx, &relative);
+            Ok(())
         }
     }
 

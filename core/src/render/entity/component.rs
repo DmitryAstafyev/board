@@ -46,7 +46,11 @@ impl Render<Component> {
         }
     }
 
-    pub fn calc(&mut self, options: &Options) -> Result<(), E> {
+    pub fn calc(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        options: &Options,
+    ) -> Result<(), E> {
         // Set self size
         self.view.container.set_box_size(
             None,
@@ -56,10 +60,11 @@ impl Render<Component> {
             )),
         );
         // Calc ports
-        self.entity
-            .ports
-            .render_mut()?
-            .calc(self.view.container.get_box_size().0, options)?;
+        self.entity.ports.render_mut()?.calc(
+            context,
+            self.view.container.get_box_size().0,
+            options,
+        )?;
         Ok(())
     }
 

@@ -76,7 +76,12 @@ impl Render<Ports> {
         elements::max(&[max_in, max_out], 0) as i32 * PORTS_VERTICAL_OFFSET + PORTS_VERTICAL_OFFSET
     }
 
-    pub fn calc(&mut self, container_width: i32, options: &Options) -> Result<(), E> {
+    pub fn calc(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        container_width: i32,
+        options: &Options,
+    ) -> Result<(), E> {
         let hide = self.origin().hide_invisible;
         // Calc ports
         for port in self
@@ -85,7 +90,7 @@ impl Render<Ports> {
             .iter_mut()
             .filter(|p| p.origin().visibility || !hide)
         {
-            port.render_mut()?.calc(options)?;
+            port.render_mut()?.calc(context, options)?;
         }
         match options.ports.representation {
             options::PortsRepresentation::Blocks => {
@@ -264,7 +269,11 @@ impl Render<Port> {
         }
     }
 
-    pub fn calc(&mut self, options: &Options) -> Result<(), E> {
+    pub fn calc(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        options: &Options,
+    ) -> Result<(), E> {
         Ok(())
     }
 

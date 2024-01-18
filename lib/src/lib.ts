@@ -143,7 +143,7 @@ export class Board extends Subscriber {
         this.parent.appendChild(this.canvas);
         this.setSize();
         this.board = new wasm.core.Board(options);
-        this.board.bind(this.id);
+        this.board.attach(this.id);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onHover = this.onHover.bind(this);
@@ -442,7 +442,7 @@ export class Board extends Subscriber {
             console.log(`Fail to find composition ID: ${id}`);
             return;
         }
-        this.board.init(composition, Uint32Array.from([]));
+        this.board.bind(composition, Uint32Array.from([]));
         this.data.composition = id;
         this.data.groupped = this.board.get_groupped_ports();
         this.setSize();
@@ -484,7 +484,7 @@ export class Board extends Subscriber {
     }
 
     public bind(composition: Types.Composition, expanded: number[]) {
-        this.board.init(composition, Uint32Array.from(expanded));
+        this.board.bind(composition, Uint32Array.from(expanded));
         this.setSize();
         this.scroll.setZoom(this.position.zoom);
         this.scroll.setSize(
