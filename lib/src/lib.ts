@@ -407,6 +407,7 @@ export class Board extends Subscriber {
                 if (element[1] === "Port") {
                     this.board.toggle_port(targetId);
                 } else {
+                    this.board.toggle_component(targetId);
                     this.data.composition !== undefined &&
                         this.data.history.push(this.data.composition);
                     this.goToComposition(targetId);

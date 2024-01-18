@@ -62,7 +62,7 @@ impl Composition {
             .map(|rep| rep.origin())
     }
 
-    pub fn get_all_connected_ports_by_component(&self, component_id: usize) -> Vec<&usize> {
+    pub fn find_ports_by_component(&self, component_id: usize) -> Vec<&usize> {
         self.connections
             .iter()
             .filter(|conn| {
@@ -71,5 +71,23 @@ impl Composition {
             })
             .flat_map(|conn| [&conn.origin().joint_in.port, &conn.origin().joint_out.port])
             .collect::<Vec<&usize>>()
+    }
+
+    pub fn find_connections_by_component(&self, component_id: usize) -> Vec<&Connection> {
+        self.connections
+            .iter()
+            .filter(|conn| {
+                conn.origin().joint_in.component == component_id
+                    || conn.origin().joint_out.component == component_id
+            })
+            .map(|rep| rep.origin())
+            .collect()
+    }
+
+    pub fn get_component(&self, id: usize) -> Option<&Component> {
+        self.components
+            .iter()
+            .find(|comp| comp.origin().sig.id == id)
+            .map(|comp| comp.origin())
     }
 }

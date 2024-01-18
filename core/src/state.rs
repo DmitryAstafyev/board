@@ -30,44 +30,44 @@ impl State {
         self.zoom = zoom;
     }
 
-    pub fn toggle_component(&mut self, id: usize) {
+    pub fn toggle_component(&mut self, id: &usize) {
         if let Some((i, _)) = self
             .components
             .iter()
             .enumerate()
-            .find(|(_, comp)| *comp == &id)
+            .find(|(_, comp)| *comp == id)
         {
             let _ = self.components.remove(i);
         } else {
-            self.components.push(id);
+            self.components.push(*id);
         }
     }
 
-    pub fn toggle_port(&mut self, id: usize) -> bool {
-        if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, port)| *port == &id) {
+    pub fn toggle_port(&mut self, id: &usize) -> bool {
+        if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, port)| *port == id) {
             let _ = self.ports.remove(i);
             false
         } else {
-            self.ports.push(id);
+            self.ports.push(*id);
             true
         }
     }
 
-    pub fn insert_component(&mut self, id: usize) -> bool {
+    pub fn insert_component(&mut self, id: &usize) -> bool {
         if !self.components.contains(&id) {
-            self.components.push(id);
+            self.components.push(*id);
             true
         } else {
             false
         }
     }
 
-    pub fn remove_component(&mut self, id: usize) -> bool {
+    pub fn remove_component(&mut self, id: &usize) -> bool {
         if let Some((i, _)) = self
             .components
             .iter()
             .enumerate()
-            .find(|(_, comp)| *comp == &id)
+            .find(|(_, comp)| *comp == id)
         {
             let _ = self.components.remove(i);
             true
@@ -76,17 +76,17 @@ impl State {
         }
     }
 
-    pub fn insert_port(&mut self, id: usize) -> bool {
+    pub fn insert_port(&mut self, id: &usize) -> bool {
         if !self.ports.contains(&id) {
-            self.ports.push(id);
+            self.ports.push(*id);
             true
         } else {
             false
         }
     }
 
-    pub fn remove_port(&mut self, id: usize) -> bool {
-        if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, comp)| *comp == &id) {
+    pub fn remove_port(&mut self, id: &usize) -> bool {
+        if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, comp)| *comp == id) {
             let _ = self.ports.remove(i);
             true
         } else {

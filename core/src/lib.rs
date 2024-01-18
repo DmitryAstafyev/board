@@ -247,8 +247,45 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn toggle_component(&mut self, id: usize) -> Result<(), String> {
-        self.state.toggle_component(id);
-        self.render()
+        if let Some(comp) = self.render.origin().get_component(id) {
+            let rel_connections = self.render.origin().find_connections_by_component(id);
+            let rel_ports = [
+                rel_connections
+                    .iter()
+                    .flat_map(|conn| [&conn.joint_in.port, &conn.joint_out.port])
+                    .collect::<Vec<&usize>>(),
+                comp.ports
+                    .origin()
+                    .ports
+                    .iter()
+                    .map(|port| &port.origin().sig.id)
+                    .collect::<Vec<&usize>>(),
+            ]
+            .concat();
+            let components = rel_connections
+                .iter()
+                .flat_map(|conn| [&conn.joint_in.component, &conn.joint_out.component])
+                .collect::<Vec<&usize>>();
+            if self.state.is_component_selected(&id) {
+                rel_ports.iter().for_each(|id| {
+                    self.state.remove_port(id);
+                });
+                self.state.remove_component(&id);
+                components.iter().for_each(|id| {
+                    self.state.remove_component(id);
+                });
+            } else {
+                rel_ports.iter().for_each(|id| {
+                    self.state.insert_port(id);
+                });
+                self.state.insert_component(&id);
+                components.iter().for_each(|id| {
+                    self.state.insert_component(id);
+                });
+            }
+            self.render()?;
+        }
+        Ok(())
     }
 
     #[wasm_bindgen]
@@ -259,38 +296,38 @@ impl Board {
             } else {
                 connection.joint_in.port
             };
-            if self.state.toggle_port(id) {
+            if self.state.toggle_port(&id) {
                 // Added
-                self.state.insert_port(rel_port);
-                self.state.insert_component(connection.joint_out.component);
-                self.state.insert_component(connection.joint_in.component);
+                self.state.insert_port(&rel_port);
+                self.state.insert_component(&connection.joint_out.component);
+                self.state.insert_component(&connection.joint_in.component);
             } else {
                 // Removed
-                self.state.remove_port(rel_port);
+                self.state.remove_port(&rel_port);
                 if !self.state.is_any_port_selected(
                     self.render
                         .origin()
-                        .get_all_connected_ports_by_component(connection.joint_in.component),
+                        .find_ports_by_component(connection.joint_in.component),
                 ) {
-                    self.state.remove_component(connection.joint_in.component);
+                    self.state.remove_component(&connection.joint_in.component);
                 }
                 if !self.state.is_any_port_selected(
                     self.render
                         .origin()
-                        .get_all_connected_ports_by_component(connection.joint_out.component),
+                        .find_ports_by_component(connection.joint_out.component),
                 ) {
-                    self.state.remove_component(connection.joint_out.component);
+                    self.state.remove_component(&connection.joint_out.component);
                 }
             }
         } else {
-            self.state.toggle_port(id);
+            self.state.toggle_port(&id);
         }
         self.render()
     }
 
     #[wasm_bindgen]
     pub fn insert_component(&mut self, id: usize) -> Result<(), String> {
-        if self.state.insert_component(id) {
+        if self.state.insert_component(&id) {
             self.render()
         } else {
             Ok(())
@@ -299,7 +336,7 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn remove_component(&mut self, id: usize) -> Result<(), String> {
-        if self.state.remove_component(id) {
+        if self.state.remove_component(&id) {
             self.render()
         } else {
             Ok(())
@@ -308,7 +345,7 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn insert_port(&mut self, id: usize) -> Result<(), String> {
-        if self.state.insert_port(id) {
+        if self.state.insert_port(&id) {
             self.render()
         } else {
             Ok(())
@@ -317,7 +354,7 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn remove_port(&mut self, id: usize) -> Result<(), String> {
-        if self.state.remove_port(id) {
+        if self.state.remove_port(&id) {
             self.render()
         } else {
             Ok(())
