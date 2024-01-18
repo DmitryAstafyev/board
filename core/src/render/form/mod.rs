@@ -147,4 +147,14 @@ impl Form {
             Self::Label(figure) => figure.render(context, relative),
         }
     }
+
+    pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+        match self {
+            Self::Rectangle(_) => {}
+            Self::GridRectangle(_) => {}
+            Self::Path(_) => {}
+            Self::Button(figure) => figure.calc(context, relative),
+            Self::Label(figure) => figure.calc(context, relative),
+        }
+    }
 }

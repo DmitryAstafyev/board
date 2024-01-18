@@ -37,6 +37,7 @@ impl Label {
             Align::Right => (self.x - self.w - self.padding, self.y),
         }
     }
+
     pub fn get_coors_with_zoom(&self, relative: &Relative) -> (i32, i32) {
         match self.align {
             Align::Left => (relative.zoom(self.x + self.padding), relative.zoom(self.y)),
@@ -46,18 +47,23 @@ impl Label {
             ),
         }
     }
-    // Take into account self.w already condiser zooming, because it's calculated by
-    // render and already reflects zoom-factor.
-    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+
+    pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         let text_padding = relative.zoom(TEXT_PADDING as i32) as f64;
         self.h = relative.zoom((CELL as f64 * 0.7).floor() as i32);
         context.set_text_baseline("top");
-        context.set_font(&format!("{}px serif", self.h - 6));
+        context.set_font(&format!("{}px serif", (self.h as f64 * 0.7).round()));
         self.w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width() as i32
         } else {
             64
         } + (text_padding as i32) * 2;
+    }
+    // Take into account self.w already condiser zooming, because it's calculated by
+    // render and already reflects zoom-factor.
+    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+        self.calc(context, relative);
+        let text_padding = relative.zoom(TEXT_PADDING as i32) as f64;
         let x = match self.align {
             Align::Left => relative.x(self.x + self.padding),
             Align::Right => relative.x(self.x - self.padding) - self.w,

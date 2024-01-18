@@ -130,6 +130,7 @@ impl Board {
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
             &mut self.grid,
             &expanded,
+            &self.state.get_view_relative(),
             &self.options,
         )?)
     }
@@ -143,10 +144,9 @@ impl Board {
             (self.width, self.height),
             self.state.zoom,
         );
-        let relative = self.state.get_view_relative();
         if let Err(e) = self.render.draw(
             cx,
-            &relative,
+            &self.state.get_view_relative(),
             &targets
                 .iter()
                 .map(|(id, _, _)| id.parse::<usize>().unwrap())
@@ -156,7 +156,7 @@ impl Board {
         ) {
             Err(e)?
         } else {
-            let _ = self.grid.draw(cx, &relative);
+            let _ = self.grid.draw(cx, &self.state.get_view_relative());
             Ok(())
         }
     }

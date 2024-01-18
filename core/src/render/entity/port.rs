@@ -80,6 +80,7 @@ impl Render<Ports> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         container_width: i32,
+        relative: &Relative,
         options: &Options,
     ) -> Result<(), E> {
         let hide = self.origin().hide_invisible;
@@ -90,7 +91,7 @@ impl Render<Ports> {
             .iter_mut()
             .filter(|p| p.origin().visibility || !hide)
         {
-            port.render_mut()?.calc(context, options)?;
+            port.render_mut()?.calc(context, relative, options)?;
         }
         match options.ports.representation {
             options::PortsRepresentation::Blocks => {
@@ -272,8 +273,10 @@ impl Render<Port> {
     pub fn calc(
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
         options: &Options,
     ) -> Result<(), E> {
+        self.view.container.form.calc(context, relative);
         Ok(())
     }
 

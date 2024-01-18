@@ -49,6 +49,7 @@ impl Render<Component> {
     pub fn calc(
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
         options: &Options,
     ) -> Result<(), E> {
         // Set self size
@@ -60,9 +61,11 @@ impl Render<Component> {
             )),
         );
         // Calc ports
+        let self_relative = self.relative(relative);
         self.entity.ports.render_mut()?.calc(
             context,
             self.view.container.get_box_size().0,
+            &self_relative,
             options,
         )?;
         Ok(())

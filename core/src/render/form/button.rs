@@ -49,6 +49,19 @@ impl Button {
             ),
         }
     }
+
+    pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, _relative: &Relative) {
+        context.set_text_baseline("middle");
+        context.set_font("12px serif");
+        let w = if let Ok(metric) = context.measure_text(&self.label) {
+            metric.width()
+        } else {
+            64.0
+        };
+        self.w = w as i32 + PADDING_IN_HORIZONT as i32;
+        self.h = 18;
+    }
+
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         context.set_text_baseline("middle");
         context.set_font("12px serif");

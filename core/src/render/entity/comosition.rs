@@ -200,47 +200,36 @@ impl Render<Composition> {
                         .origin()
                         .find_visible(conn.origin().joint_out.port),
                 ) {
-                    let port_in = port_in.render()?.view.container.get_coors();
-                    let port_out = port_out.render()?.view.container.get_coors();
+                    let coors_port_in = port_in.render()?.view.container.get_coors();
+                    let coors_port_out = port_out.render()?.view.container.get_coors();
                     let relative_inns = ins.own_relative()?;
                     let relative_outs = outs.own_relative()?;
                     let points: Vec<Point> = match options.connections.align {
                         ConnectionsAlign::Straight => {
+                            let size_port_in = port_in.render()?.view.container.get_box_size();
+                            let size_port_out = port_out.render()?.view.container.get_box_size();
                             vec![
                                 Point {
-                                    x: relative_inns.x(port_in.0),
-                                    y: relative_inns.y(port_in.1),
+                                    x: relative_inns.x(coors_port_in.0),
+                                    y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
                                 },
                                 Point {
-                                    x: relative_outs.x(port_out.0),
-                                    y: relative_outs.y(port_out.1),
+                                    x: relative_outs.x(coors_port_out.0) + size_port_out.0,
+                                    y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
                                 },
                             ]
                         }
                         ConnectionsAlign::Streamlined => {
-                            // let offset = port::PORT_SIDE / 2;
-                            // let offset = (CELL / 2) as i32;
                             let a = Cell::new(
-                                relative_inns.x(port_in.0) as u32,
-                                relative_inns.y(port_in.1) as u32,
+                                relative_inns.x(coors_port_in.0) as u32,
+                                relative_inns.y(coors_port_in.1) as u32,
                                 grid,
                             )?;
                             let b = Cell::new(
-                                relative_outs.x(port_out.0) as u32,
-                                relative_outs.y(port_out.1) as u32,
+                                relative_outs.x(coors_port_out.0) as u32,
+                                relative_outs.y(coors_port_out.1) as u32,
                                 grid,
                             )?;
-                            // let (port_coor_left, port_coor_right) = if a.x < b.x {
-                            //     (
-                            //         (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
-                            //         (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
-                            //     )
-                            // } else {
-                            //     (
-                            //         (relative_outs.x(port_out.0), relative_outs.y(port_out.1)),
-                            //         (relative_inns.x(port_in.0), relative_inns.y(port_in.1)),
-                            //     )
-                            // };
                             let (left, right) = if a.x < b.x { (a, b) } else { (b, a) };
                             let a = (left.x, left.y);
                             let b = (right.x, left.y);
@@ -281,6 +270,7 @@ impl Render<Composition> {
         context: &mut web_sys::CanvasRenderingContext2d,
         grid: &mut Grid,
         expanded: &[usize],
+        relative: &Relative,
         options: &Options,
     ) -> Result<(), E> {
         // Create composition grid
@@ -293,6 +283,7 @@ impl Render<Composition> {
                     context,
                     &mut composition_grid,
                     expanded,
+                    relative,
                     options,
                 )?;
                 composition.render_mut()?.show();
@@ -307,7 +298,7 @@ impl Render<Composition> {
             }
         }
         for component in self.entity.components.iter_mut() {
-            component.render_mut()?.calc(context, options)?;
+            component.render_mut()?.calc(context, relative, options)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
         let mut dependencies: Vec<(usize, usize)> = vec![];
@@ -352,9 +343,11 @@ impl Render<Composition> {
             .container
             .set_box_size(Some(grid_size.0 as i32), Some(grid_height_px as i32));
         // Calc ports
+        let self_relative = self.relative(relative);
         self.entity.ports.render_mut()?.calc(
             context,
             self.view.container.get_box_size().0,
+            &self_relative,
             options,
         )?;
         // Add composition as itself into grid
