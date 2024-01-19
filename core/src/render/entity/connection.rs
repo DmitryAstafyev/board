@@ -1,7 +1,7 @@
 use crate::{
     entity::Connection,
     error::E,
-    render::{form::Path, Container, Form, Relative, Render, Style, View},
+    render::{form::Path, grid::ElementType, Container, Form, Relative, Render, Style, View},
 };
 
 impl Render<Connection> {
@@ -11,10 +11,13 @@ impl Render<Connection> {
             entity,
             view: View {
                 container: Container {
-                    form: Form::Path(Path {
-                        points: vec![],
-                        id: id.to_string(),
-                    }),
+                    form: Form::Path(
+                        ElementType::Connection,
+                        Path {
+                            points: vec![],
+                            id: id.to_string(),
+                        },
+                    ),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: String::from("rgb(200,200,200)"),

@@ -84,7 +84,7 @@ impl Render<Composition> {
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(component) = r {
-                    Representation::Render(Render::<Component>::new(component, options))
+                    Representation::Render(Render::<Component>::new(component, options, None))
                 } else {
                     r
                 }
@@ -117,19 +117,23 @@ impl Render<Composition> {
         } else {
             entity.ports
         };
+
         let id = entity.sig.id;
         let parent = entity.parent;
         Self {
             entity,
             view: View {
                 container: Container {
-                    form: Form::Rectangle(Rectangle {
-                        id: id.to_string(),
-                        x: 0,
-                        y: 0,
-                        w: 100,
-                        h: 100,
-                    }),
+                    form: Form::Rectangle(
+                        ElementType::Composition,
+                        Rectangle {
+                            id: id.to_string(),
+                            x: 0,
+                            y: 0,
+                            w: 100,
+                            h: 100,
+                        },
+                    ),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: String::from("rgb(200,200,230)"),
@@ -138,16 +142,19 @@ impl Render<Composition> {
                 },
                 elements: if let Some(id) = parent {
                     vec![Container {
-                        form: Form::Button(Button {
-                            id: format!("back::{id}"),
-                            x: 0,
-                            y: 0,
-                            w: 0,
-                            h: 0,
-                            label: id.to_string(),
-                            align: button::Align::Right,
-                            padding: 3,
-                        }),
+                        form: Form::Button(
+                            ElementType::Element,
+                            Button {
+                                id: format!("back::{id}"),
+                                x: 0,
+                                y: 0,
+                                w: 0,
+                                h: 0,
+                                label: id.to_string(),
+                                align: button::Align::Right,
+                                padding: 3,
+                            },
+                        ),
                         style: Style {
                             stroke_style: String::from("rgb(0,0,0)"),
                             fill_style: String::from("rgb(100,150,255)"),
@@ -256,7 +263,10 @@ impl Render<Composition> {
                         }
                     };
                     let path = Path::new(conn.origin().sig.id.to_string(), points);
-                    conn.render_mut()?.view.container.set_form(Form::Path(path));
+                    conn.render_mut()?
+                        .view
+                        .container
+                        .set_form(Form::Path(ElementType::Connection, path));
                 } else {
                     console_log!("No ports has been found :/");
                 }
@@ -293,6 +303,7 @@ impl Render<Composition> {
                     .push(Representation::Render(Render::<Component>::new(
                         composition.origin().to_component(options),
                         options,
+                        Some(ElementType::Composition),
                     )));
                 composition.render_mut()?.hide();
             }
@@ -351,7 +362,7 @@ impl Render<Composition> {
             options,
         )?;
         // Add composition as itself into grid
-        composition_grid.insert_self(self.entity.sig.id);
+        composition_grid.insert_self(self.entity.sig.id, ElementType::Composition);
         if let Some(container) = self.view.elements.first_mut() {
             container.set_coors(Some(grid_size.0 as i32), None);
         }

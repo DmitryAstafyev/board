@@ -13,6 +13,8 @@ pub const CELL: u32 = 25;
 pub enum ElementType {
     Unknown,
     Component,
+    Composition,
+    Connection,
     Port,
     Element,
 }
@@ -258,7 +260,7 @@ pub struct Grid {
     // Total grid size (in cells)
     pub size: (u32, u32),
     // Cells map <EntityID, Occupied area <(x, y, x1, y1)>>
-    pub map: HashMap<String, (u32, u32, u32, u32)>,
+    pub map: HashMap<String, (ElementType, (u32, u32, u32, u32))>,
     pub id: Option<usize>,
 }
 
@@ -290,21 +292,24 @@ impl Grid {
         self.size.1 * CELL
     }
 
-    pub fn insert_self(&mut self, id: usize) {
+    pub fn insert_self(&mut self, id: usize, ty: ElementType) {
         self.id = Some(id);
         self.map.insert(
             id.to_string(),
             (
-                0,
-                0,
-                as_u32(self.size.0 as i32 - 1),
-                as_u32(self.size.1 as i32 - 1),
+                ty,
+                (
+                    0,
+                    0,
+                    as_u32(self.size.0 as i32 - 1),
+                    as_u32(self.size.1 as i32 - 1),
+                ),
             ),
         );
     }
 
     pub fn relative(&self, target: usize) -> Relative {
-        if let Some((x, y)) = self.map.iter().find_map(|(id, (x, y, _, _))| {
+        if let Some((x, y)) = self.map.iter().find_map(|(id, (_, (x, y, _, _)))| {
             if id == &target.to_string() {
                 Some((x, y))
             } else {
@@ -319,14 +324,14 @@ impl Grid {
 
     pub fn get_coors_by_ids(&self, ids: &[usize], relative: &Relative) -> Vec<ElementCoors> {
         let mut found: Vec<ElementCoors> = vec![];
-        self.map.iter().for_each(|(id, area)| {
+        self.map.iter().for_each(|(id, (ty, area))| {
             if let Ok(id) = id.parse::<usize>() {
                 if !ids.contains(&id) {
                     return;
                 }
                 found.push((
                     id.to_string(),
-                    ElementType::Component,
+                    ty.clone(),
                     (
                         relative.x((area.0 * CELL) as i32),
                         relative.y((area.1 * CELL) as i32),
@@ -391,11 +396,11 @@ impl Grid {
         let targets = self
             .map
             .iter()
-            .filter_map(|(id, block)| {
+            .filter_map(|(id, (ty, block))| {
                 if elements::is_area_cross(&(ax, ay, ax1, ay1), block) {
                     Some((
                         id.clone(),
-                        ElementType::Unknown,
+                        ty.clone(),
                         (
                             (block.0 as f64 * cell) as i32,
                             (block.1 as f64 * cell) as i32,
@@ -432,7 +437,7 @@ impl Grid {
         y1 += self.options.cells_space_vertical;
         let extd_target = (x, y, x1, y1);
         // Check crossing
-        for (_, (ax, ay, ax1, ay1)) in self.map.iter() {
+        for (_, (_, (ax, ay, ax1, ay1))) in self.map.iter() {
             if elements::is_area_cross(&extd_target, &(*ax, *ay, *ax1, *ay1)) {
                 return false;
             }
@@ -447,7 +452,7 @@ impl Grid {
         }
         let self_id = self.id.unwrap_or(0).to_string();
         // Check crossing
-        for (id, area) in self.map.iter() {
+        for (id, (_, area)) in self.map.iter() {
             if &self_id != id && elements::is_area_cross(&target, area) {
                 return false;
             }
@@ -464,7 +469,7 @@ impl Grid {
             return false;
         }
         let self_id = self.id.unwrap_or(0).to_string();
-        for (id, (ax, ay, ax1, ay1)) in self.map.iter() {
+        for (id, (_, (ax, ay, ax1, ay1))) in self.map.iter() {
             if &self_id != id
                 && elements::is_point_in(
                     &(point.0 as i32, point.1 as i32),
@@ -479,7 +484,7 @@ impl Grid {
 
     fn is_map_point_free(&self, point: &(u32, u32)) -> bool {
         let self_id = self.id.unwrap_or(0).to_string();
-        for (id, (ax, ay, ax1, ay1)) in self.map.iter() {
+        for (id, (ty, (ax, ay, ax1, ay1))) in self.map.iter() {
             if &self_id != id
                 && elements::is_point_in(
                     &(point.0 as i32, point.1 as i32),
@@ -496,14 +501,14 @@ impl Grid {
         let max_x = self
             .map
             .values()
-            .map(|(_, _, x1, _)| x1)
+            .map(|(_, (_, _, x1, _))| x1)
             .max()
             .unwrap_or(&0)
             + self.options.padding;
         let max_y = self
             .map
             .values()
-            .map(|(_, _, _, y1)| y1)
+            .map(|(_, (_, _, _, y1))| y1)
             .max()
             .unwrap_or(&0)
             + self.options.padding;
@@ -575,9 +580,11 @@ impl Grid {
         }
         // Merge grid
         if let Some((p_x, p_y)) = point {
-            grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
-                self.map
-                    .insert(id.clone(), (x + p_x, y + p_y, x1 + p_x, y1 + p_y));
+            grid.map.iter().for_each(|(id, (ty, (x, y, x1, y1)))| {
+                self.map.insert(
+                    id.clone(),
+                    (ty.clone(), (x + p_x, y + p_y, x1 + p_x, y1 + p_y)),
+                );
             });
         }
         // Remove unused space
@@ -617,12 +624,12 @@ impl Grid {
     }
 }
 
-pub type FormSize = (String, (u32, u32));
+pub type FormSize = (String, ElementType, (u32, u32));
 
 fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
     let mut data = vec![];
     for form in forms {
-        data.push((form.id(), form.cells()?));
+        data.push((form.id(), form.get_el_ty().clone(), form.cells()?));
     }
     Ok(data)
 }
@@ -630,14 +637,14 @@ fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
 fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<Grid, E> {
     let on_left = get_sizes(a)?;
     let on_right = get_sizes(b)?;
-    let mut map: HashMap<String, (u32, u32, u32, u32)> = HashMap::new();
+    let mut map: HashMap<String, (ElementType, (u32, u32, u32, u32))> = HashMap::new();
     let mut cursor_by_y: u32 = 0;
     let mut size: (u32, u32) = (0, 0);
     if !on_left.is_empty() {
-        on_left.iter().for_each(|(id, (w, h))| {
+        on_left.iter().for_each(|(id, ty, (w, h))| {
             map.insert(
                 id.to_string(),
-                (0, cursor_by_y, w - 1, cursor_by_y + (h - 1)),
+                (ty.clone(), (0, cursor_by_y, w - 1, cursor_by_y + (h - 1))),
             );
             cursor_by_y += h + options.cells_space_vertical;
             if size.0 < *w {
@@ -655,10 +662,13 @@ fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<
     if !on_right.is_empty() {
         cursor_by_y = 0;
         let mut max_w = 0;
-        on_right.iter().for_each(|(id, (w, h))| {
+        on_right.iter().for_each(|(id, ty, (w, h))| {
             map.insert(
                 id.to_string(),
-                (size.0, cursor_by_y, size.0 + (w - 1), cursor_by_y + (h - 1)),
+                (
+                    ty.clone(),
+                    (size.0, cursor_by_y, size.0 + (w - 1), cursor_by_y + (h - 1)),
+                ),
             );
             cursor_by_y += h + options.cells_space_vertical;
             if max_w < *w {
@@ -690,28 +700,34 @@ fn with_forms_by_sides(
     let on_left = get_sizes(left)?;
     let on_center = get_sizes(center)?;
     let on_right = get_sizes(right)?;
-    let mut map: HashMap<String, (u32, u32, u32, u32)> = HashMap::new();
+    let mut map: HashMap<String, (ElementType, (u32, u32, u32, u32))> = HashMap::new();
     let mut size: (u32, u32) = (0, 0);
     // Put left side
     let mut cursor_by_y: u32 = 0;
-    on_left.iter().for_each(|(id, (w, h))| {
-        map.insert(id.to_string(), (0, cursor_by_y, *w, cursor_by_y + h));
+    on_left.iter().for_each(|(id, ty, (w, h))| {
+        map.insert(
+            id.to_string(),
+            (ty.clone(), (0, cursor_by_y, *w, cursor_by_y + h)),
+        );
         cursor_by_y += h + options.cells_space_vertical;
     });
     if cursor_by_y > 0 {
         size.1 = cursor_by_y - options.cells_space_vertical;
     }
     // Put center
-    let mut cursor_by_x = *on_left.iter().map(|(_, (w, _))| w).max().unwrap_or(&0);
+    let mut cursor_by_x = *on_left.iter().map(|(_, _ty, (w, _))| w).max().unwrap_or(&0);
     size.0 = cursor_by_x;
     if cursor_by_x > 0 {
         cursor_by_x += options.cells_space_horizontal;
     }
     cursor_by_y = 0;
-    on_center.iter().for_each(|(id, (w, h))| {
+    on_center.iter().for_each(|(id, ty, (w, h))| {
         map.insert(
             id.to_string(),
-            (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
+            (
+                ty.clone(),
+                (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
+            ),
         );
         cursor_by_y += h + options.cells_space_vertical;
     });
@@ -719,23 +735,34 @@ fn with_forms_by_sides(
         size.1 = cursor_by_y - options.cells_space_vertical;
     }
     // Put right side
-    let center_width = *on_center.iter().map(|(_, (w, _))| w).max().unwrap_or(&0);
+    let center_width = *on_center
+        .iter()
+        .map(|(_, _ty, (w, _))| w)
+        .max()
+        .unwrap_or(&0);
     size.0 += center_width;
     if center_width > 0 {
         cursor_by_x += center_width + options.cells_space_horizontal;
     }
     cursor_by_y = 0;
-    on_right.iter().for_each(|(id, (w, h))| {
+    on_right.iter().for_each(|(id, ty, (w, h))| {
         map.insert(
             id.to_string(),
-            (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
+            (
+                ty.clone(),
+                (cursor_by_x, cursor_by_y, cursor_by_x + w, cursor_by_y + h),
+            ),
         );
         cursor_by_y += h + options.cells_space_vertical;
     });
     if cursor_by_y > 0 && cursor_by_y - options.cells_space_vertical > size.1 {
         size.1 = cursor_by_y - options.cells_space_vertical;
     }
-    size.0 += *on_right.iter().map(|(_, (w, _))| w).max().unwrap_or(&0);
+    size.0 += *on_right
+        .iter()
+        .map(|(_, _ty, (w, _))| w)
+        .max()
+        .unwrap_or(&0);
     let rows = if on_right.is_empty() { 0 } else { 1 }
         + if on_center.is_empty() { 0 } else { 1 }
         + if on_left.is_empty() { 0 } else { 1 };
@@ -755,11 +782,11 @@ fn with_forms_by_sides(
 }
 
 fn from_grids_into_row(grids: &[Grid], options: &GridOptions) -> Grid {
-    let mut map: HashMap<String, (u32, u32, u32, u32)> = HashMap::new();
+    let mut map: HashMap<String, (ElementType, (u32, u32, u32, u32))> = HashMap::new();
     let mut size: (u32, u32) = (0, 0);
     grids.iter().for_each(|grid| {
-        grid.map.iter().for_each(|(id, (x, y, x1, y1))| {
-            map.insert(id.clone(), (x + size.0, *y, x1 + size.0, *y1));
+        grid.map.iter().for_each(|(id, (ty, (x, y, x1, y1)))| {
+            map.insert(id.clone(), (ty.clone(), (x + size.0, *y, x1 + size.0, *y1)));
         });
         size.0 += grid.size.0
             + if grid.size.0 > 0 {

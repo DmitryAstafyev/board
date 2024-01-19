@@ -33,13 +33,16 @@ impl Render<Ports> {
             entity,
             view: View {
                 container: Container {
-                    form: Form::Rectangle(Rectangle {
-                        x: 0,
-                        y: 0,
-                        w: 0,
-                        h: 0,
-                        id: String::new(),
-                    }),
+                    form: Form::Rectangle(
+                        ElementType::Port,
+                        Rectangle {
+                            x: 0,
+                            y: 0,
+                            w: 0,
+                            h: 0,
+                            id: String::new(),
+                        },
+                    ),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: String::from("rgb(0,0,0)"),
@@ -238,13 +241,16 @@ impl Render<Port> {
             view: View {
                 container: match options.ports.representation {
                     options::PortsRepresentation::Blocks => Container {
-                        form: Form::Rectangle(Rectangle {
-                            x: 0,
-                            y: 0,
-                            w: PORT_SIDE,
-                            h: PORT_SIDE,
-                            id: id.to_string(),
-                        }),
+                        form: Form::Rectangle(
+                            ElementType::Port,
+                            Rectangle {
+                                x: 0,
+                                y: 0,
+                                w: PORT_SIDE,
+                                h: PORT_SIDE,
+                                id: id.to_string(),
+                            },
+                        ),
                         style: Style {
                             stroke_style: String::from("rgb(0,0,0)"),
                             fill_style: String::from("rgb(50,50,50)"),
@@ -252,16 +258,19 @@ impl Render<Port> {
                         hover: None,
                     },
                     options::PortsRepresentation::Labels => Container {
-                        form: Form::Label(Label {
-                            x: 0,
-                            y: 0,
-                            w: 0,
-                            h: 0,
-                            id: id.to_string(),
-                            padding: 4,
-                            label,
-                            align,
-                        }),
+                        form: Form::Label(
+                            ElementType::Port,
+                            Label {
+                                x: 0,
+                                y: 0,
+                                w: 0,
+                                h: 0,
+                                id: id.to_string(),
+                                padding: 4,
+                                label,
+                                align,
+                            },
+                        ),
                         style: Style {
                             stroke_style: String::from("rgb(0,0,0)"),
                             fill_style: String::from("rgb(220,220,220)"),

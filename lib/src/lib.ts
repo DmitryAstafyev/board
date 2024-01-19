@@ -280,7 +280,9 @@ export class Board extends Subscriber {
             return;
         }
         const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
-        const component = targets.filter((t) => t[1] === "Unknown");
+        const component = targets.filter(
+            (t) => t[1] === "Component" || t[1] === "Composition"
+        );
         if (component.length === 1) {
             const id = parseInt(component[0][0], 10);
             if (!this.hover.component.isActive(id)) {
@@ -404,10 +406,13 @@ export class Board extends Subscriber {
             } else if (targets.length === 1) {
                 const element = targets[0] as Types.ElementCoors;
                 const targetId = parseInt(element[0], 10);
-                if (element[1] === "Port") {
+                const elementType = element[1];
+                console.log(`click on: ${elementType}`);
+                if (elementType === "Port") {
                     this.board.toggle_port(targetId);
-                } else {
+                } else if (elementType === "Component") {
                     this.board.toggle_component(targetId);
+                } else if (elementType === "Composition") {
                     this.data.composition !== undefined &&
                         this.data.history.push(this.data.composition);
                     this.goToComposition(targetId);

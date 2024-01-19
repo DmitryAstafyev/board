@@ -2,8 +2,8 @@ use crate::{
     entity::{Component, Ports},
     error::E,
     render::{
-        elements, form::GridRectangle, options::Options, Container, Form, Relative, Render,
-        Representation, Style, View,
+        elements, form::GridRectangle, grid::ElementType, options::Options, Container, Form,
+        Relative, Render, Representation, Style, View,
     },
     state::State,
 };
@@ -12,7 +12,7 @@ const MIN_HEIGHT: i32 = 64;
 const MIN_WIDTH: i32 = 64;
 
 impl Render<Component> {
-    pub fn new(mut entity: Component, options: &Options) -> Self {
+    pub fn new(mut entity: Component, options: &Options, mut ty: Option<ElementType>) -> Self {
         entity.ports = if let Representation::Origin(ports) = entity.ports {
             Representation::Render(Render::<Ports>::new(ports, options))
         } else {
@@ -24,13 +24,14 @@ impl Render<Component> {
             entity,
             view: View {
                 container: Container {
-                    form: Form::GridRectangle(GridRectangle::new(
-                        id.to_string(),
-                        0,
-                        0,
-                        MIN_WIDTH,
-                        MIN_HEIGHT,
-                    )),
+                    form: Form::GridRectangle(
+                        if let Some(ty) = ty.take() {
+                            ty
+                        } else {
+                            ElementType::Component
+                        },
+                        GridRectangle::new(id.to_string(), 0, 0, MIN_WIDTH, MIN_HEIGHT),
+                    ),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: if composition {

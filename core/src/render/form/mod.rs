@@ -4,7 +4,10 @@ pub mod label;
 pub mod path;
 pub mod rectangle;
 
-use crate::{error::E, render::Relative, render::Style};
+use crate::{
+    error::E,
+    render::{grid::ElementType, Relative, Style},
+};
 pub use button::Button;
 pub use grid_rectangle::GridRectangle;
 pub use label::Label;
@@ -63,98 +66,108 @@ impl Container {
 
 #[derive(Debug)]
 pub enum Form {
-    GridRectangle(GridRectangle),
-    Rectangle(Rectangle),
-    Path(Path),
-    Button(Button),
-    Label(Label),
+    GridRectangle(ElementType, GridRectangle),
+    Rectangle(ElementType, Rectangle),
+    Path(ElementType, Path),
+    Button(ElementType, Button),
+    Label(ElementType, Label),
 }
 
 impl Form {
+    pub fn get_el_ty(&self) -> &ElementType {
+        match self {
+            Self::Rectangle(ty, _) => ty,
+            Self::GridRectangle(ty, _) => ty,
+            Self::Path(ty, _) => ty,
+            Self::Button(ty, _) => ty,
+            Self::Label(ty, _) => ty,
+        }
+    }
+
     pub fn get_box_size(&self) -> (i32, i32) {
         match self {
-            Self::Rectangle(figure) => figure.get_box_size(),
-            Self::GridRectangle(figure) => figure.get_box_size(),
-            Self::Path(figure) => figure.get_box_size(),
-            Self::Button(figure) => figure.get_box_size(),
-            Self::Label(figure) => figure.get_box_size(),
+            Self::Rectangle(_, figure) => figure.get_box_size(),
+            Self::GridRectangle(_, figure) => figure.get_box_size(),
+            Self::Path(_, figure) => figure.get_box_size(),
+            Self::Button(_, figure) => figure.get_box_size(),
+            Self::Label(_, figure) => figure.get_box_size(),
         }
     }
     pub fn set_box_size(&mut self, w: Option<i32>, h: Option<i32>) {
         match self {
-            Self::Rectangle(figure) => figure.set_box_size(w, h),
-            Self::GridRectangle(figure) => figure.set_box_size(w, h),
-            Self::Path(_) => { /* Ignore */ }
-            Self::Button(_) => { /* Ignore */ }
-            Self::Label(_) => { /* Ignore */ }
+            Self::Rectangle(_, figure) => figure.set_box_size(w, h),
+            Self::GridRectangle(_, figure) => figure.set_box_size(w, h),
+            Self::Path(_, _) => { /* Ignore */ }
+            Self::Button(_, _) => { /* Ignore */ }
+            Self::Label(_, _) => { /* Ignore */ }
         }
     }
     pub fn set_coors(&mut self, x: Option<i32>, y: Option<i32>) {
         match self {
-            Self::Rectangle(figure) => figure.set_coors(x, y),
-            Self::GridRectangle(figure) => figure.set_coors(x, y),
-            Self::Path(_) => { /* Ignore */ }
-            Self::Button(figure) => figure.set_coors(x, y),
-            Self::Label(figure) => figure.set_coors(x, y),
+            Self::Rectangle(_, figure) => figure.set_coors(x, y),
+            Self::GridRectangle(_, figure) => figure.set_coors(x, y),
+            Self::Path(_, _) => { /* Ignore */ }
+            Self::Button(_, figure) => figure.set_coors(x, y),
+            Self::Label(_, figure) => figure.set_coors(x, y),
         }
     }
     pub fn get_coors(&self) -> (i32, i32) {
         match self {
-            Self::Rectangle(figure) => figure.get_coors(),
-            Self::GridRectangle(figure) => figure.get_coors(),
-            Self::Path(_) => {
+            Self::Rectangle(_, figure) => figure.get_coors(),
+            Self::GridRectangle(_, figure) => figure.get_coors(),
+            Self::Path(_, _) => {
                 /* Ignore */
                 (0, 0)
             }
-            Self::Button(figure) => figure.get_coors(),
-            Self::Label(figure) => figure.get_coors(),
+            Self::Button(_, figure) => figure.get_coors(),
+            Self::Label(_, figure) => figure.get_coors(),
         }
     }
     pub fn get_coors_with_zoom(&self, relative: &Relative) -> (i32, i32) {
         match self {
-            Self::Rectangle(_) | Self::GridRectangle(_) | Self::Path(_) => {
+            Self::Rectangle(_, _) | Self::GridRectangle(_, _) | Self::Path(_, _) => {
                 /* Ignore */
                 (0, 0)
             }
-            Self::Button(figure) => figure.get_coors_with_zoom(relative),
-            Self::Label(figure) => figure.get_coors_with_zoom(relative),
+            Self::Button(_, figure) => figure.get_coors_with_zoom(relative),
+            Self::Label(_, figure) => figure.get_coors_with_zoom(relative),
         }
     }
     pub fn cells(&self) -> Result<(u32, u32), E> {
         match self {
-            Self::Rectangle(_) => Err(E::NotGridForm),
-            Self::GridRectangle(figure) => Ok(figure.cells),
-            Self::Path(_) => Err(E::NotGridForm),
-            Self::Button(_) => Err(E::NotGridForm),
-            Self::Label(_) => Err(E::NotGridForm),
+            Self::Rectangle(_, _) => Err(E::NotGridForm),
+            Self::GridRectangle(_, figure) => Ok(figure.cells),
+            Self::Path(_, _) => Err(E::NotGridForm),
+            Self::Button(_, _) => Err(E::NotGridForm),
+            Self::Label(_, _) => Err(E::NotGridForm),
         }
     }
     pub fn id(&self) -> String {
         match self {
-            Self::Rectangle(figure) => figure.id.clone(),
-            Self::GridRectangle(figure) => figure.id.clone(),
-            Self::Path(figure) => figure.id.clone(),
-            Self::Button(figure) => figure.id.clone(),
-            Self::Label(figure) => figure.id.clone(),
+            Self::Rectangle(_, figure) => figure.id.clone(),
+            Self::GridRectangle(_, figure) => figure.id.clone(),
+            Self::Path(_, figure) => figure.id.clone(),
+            Self::Button(_, figure) => figure.id.clone(),
+            Self::Label(_, figure) => figure.id.clone(),
         }
     }
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         match self {
-            Self::Rectangle(figure) => figure.render(context, relative),
-            Self::GridRectangle(figure) => figure.render(context, relative),
-            Self::Path(figure) => figure.render(context, relative),
-            Self::Button(figure) => figure.render(context, relative),
-            Self::Label(figure) => figure.render(context, relative),
+            Self::Rectangle(_, figure) => figure.render(context, relative),
+            Self::GridRectangle(_, figure) => figure.render(context, relative),
+            Self::Path(_, figure) => figure.render(context, relative),
+            Self::Button(_, figure) => figure.render(context, relative),
+            Self::Label(_, figure) => figure.render(context, relative),
         }
     }
 
     pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         match self {
-            Self::Rectangle(_) => {}
-            Self::GridRectangle(_) => {}
-            Self::Path(_) => {}
-            Self::Button(figure) => figure.calc(context, relative),
-            Self::Label(figure) => figure.calc(context, relative),
+            Self::Rectangle(_, _) => {}
+            Self::GridRectangle(_, _) => {}
+            Self::Path(_, _) => {}
+            Self::Button(_, figure) => figure.calc(context, relative),
+            Self::Label(_, figure) => figure.calc(context, relative),
         }
     }
 }
