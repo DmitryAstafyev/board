@@ -30,18 +30,18 @@ impl State {
         self.zoom = zoom;
     }
 
-    pub fn toggle_component(&mut self, id: &usize) {
-        if let Some((i, _)) = self
-            .components
-            .iter()
-            .enumerate()
-            .find(|(_, comp)| *comp == id)
-        {
-            let _ = self.components.remove(i);
-        } else {
-            self.components.push(*id);
-        }
-    }
+    // pub fn toggle_component(&mut self, id: &usize) {
+    //     if let Some((i, _)) = self
+    //         .components
+    //         .iter()
+    //         .enumerate()
+    //         .find(|(_, comp)| *comp == id)
+    //     {
+    //         let _ = self.components.remove(i);
+    //     } else {
+    //         self.components.push(*id);
+    //     }
+    // }
 
     pub fn toggle_port(&mut self, id: &usize) -> bool {
         if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, port)| *port == id) {
@@ -54,7 +54,7 @@ impl State {
     }
 
     pub fn insert_component(&mut self, id: &usize) -> bool {
-        if !self.components.contains(&id) {
+        if !self.components.contains(id) {
             self.components.push(*id);
             true
         } else {

@@ -406,11 +406,8 @@ impl Render<Composition> {
                 .draw(context, relative, targets, options, state)?;
         }
         for connection in self.entity.connections.iter_mut().filter(|conn| {
-            (targets.contains(&conn.origin().joint_in.component)
-                || targets.contains(&conn.origin().joint_out.component))
-                && (state.is_port_selected(&conn.origin().joint_in.port)
-                    || state.is_port_selected(&conn.origin().joint_out.port)/*|| state.is_component_selected(&conn.origin().joint_in.component)
-                || state.is_component_selected(&conn.origin().joint_out.component)*/)
+            state.is_port_selected(&conn.origin().joint_in.port)
+                || state.is_port_selected(&conn.origin().joint_out.port)
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }
