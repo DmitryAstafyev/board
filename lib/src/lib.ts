@@ -80,14 +80,12 @@ export class Board extends Subscriber {
         x: number;
         y: number;
         processing: boolean;
-        scrolling: boolean;
         clickTimer: any;
         dropClick: boolean;
     } = {
         x: 0,
         y: 0,
         processing: false,
-        scrolling: false,
         clickTimer: -1,
         dropClick: false,
     };
@@ -191,14 +189,14 @@ export class Board extends Subscriber {
     }
 
     protected onMouseDown(event: MouseEvent): void {
+        if (event.target == this.parent) {
+            // Click on scroll bars
+            return;
+        }
         this.movement.x = event.offsetX;
         this.movement.y = event.offsetY;
         this.movement.dropClick = false;
-        this.movement.scrolling = false;
         this.movement.clickTimer = setTimeout(() => {
-            if (this.movement.scrolling) {
-                return;
-            }
             this.hover.component.hide();
             this.hover.port.hide();
             this.movement.processing = true;
@@ -267,7 +265,6 @@ export class Board extends Subscriber {
     }
 
     protected onScroll(event: ScrollEvent) {
-        this.movement.scrolling = true;
         this.position.x = -event.x / this.position.zoom;
         this.position.y = -event.y / this.position.zoom;
         this.canvas.style.left = `${event.x}px`;
