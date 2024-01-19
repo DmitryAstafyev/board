@@ -38,14 +38,14 @@ export class Connection {
         this.node.port.className = "port-highlight";
         this.node.port.style.display = "none";
         this.node.port.style.position = "absolute";
-        this.node.port.style.background = "rgb(255,0,0)";
+        this.node.port.style.background = "rgba(0,0,0,0.25)";
         this.node.port.style.pointerEvents = "none";
         this.node.port.style.userSelect = "none";
         this.node.port.style.zIndex = `10`;
         this.node.component.className = "component-highlight";
         this.node.component.style.display = "none";
         this.node.component.style.position = "absolute";
-        this.node.component.style.background = "rgba(255,0,0, 0.25)";
+        this.node.component.style.background = "rgba(0,0,0, 0.25)";
         this.node.component.style.pointerEvents = "none";
         this.node.component.style.userSelect = "none";
         this.node.component.style.zIndex = `10`;

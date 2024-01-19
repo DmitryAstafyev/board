@@ -131,8 +131,8 @@ export class Board extends Subscriber {
         }
         this.parent = node;
         this.hover = {
-            component: new Hover(`rgba(0,0,0,0.15)`, node),
-            port: new Hover(`rgb(255,50,50)`, node),
+            component: new Hover(`rgba(0,0,0,0.25)`, node),
+            port: new Hover(`rgba(0,0,0,0.25)`, node),
         };
         this.connection = new Connection(node);
         this.scroll = new ScrollBars(node);

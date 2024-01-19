@@ -102,19 +102,19 @@ impl Board {
             })?;
         self.width = canvas.width();
         self.height = canvas.height();
-        let _ = self.context.insert(
-            canvas
-                .get_context("2d")
-                .map_err(|_| E::Dom("Fail to get context from canvas".to_string()))?
-                .ok_or(E::Dom("Document isn't found".to_string()))?
-                .dyn_into::<web_sys::CanvasRenderingContext2d>()
-                .map_err(|e| {
-                    E::Dom(format!(
-                        "Fail to convert into 2d context; error: {}",
-                        e.to_string()
-                    ))
-                })?,
-        );
+        let cx = canvas
+            .get_context("2d")
+            .map_err(|_| E::Dom("Fail to get context from canvas".to_string()))?
+            .ok_or(E::Dom("Document isn't found".to_string()))?
+            .dyn_into::<web_sys::CanvasRenderingContext2d>()
+            .map_err(|e| {
+                E::Dom(format!(
+                    "Fail to convert into 2d context; error: {}",
+                    e.to_string()
+                ))
+            })?;
+        let _ = cx.translate(0.5, 0.5);
+        let _ = self.context.insert(cx);
         Ok(())
     }
 
