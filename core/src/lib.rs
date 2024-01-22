@@ -11,17 +11,18 @@ use entity::{
     Composition, Signature,
 };
 use error::E;
-use render::{options::Options, Grid, Relative, Render, Style};
+use render::{options::Options, Grid, Render, Style};
 use state::State;
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
-use web_sys::CanvasRenderingContext2d;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 #[wasm_bindgen]
 pub struct Board {
     render: Render<Composition>,
     context: Option<CanvasRenderingContext2d>,
+    canvas: Option<HtmlCanvasElement>,
     width: u32,
     height: u32,
     grid: Grid,
@@ -50,6 +51,7 @@ impl Board {
             options,
             render,
             context: None,
+            canvas: None,
             width: 0,
             height: 0,
             grid,
@@ -74,6 +76,7 @@ impl Board {
             options,
             render,
             context: None,
+            canvas: None,
             width: 0,
             height: 0,
             grid,
@@ -92,14 +95,12 @@ impl Board {
             .ok_or(E::Dom(format!(
                 "Fail to find canvas with id[{canvas_el_id}]"
             )))?;
-        let canvas: web_sys::HtmlCanvasElement = canvas
-            .dyn_into::<web_sys::HtmlCanvasElement>()
-            .map_err(|e| {
-                E::Dom(format!(
-                    "Fail to convert into HtmlCanvasElement: {}",
-                    e.to_string()
-                ))
-            })?;
+        let canvas: HtmlCanvasElement = canvas.dyn_into::<HtmlCanvasElement>().map_err(|e| {
+            E::Dom(format!(
+                "Fail to convert into HtmlCanvasElement: {}",
+                e.to_string()
+            ))
+        })?;
         self.width = canvas.width();
         self.height = canvas.height();
         let cx = canvas
@@ -115,6 +116,18 @@ impl Board {
             })?;
         let _ = cx.translate(0.5, 0.5);
         let _ = self.context.insert(cx);
+        let _ = self.canvas.insert(canvas);
+        Ok(())
+    }
+
+    #[wasm_bindgen]
+    pub fn update_size(&mut self) -> Result<(), String> {
+        let canvas = self
+            .canvas
+            .as_mut()
+            .ok_or(String::from("Canvas isn't attached"))?;
+        self.width = canvas.width();
+        self.height = canvas.height();
         Ok(())
     }
 

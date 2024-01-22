@@ -105,6 +105,7 @@ export class Board extends Subscriber {
         root: undefined,
         history: [],
     };
+    protected readonly resize: ResizeObserver;
 
     constructor(parent: string | HTMLElement, options: Types.Options) {
         super();
@@ -152,6 +153,7 @@ export class Board extends Subscriber {
         this.onKeyDown = this.onKeyDown.bind(this);
         this.onKeyUp = this.onKeyUp.bind(this);
         this.onScroll = this.onScroll.bind(this);
+        this.onResize = this.onResize.bind(this);
         this.parent.addEventListener("mousemove", this.onHover);
         this.parent.addEventListener("mouseleave", this.onHoverOver);
         this.parent.addEventListener("mousedown", this.onMouseDown);
@@ -166,6 +168,12 @@ export class Board extends Subscriber {
             this.subjects.get().onPortHoverOver.emit();
         });
         this.register(this.scroll.scroll.subscribe(this.onScroll));
+        this.resize = new ResizeObserver(this.onResize);
+        this.resize.observe(this.parent);
+    }
+
+    protected onResize(entries: ResizeObserverEntry[]): void {
+        this.updateSize();
     }
 
     protected setSize(): void {
@@ -174,6 +182,17 @@ export class Board extends Subscriber {
         this.size.height = size.height;
         this.canvas.width = size.width;
         this.canvas.height = size.height;
+    }
+
+    protected updateSize(): void {
+        this.setSize();
+        this.scroll.setZoom(this.position.zoom);
+        this.scroll.setSize(
+            this.board.get_size() as [number, number],
+            this.size
+        );
+        this.board.update_size();
+        this.render();
     }
 
     protected onKeyDown(event: KeyboardEvent) {
@@ -448,13 +467,7 @@ export class Board extends Subscriber {
         this.board.bind(composition, Uint32Array.from([]));
         this.data.composition = id;
         this.data.groupped = this.board.get_groupped_ports();
-        this.setSize();
-        this.scroll.setZoom(this.position.zoom);
-        this.scroll.setSize(
-            this.board.get_size() as [number, number],
-            this.size
-        );
-        this.render();
+        this.updateSize();
     }
 
     public readonly subjects: Subjects<{
@@ -472,6 +485,7 @@ export class Board extends Subscriber {
     });
 
     public destroy(): void {
+        this.resize.unobserve(this.parent);
         this.parent.removeEventListener("mousedown", this.onMouseDown);
         this.parent.removeEventListener("wheel", this.onWheel);
         this.parent.removeEventListener("mousemove", this.onHover);
@@ -488,12 +502,7 @@ export class Board extends Subscriber {
 
     public bind(composition: Types.Composition, expanded: number[]) {
         this.board.bind(composition, Uint32Array.from(expanded));
-        this.setSize();
-        this.scroll.setZoom(this.position.zoom);
-        this.scroll.setSize(
-            this.board.get_size() as [number, number],
-            this.size
-        );
+        this.updateSize();
         this.data.composition = composition.sig.id;
         this.data.root = composition;
         this.data.groupped = this.getGrouppedPorts();
