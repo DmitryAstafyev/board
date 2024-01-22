@@ -186,12 +186,17 @@ export class Board extends Subscriber {
 
     protected updateSize(): void {
         this.setSize();
+        this.board.update_size();
         this.scroll.setZoom(this.position.zoom);
         this.scroll.setSize(
             this.board.get_size() as [number, number],
             this.size
         );
-        this.board.update_size();
+        this.scroll.moveTo(0, 0);
+        this.canvas.style.left = `0px`;
+        this.canvas.style.top = `0px`;
+        this.position.x = 0;
+        this.position.y = 0;
         this.render();
     }
 
