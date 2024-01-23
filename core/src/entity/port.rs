@@ -78,8 +78,8 @@ impl Ports {
             .collect::<Vec<&mut Representation<Port>>>()
     }
 
-    pub fn _find(&self, port_id: usize) -> Option<&Representation<Port>> {
-        self.ports.iter().find(|p| p.origin().sig.id == port_id)
+    pub fn find(&self, port_id: &usize) -> Option<&Representation<Port>> {
+        self.ports.iter().find(|p| &p.origin().sig.id == port_id)
     }
 
     pub fn find_visible(&self, port_id: usize) -> Option<&Representation<Port>> {

@@ -59,6 +59,17 @@ fn find<'a>(
         })
 }
 
+fn find_port<'a>(
+    components: &'a [Representation<Component>],
+    compositions: &'a [Representation<Composition>],
+    parent_id: &usize,
+    port_id: &usize,
+) -> Option<&'a Port> {
+    find(components, compositions, parent_id)
+        .map(|entry| entry.ports().origin().find(port_id).map(|p| p.origin()))
+        .flatten()
+}
+
 impl Render<Composition> {
     pub fn new(mut entity: Composition, options: &Options) -> Self {
         let mut sig_producer = SignatureProducer::new(100000000);
@@ -575,17 +586,48 @@ impl Render<Composition> {
         Ok(ports)
     }
 
-    pub fn get_connection_info(&self, port: usize) -> Option<(usize, usize)> {
+    pub fn get_connection_info(
+        &self,
+        port: usize,
+    ) -> Option<((usize, Vec<usize>, usize), (usize, Vec<usize>, usize))> {
+        let components = &self.entity.components;
+        let compositions = &self.entity.compositions;
         self.entity
             .connections
             .iter()
             .find(|c| c.origin().joint_in.port == port || c.origin().joint_out.port == port)
             .map(|c| {
                 let origin = c.origin();
-                if origin.joint_in.port == port {
-                    (origin.joint_out.port, origin.joint_out.component)
+                let port_out = find_port(
+                    &components,
+                    &compositions,
+                    &origin.joint_out.component,
+                    &origin.joint_out.port,
+                );
+                let port_in = find_port(
+                    &components,
+                    &compositions,
+                    &origin.joint_in.component,
+                    &origin.joint_in.port,
+                );
+                if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
+                    (
+                        (
+                            origin.joint_out.port,
+                            port_out.contains.clone(),
+                            origin.joint_out.component,
+                        ),
+                        (
+                            origin.joint_in.port,
+                            port_in.contains.clone(),
+                            origin.joint_in.component,
+                        ),
+                    )
                 } else {
-                    (origin.joint_in.port, origin.joint_in.component)
+                    (
+                        (origin.joint_out.port, vec![], origin.joint_out.component),
+                        (origin.joint_in.port, vec![], origin.joint_in.component),
+                    )
                 }
             })
     }
@@ -612,9 +654,6 @@ pub fn group_ports(
     connections: &[Representation<Connection>],
     sig_producer: &mut SignatureProducer,
 ) -> GrouppedPorts {
-    // if self.origin.is_none() {
-    //     self.origin = Some(self.cloned_ports());
-    // }
     let mut added_connections: Vec<Representation<Connection>> = vec![];
     let mut added_ports: Vec<(usize, Representation<Port>)> = vec![];
     let mut groupped: HashMap<(usize, usize), Vec<(usize, usize)>> = HashMap::new();
@@ -638,7 +677,10 @@ pub fn group_ports(
         .for_each(|((comp_joint_in, comp_joint_out), ports)| {
             let ports_in = ports.iter().map(|(l, _)| *l).collect::<Vec<usize>>();
             let ports_out = ports.iter().map(|(_, r)| *r).collect::<Vec<usize>>();
-            if ports_in.is_empty() || ports_out.is_empty() {
+            if ports_in.is_empty()
+                || ports_out.is_empty()
+                || (ports_in.len() == 1 && ports_out.len() == 1)
+            {
                 return;
             }
             let joined_port_in = Port {
