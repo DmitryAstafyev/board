@@ -1,13 +1,13 @@
-import { Hover } from './hover';
-import { Connection } from './connection';
-import { ScrollBars, ScrollEvent } from './scrollbars';
-import { Subject, Subjects, Subscriber } from './subscriber';
+import { Hover } from "./hover";
+import { Connection } from "./connection";
+import { ScrollBars, ScrollEvent } from "./scrollbars";
+import { Subject, Subjects, Subscriber } from "./subscriber";
 
-import * as Core from 'core';
-import * as Types from './types';
-import * as DOM from './dom';
+import * as Core from "core";
+import * as Types from "./types";
+import * as DOM from "./dom";
 
-export * from './types';
+export * from "./types";
 
 export const wasm: {
     core: typeof Core | undefined;
@@ -27,7 +27,7 @@ function getId(): string {
 }
 
 // Loading wasm module
-import('core')
+import("core")
     .then((core: typeof Core) => {
         wasm.core = core;
     })
@@ -110,7 +110,7 @@ export class Board extends Subscriber {
     constructor(parent: string | HTMLElement, options: Types.Options) {
         super();
         const node: HTMLElement | null = (() => {
-            if (typeof parent === 'string') {
+            if (typeof parent === "string") {
                 return document.querySelector(parent);
             } else {
                 return parent;
@@ -122,8 +122,10 @@ export class Board extends Subscriber {
         if (node === null || node === undefined) {
             throw new Error(
                 `Cannot get access to parent HTMLElement; selector type: ${typeof parent}; ${
-                    typeof parent === 'string' ? `selector: ${parent} isn't valid` : ''
-                }`,
+                    typeof parent === "string"
+                        ? `selector: ${parent} isn't valid`
+                        : ""
+                }`
             );
         }
         this.parent = node;
@@ -134,9 +136,9 @@ export class Board extends Subscriber {
         this.connection = new Connection(node);
         this.scroll = new ScrollBars(node);
         this.id = getId();
-        this.canvas = document.createElement('canvas');
-        this.canvas.setAttribute('id', this.id);
-        this.canvas.style.position = 'absolute';
+        this.canvas = document.createElement("canvas");
+        this.canvas.setAttribute("id", this.id);
+        this.canvas.style.position = "absolute";
         this.parent.appendChild(this.canvas);
         this.setSize();
         this.board = new wasm.core.Board(options);
@@ -152,13 +154,13 @@ export class Board extends Subscriber {
         this.onKeyUp = this.onKeyUp.bind(this);
         this.onScroll = this.onScroll.bind(this);
         this.onResize = this.onResize.bind(this);
-        this.parent.addEventListener('mousemove', this.onHover);
-        this.parent.addEventListener('mouseleave', this.onHoverOver);
-        this.parent.addEventListener('mousedown', this.onMouseDown);
-        this.parent.addEventListener('wheel', this.onWheel);
-        this.parent.addEventListener('click', this.onClick);
-        window.addEventListener('keydown', this.onKeyDown);
-        window.addEventListener('keyup', this.onKeyUp);
+        this.parent.addEventListener("mousemove", this.onHover);
+        this.parent.addEventListener("mouseleave", this.onHoverOver);
+        this.parent.addEventListener("mousedown", this.onMouseDown);
+        this.parent.addEventListener("wheel", this.onWheel);
+        this.parent.addEventListener("click", this.onClick);
+        window.addEventListener("keydown", this.onKeyDown);
+        window.addEventListener("keyup", this.onKeyUp);
         this.hover.component.onHide(() => {
             this.subjects.get().onComponentHoverOver.emit();
         });
@@ -186,7 +188,10 @@ export class Board extends Subscriber {
         this.setSize();
         this.board.update_size();
         this.scroll.setZoom(this.position.zoom);
-        this.scroll.setSize(this.board.get_size() as [number, number], this.size);
+        this.scroll.setSize(
+            this.board.get_size() as [number, number],
+            this.size
+        );
         this.scroll.moveTo(0, 0);
         this.canvas.style.left = `0px`;
         this.canvas.style.top = `0px`;
@@ -196,7 +201,7 @@ export class Board extends Subscriber {
     }
 
     protected onKeyDown(event: KeyboardEvent) {
-        if (event.key === 'Alt') {
+        if (event.key === "Alt") {
             this.keyboard.alt = true;
             this.scroll.locked(true);
         }
@@ -221,8 +226,8 @@ export class Board extends Subscriber {
             this.movement.processing = true;
             this.movement.dropClick = true;
             this.scroll.locked(true);
-            window.addEventListener('mousemove', this.onMouseMove);
-            window.addEventListener('mouseup', this.onMouseUp);
+            window.addEventListener("mousemove", this.onMouseMove);
+            window.addEventListener("mouseup", this.onMouseUp);
         }, CLICK_DURATION);
     }
 
@@ -230,8 +235,10 @@ export class Board extends Subscriber {
         if (!this.movement.processing) {
             return;
         }
-        this.position.x -= (this.movement.x - event.offsetX) / this.position.zoom;
-        this.position.y -= (this.movement.y - event.offsetY) / this.position.zoom;
+        this.position.x -=
+            (this.movement.x - event.offsetX) / this.position.zoom;
+        this.position.y -=
+            (this.movement.y - event.offsetY) / this.position.zoom;
         this.position.x = this.position.x > 0 ? 0 : this.position.x;
         this.position.y = this.position.y > 0 ? 0 : this.position.y;
         const canvas = this.board.get_size();
@@ -247,7 +254,7 @@ export class Board extends Subscriber {
         this.movement.y = event.offsetY;
         this.scroll.moveTo(
             -this.position.x * this.position.zoom,
-            -this.position.y * this.position.zoom,
+            -this.position.y * this.position.zoom
         );
         this.canvas.style.left = `${-this.position.x * this.position.zoom}px`;
         this.canvas.style.top = `${-this.position.y * this.position.zoom}px`;
@@ -257,8 +264,8 @@ export class Board extends Subscriber {
     protected onMouseUp(_event: MouseEvent): void {
         this.movement.processing = false;
         this.scroll.locked(false);
-        window.removeEventListener('mousemove', this.onMouseMove);
-        window.removeEventListener('mouseup', this.onMouseUp);
+        window.removeEventListener("mousemove", this.onMouseMove);
+        window.removeEventListener("mouseup", this.onMouseUp);
         clearTimeout(this.movement.clickTimer);
     }
 
@@ -268,11 +275,16 @@ export class Board extends Subscriber {
         if (x < 0 || y < 0) {
             return [];
         }
-        this.board.set_view_state(this.position.x, this.position.y, this.position.zoom);
+        this.board.set_view_state(
+            this.position.x,
+            this.position.y,
+            this.position.zoom
+        );
         return this.board
             .who(x, y, 2)
             .filter(
-                (element: Types.ElementCoors) => element[0] !== this.data.composition?.toString(),
+                (element: Types.ElementCoors) =>
+                    element[0] !== this.data.composition?.toString()
             );
     }
 
@@ -289,16 +301,22 @@ export class Board extends Subscriber {
             return;
         }
         const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
-        const component = targets.filter((t) => t[1] === 'Component' || t[1] === 'Composition');
+        const component = targets.filter(
+            (t) => t[1] === "Component" || t[1] === "Composition"
+        );
         if (component.length === 1) {
             const id = parseInt(component[0][0], 10);
             if (!this.hover.component.isActive(id)) {
                 this.hover.component.show(
                     id,
-                    component[0][2][0] + this.scroll.x() + this.position.x * this.position.zoom,
-                    component[0][2][1] + this.scroll.y() + this.position.y * this.position.zoom,
+                    component[0][2][0] +
+                        this.scroll.x() +
+                        this.position.x * this.position.zoom,
+                    component[0][2][1] +
+                        this.scroll.y() +
+                        this.position.y * this.position.zoom,
                     component[0][2][2] - component[0][2][0],
-                    component[0][2][3] - component[0][2][1],
+                    component[0][2][3] - component[0][2][1]
                 );
                 this.subjects.get().onComponentHover.emit({
                     id,
@@ -309,25 +327,38 @@ export class Board extends Subscriber {
         } else {
             this.hover.component.hide();
         }
-        const port = targets.filter((t) => t[1] === 'Port');
+        const port = targets.filter((t) => t[1] === "Port");
         if (port.length === 1) {
             const id = parseInt(port[0][0], 10);
             if (!this.hover.port.isActive(id)) {
                 this.hover.port.show(
                     id,
-                    port[0][2][0] + this.scroll.x() + this.position.x * this.position.zoom,
-                    port[0][2][1] + this.scroll.y() + this.position.y * this.position.zoom,
+                    port[0][2][0] +
+                        this.scroll.x() +
+                        this.position.x * this.position.zoom,
+                    port[0][2][1] +
+                        this.scroll.y() +
+                        this.position.y * this.position.zoom,
                     port[0][2][2] - port[0][2][0],
-                    port[0][2][3] - port[0][2][1],
+                    port[0][2][3] - port[0][2][1]
                 );
-                const groupped = this.data.groupped.find((groupped) => groupped[0] === id);
+                const groupped = this.data.groupped.find(
+                    (groupped) => groupped[0] === id
+                );
                 const connection = this.getConnectionInfo(id);
                 if (connection !== undefined) {
                     const target =
-                        connection.inner.port === id ? connection.inner : connection.outter;
-                    const coors = this.getCoorsByIds([target.port, target.component]);
-                    const port = coors.find((coor) => coor[1] === 'Port');
-                    const component = coors.find((coor) => coor[1] === 'Component');
+                        connection.inner.port === id
+                            ? connection.inner
+                            : connection.outter;
+                    const coors = this.getCoorsByIds([
+                        target.port,
+                        target.component,
+                    ]);
+                    const port = coors.find((coor) => coor[1] === "Port");
+                    const component = coors.find(
+                        (coor) => coor[1] === "Component"
+                    );
                     if (port !== undefined && component !== undefined) {
                         this.connection.show(
                             {
@@ -341,7 +372,7 @@ export class Board extends Subscriber {
                                 top: component[2][1] + this.scroll.y(),
                                 width: component[2][2] - component[2][0],
                                 height: component[2][3] - component[2][1],
-                            },
+                            }
                         );
                     } else {
                         this.connection.hide();
@@ -386,25 +417,27 @@ export class Board extends Subscriber {
         if (event.button == 0) {
             const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
             const back = targets.find((element: Types.ElementCoors) =>
-                element[0].startsWith('back::'),
+                element[0].startsWith("back::")
             );
             if (back !== undefined) {
-                const target = parseInt(back[0].replace('back::', ''), 10);
+                const target = parseInt(back[0].replace("back::", ""), 10);
                 this.data.history.pop();
                 this.goToComposition(target);
             } else if (targets.length > 1) {
-                console.log(`Cannot detect target too many ids: ${targets.join(', ')}`);
+                console.log(
+                    `Cannot detect target too many ids: ${targets.join(", ")}`
+                );
                 return;
             } else if (targets.length === 1) {
                 const element = targets[0] as Types.ElementCoors;
                 const targetId = parseInt(element[0], 10);
                 const elementType = element[1];
-                if (elementType === 'Port') {
+                if (elementType === "Port") {
                     this.board.toggle_port(targetId);
                     this.subjects.get().onPortClick.emit(targetId);
-                } else if (elementType === 'Component') {
+                } else if (elementType === "Component") {
                     this.board.toggle_component(targetId);
-                } else if (elementType === 'Composition') {
+                } else if (elementType === "Composition") {
                     this.data.composition !== undefined &&
                         this.data.history.push(this.data.composition);
                     this.goToComposition(targetId);
@@ -415,12 +448,13 @@ export class Board extends Subscriber {
 
     protected zoom(deltaY: number) {
         this.position.zoom += deltaY > 0 ? 0.05 : -0.05;
-        this.position.zoom = this.position.zoom < 0.1 ? 0.1 : this.position.zoom;
+        this.position.zoom =
+            this.position.zoom < 0.1 ? 0.1 : this.position.zoom;
         this.position.zoom = this.position.zoom > 2 ? 2 : this.position.zoom;
         this.scroll.setZoom(this.position.zoom);
         this.scroll.moveTo(
             -this.position.x * this.position.zoom,
-            -this.position.y * this.position.zoom,
+            -this.position.y * this.position.zoom
         );
         this.canvas.style.left = `${-this.position.x * this.position.zoom}px`;
         this.canvas.style.top = `${-this.position.y * this.position.zoom}px`;
@@ -463,14 +497,14 @@ export class Board extends Subscriber {
 
     public destroy(): void {
         this.resize.unobserve(this.parent);
-        this.parent.removeEventListener('mousedown', this.onMouseDown);
-        this.parent.removeEventListener('wheel', this.onWheel);
-        this.parent.removeEventListener('mousemove', this.onHover);
-        this.parent.removeEventListener('mouseleave', this.onHoverOver);
-        window.removeEventListener('mousemove', this.onMouseMove);
-        window.removeEventListener('mouseup', this.onMouseUp);
-        window.removeEventListener('keydown', this.onKeyDown);
-        window.removeEventListener('keyup', this.onKeyUp);
+        this.parent.removeEventListener("mousedown", this.onMouseDown);
+        this.parent.removeEventListener("wheel", this.onWheel);
+        this.parent.removeEventListener("mousemove", this.onHover);
+        this.parent.removeEventListener("mouseleave", this.onHoverOver);
+        window.removeEventListener("mousemove", this.onMouseMove);
+        window.removeEventListener("mouseup", this.onMouseUp);
+        window.removeEventListener("keydown", this.onKeyDown);
+        window.removeEventListener("keyup", this.onKeyUp);
         this.hover.component.destroy();
         this.hover.port.destroy();
         this.subjects.destroy();
@@ -486,7 +520,11 @@ export class Board extends Subscriber {
     }
 
     public render() {
-        this.board.set_view_state(this.position.x, this.position.y, this.position.zoom);
+        this.board.set_view_state(
+            this.position.x,
+            this.position.y,
+            this.position.zoom
+        );
         this.board.render();
     }
 
@@ -495,7 +533,11 @@ export class Board extends Subscriber {
     }
 
     public getCoorsByIds(ids: number[]): Types.ElementCoors[] {
-        this.board.set_view_state(this.position.x, this.position.y, this.position.zoom);
+        this.board.set_view_state(
+            this.position.x,
+            this.position.y,
+            this.position.zoom
+        );
         return this.board.get_coors_by_ids(Uint32Array.from(ids));
     }
 
@@ -505,9 +547,11 @@ export class Board extends Subscriber {
               inner: { port: number; contains: number[]; component: number };
           }
         | undefined {
-        const info: [[number, number[], number], [number, number[], number]] | undefined | string =
-            this.board.get_connection_info(port);
-        if (typeof info === 'string') {
+        const info:
+            | [[number, number[], number], [number, number[], number]]
+            | undefined
+            | string = this.board.get_connection_info(port);
+        if (typeof info === "string") {
             console.error(info);
             return undefined;
         }
@@ -515,8 +559,31 @@ export class Board extends Subscriber {
             return undefined;
         }
         return {
-            outter: { port: info[0][0], contains: info[0][1], component: info[0][2] },
-            inner: { port: info[1][0], contains: info[1][1], component: info[1][2] },
+            outter: {
+                port: info[0][0],
+                contains: info[0][1],
+                component: info[0][2],
+            },
+            inner: {
+                port: info[1][0],
+                contains: info[1][1],
+                component: info[1][2],
+            },
+        };
+    }
+
+    public offsetX(x: number): number {
+        return this.position.x + x;
+    }
+
+    public offsetY(y: number): number {
+        return this.position.y + y;
+    }
+
+    public offset(): { x: number; y: number } {
+        return {
+            x: this.position.x,
+            y: this.position.y,
         };
     }
 }
