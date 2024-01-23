@@ -205,6 +205,7 @@ impl Render<Composition> {
     pub fn setup_connections(&mut self, grid: &Grid, options: &Options) -> Result<(), E> {
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
+        let mut failed: Vec<&Connection> = vec![];
         for conn in self.entity.connections.iter_mut() {
             if let (Some(ins), Some(outs)) = (
                 find(components, compositions, &conn.origin().joint_in.component),
@@ -279,9 +280,17 @@ impl Render<Composition> {
                         .container
                         .set_form(Form::Path(ElementType::Connection, path));
                 } else {
-                    console_log!("No ports has been found :/");
+                    failed.push(conn.origin());
                 }
             }
+        }
+        if !failed.is_empty() {
+            console_log!(
+                "Fail to find ports for connections: {:?}",
+                failed
+                    .iter()
+                    .map(|c| format!("conn: {}/{};", c.sig.id, c.sig.class_name))
+            );
         }
         Ok(())
     }
