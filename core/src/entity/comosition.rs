@@ -62,6 +62,21 @@ impl Composition {
             .map(|rep| rep.origin())
     }
 
+    pub fn find_connected_port(&self, port_id: usize) -> Option<usize> {
+        self.connections
+            .iter()
+            .find(|conn| {
+                conn.origin().joint_in.port == port_id || conn.origin().joint_out.port == port_id
+            })
+            .map(|conn| {
+                if conn.origin().joint_in.port == port_id {
+                    conn.origin().joint_out.port
+                } else {
+                    conn.origin().joint_in.port
+                }
+            })
+    }
+
     pub fn find_ports_by_component(&self, component_id: usize) -> Vec<&usize> {
         self.connections
             .iter()

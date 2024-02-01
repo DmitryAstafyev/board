@@ -433,12 +433,8 @@ function real() {
             const board = new Board(`div#container`, getLabeledPortsOptions());
             board.bind(root, []);
             board.render();
-            board.subjects.get().onPortHover.subscribe((event) => {
-                console.log(event);
-            });
-            board.subjects.get().onComponentHover.subscribe((event) => {
-                console.log(event);
-            });
+            board.subjects.get().onPortHover.subscribe((event) => {});
+            board.subjects.get().onComponentHover.subscribe((event) => {});
         });
     }, 200);
 }
@@ -449,12 +445,8 @@ function dummy() {
         const board = new Board(`div#container`, getLabeledPortsOptions());
         board.bind(composition, []);
         board.render();
-        board.subjects.get().onPortHover.subscribe((event) => {
-            console.log(event);
-        });
-        board.subjects.get().onComponentHover.subscribe((event) => {
-            console.log(event);
-        });
+        board.subjects.get().onPortHover.subscribe((event) => {});
+        board.subjects.get().onComponentHover.subscribe((event) => {});
     }, 200);
 }
 

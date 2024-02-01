@@ -1,4 +1,4 @@
-export type ActionOnHide = () => void;
+export type Action = (id: number) => void;
 
 export class Hover {
     protected node: HTMLDivElement;
@@ -7,8 +7,9 @@ export class Hover {
     protected width: number = 0;
     protected height: number = 0;
     protected visible: boolean = false;
-    protected id: number | undefined;
-    protected _onHideAction: ActionOnHide | undefined;
+    protected id: number = -1;
+    protected _onHideAction: Action | undefined;
+    protected _onShowAction: Action | undefined;
 
     constructor(color: string, parent: HTMLElement) {
         this.node = document.createElement("div") as HTMLDivElement;
@@ -26,12 +27,20 @@ export class Hover {
         this.node.parentNode?.removeChild(this.node);
     }
 
+    public getId(): number {
+        return this.id;
+    }
+
     public isActive(id: number): boolean {
         return this.id === id;
     }
 
-    public onHide(action: ActionOnHide) {
+    public onHide(action: Action) {
         this._onHideAction = action;
+    }
+
+    public onShow(action: Action) {
+        this._onShowAction = action;
     }
 
     public show(
@@ -41,20 +50,23 @@ export class Hover {
         width: number,
         height: number
     ): void {
+        this.hide();
         this.id = id;
         this.node.style.top = `${top}px`;
         this.node.style.left = `${left}px`;
         this.node.style.width = `${width}px`;
         this.node.style.height = `${height}px`;
         this.node.style.display = "block";
+        this._onShowAction !== undefined && this._onShowAction(id);
     }
 
     public hide(): void {
-        if (this.id === undefined) {
+        if (this.id === -1) {
             return;
         }
-        this.id = undefined;
+        let id = this.id;
+        this.id = -1;
         this.node.style.display = "none";
-        this._onHideAction !== undefined && this._onHideAction();
+        this._onHideAction !== undefined && this._onHideAction(id);
     }
 }

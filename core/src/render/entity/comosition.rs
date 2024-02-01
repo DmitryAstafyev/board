@@ -432,6 +432,7 @@ impl Render<Composition> {
         for connection in self.entity.connections.iter_mut().filter(|conn| {
             state.is_port_selected(&conn.origin().joint_in.port)
                 || state.is_port_selected(&conn.origin().joint_out.port)
+                || state.is_port_highlighted(&conn.origin().joint_out.port)
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }

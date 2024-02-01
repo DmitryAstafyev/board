@@ -373,4 +373,34 @@ impl Board {
             Ok(())
         }
     }
+
+    #[wasm_bindgen]
+    pub fn highlight_connection_by_port(&mut self, id: usize) -> Result<(), String> {
+        let has_to_be_rendered =
+            if let Some(rel_port) = self.render.origin().find_connected_port(id) {
+                self.state.highlight_port(&rel_port)
+            } else {
+                false
+            };
+        if self.state.highlight_port(&id) || has_to_be_rendered {
+            self.render()
+        } else {
+            Ok(())
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn unhighlight_connection_by_port(&mut self, id: usize) -> Result<(), String> {
+        let has_to_be_rendered =
+            if let Some(rel_port) = self.render.origin().find_connected_port(id) {
+                self.state.unhighlight_port(&rel_port)
+            } else {
+                false
+            };
+        if self.state.unhighlight_port(&id) || has_to_be_rendered {
+            self.render()
+        } else {
+            Ok(())
+        }
+    }
 }

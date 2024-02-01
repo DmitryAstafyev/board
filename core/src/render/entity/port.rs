@@ -306,6 +306,11 @@ impl Render<Port> {
                 stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(150,250,150)"),
             };
+        } else if state.is_port_highlighted(&self.entity.sig.id) {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(0,0,0)"),
+                fill_style: String::from("rgb(200,250,200)"),
+            };
         } else {
             self.view.container.style = Style {
                 stroke_style: String::from("rgb(50,50,50)"),

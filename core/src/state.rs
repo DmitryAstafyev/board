@@ -1,9 +1,12 @@
+use wasm_bindgen_test::console_log;
+
 use crate::render::Relative;
 
 #[derive(Debug)]
 pub struct State {
     components: Vec<usize>,
     ports: Vec<usize>,
+    ports_highlighted: Vec<usize>,
     pub x: i32,
     pub y: i32,
     pub zoom: f64,
@@ -14,6 +17,7 @@ impl State {
         Self {
             components: vec![],
             ports: vec![],
+            ports_highlighted: vec![],
             x: 0,
             y: 0,
             zoom: 1.0,
@@ -63,12 +67,7 @@ impl State {
     }
 
     pub fn remove_component(&mut self, id: &usize) -> bool {
-        if let Some((i, _)) = self
-            .components
-            .iter()
-            .enumerate()
-            .find(|(_, comp)| *comp == id)
-        {
+        if let Some(i) = self.components.iter().position(|v| v == id) {
             let _ = self.components.remove(i);
             true
         } else {
@@ -77,7 +76,7 @@ impl State {
     }
 
     pub fn insert_port(&mut self, id: &usize) -> bool {
-        if !self.ports.contains(&id) {
+        if !self.ports.contains(id) {
             self.ports.push(*id);
             true
         } else {
@@ -86,8 +85,28 @@ impl State {
     }
 
     pub fn remove_port(&mut self, id: &usize) -> bool {
-        if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, comp)| *comp == id) {
+        if let Some(i) = self.ports.iter().position(|v| v == id) {
             let _ = self.ports.remove(i);
+
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn highlight_port(&mut self, id: &usize) -> bool {
+        if !self.ports_highlighted.contains(id) {
+            self.ports_highlighted.push(*id);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn unhighlight_port(&mut self, id: &usize) -> bool {
+        if let Some(i) = self.ports_highlighted.iter().position(|v| v == id) {
+            let _ = self.ports_highlighted.remove(i);
+
             true
         } else {
             false
@@ -96,6 +115,10 @@ impl State {
 
     pub fn is_port_selected(&self, id: &usize) -> bool {
         self.ports.contains(id)
+    }
+
+    pub fn is_port_highlighted(&self, id: &usize) -> bool {
+        self.ports_highlighted.contains(id)
     }
 
     pub fn is_component_selected(&self, id: &usize) -> bool {

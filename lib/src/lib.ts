@@ -164,8 +164,12 @@ export class Board extends Subscriber {
         this.hover.component.onHide(() => {
             this.subjects.get().onComponentHoverOver.emit();
         });
-        this.hover.port.onHide(() => {
+        this.hover.port.onHide((id: number) => {
+            this.board.unhighlight_connection_by_port(id);
             this.subjects.get().onPortHoverOver.emit();
+        });
+        this.hover.port.onShow((id: number) => {
+            this.board.highlight_connection_by_port(id);
         });
         this.register(this.scroll.scroll.subscribe(this.onScroll));
         this.resize = new ResizeObserver(this.onResize);
@@ -346,40 +350,40 @@ export class Board extends Subscriber {
                     (groupped) => groupped[0] === id
                 );
                 const connection = this.getConnectionInfo(id);
-                if (connection !== undefined) {
-                    const target =
-                        connection.inner.port === id
-                            ? connection.inner
-                            : connection.outter;
-                    const coors = this.getCoorsByIds([
-                        target.port,
-                        target.component,
-                    ]);
-                    const port = coors.find((coor) => coor[1] === "Port");
-                    const component = coors.find(
-                        (coor) => coor[1] === "Component"
-                    );
-                    if (port !== undefined && component !== undefined) {
-                        this.connection.show(
-                            {
-                                left: port[2][0] + this.scroll.x(),
-                                top: port[2][1] + this.scroll.y(),
-                                width: port[2][2] - port[2][0],
-                                height: port[2][3] - port[2][1],
-                            },
-                            {
-                                left: component[2][0] + this.scroll.x(),
-                                top: component[2][1] + this.scroll.y(),
-                                width: component[2][2] - component[2][0],
-                                height: component[2][3] - component[2][1],
-                            }
-                        );
-                    } else {
-                        this.connection.hide();
-                    }
-                } else {
-                    this.connection.hide();
-                }
+                // if (connection !== undefined) {
+                //     const target =
+                //         connection.inner.port === id
+                //             ? connection.inner
+                //             : connection.outter;
+                //     const coors = this.getCoorsByIds([
+                //         target.port,
+                //         target.component,
+                //     ]);
+                //     const port = coors.find((coor) => coor[1] === "Port");
+                //     const component = coors.find(
+                //         (coor) => coor[1] === "Component"
+                //     );
+                //     if (port !== undefined && component !== undefined) {
+                //         this.connection.show(
+                //             {
+                //                 left: port[2][0] + this.scroll.x(),
+                //                 top: port[2][1] + this.scroll.y(),
+                //                 width: port[2][2] - port[2][0],
+                //                 height: port[2][3] - port[2][1],
+                //             },
+                //             {
+                //                 left: component[2][0] + this.scroll.x(),
+                //                 top: component[2][1] + this.scroll.y(),
+                //                 width: component[2][2] - component[2][0],
+                //                 height: component[2][3] - component[2][1],
+                //             }
+                //         );
+                //     } else {
+                //         this.connection.hide();
+                //     }
+                // } else {
+                //     this.connection.hide();
+                // }
                 this.subjects.get().onPortHover.emit({
                     id,
                     contains: groupped === undefined ? [] : groupped[1],
