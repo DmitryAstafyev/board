@@ -226,7 +226,6 @@ impl Render<Composition> {
                         ConnectionsAlign::Straight => {
                             let size_port_in = port_in.render()?.view.container.get_box_size();
                             let size_port_out = port_out.render()?.view.container.get_box_size();
-
                             vec![
                                 Point {
                                     x: relative_inns.x(coors_port_in.0)
@@ -295,12 +294,7 @@ impl Render<Composition> {
             }
         }
         if !failed.is_empty() {
-            console_log!(
-                "Fail to find ports for connections: {:?}",
-                failed
-                    .iter()
-                    .map(|c| format!("conn: {}/{};", c.sig.id, c.sig.class_name))
-            );
+            console_log!("Fail to find ports for {} connections", failed.len());
         }
         Ok(())
     }
