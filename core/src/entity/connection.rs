@@ -6,6 +6,8 @@ use std::collections::HashMap;
 pub struct Joint {
     pub port: usize,
     pub component: usize,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub grouped: Option<usize>,
 }
 
 impl Joint {
@@ -13,6 +15,7 @@ impl Joint {
         Self {
             port: port_id,
             component: component_id,
+            grouped: None,
         }
     }
 }
@@ -41,6 +44,20 @@ pub struct Connection {
 }
 
 impl Connection {
+    pub fn get_joint_in_port(&self) -> &usize {
+        if let Some(id) = self.joint_in.grouped.as_ref() {
+            id
+        } else {
+            &self.joint_in.port
+        }
+    }
+    pub fn get_joint_out_port(&self) -> &usize {
+        if let Some(id) = self.joint_out.grouped.as_ref() {
+            id
+        } else {
+            &self.joint_out.port
+        }
+    }
     pub fn count(connections: &[Representation<Connection>], component_id: usize) -> usize {
         connections
             .iter()

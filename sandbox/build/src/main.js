@@ -48,12 +48,9 @@ function asPPort(el) {
         ? el
         : undefined;
 }
-function getPortRef(components, compositions, id) {
-    let target = components.find((c) => c.Origin.ports.Origin.ports.find((p) => p.Origin.sig.id == id) !==
+function getPortRef(entries, id) {
+    const target = entries.find((c) => c.Origin.ports.Origin.ports.find((p) => p.Origin.sig.id == id) !==
         undefined);
-    if (target === undefined) {
-        target = compositions.find((c) => c.Origin.ports.Origin.ports.find((p) => p.Origin.sig.id == id) !== undefined);
-    }
     if (target === undefined) {
         return undefined;
     }
@@ -166,8 +163,8 @@ function load(parent, elements, holder) {
             console.error(`No ports`);
             return;
         }
-        const pPortRef = getPortRef(holder.components, holder.compositions, pPort.targetPPort);
-        const rPortRef = getPortRef(holder.components, holder.compositions, rPort.targetRPort);
+        const pPortRef = getPortRef([holder.components, holder.compositions].flat(), pPort.targetPPort);
+        const rPortRef = getPortRef([holder.components, holder.compositions].flat(), rPort.targetRPort);
         if (pPortRef !== undefined) {
             pPortRef.Origin.port_type = board_1.PortType.Out;
             pPortRef.Origin.visibility = true;

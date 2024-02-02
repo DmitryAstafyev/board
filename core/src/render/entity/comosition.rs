@@ -64,6 +64,21 @@ impl Render<Composition> {
         let mut sig_producer = SignatureProducer::new(100000000);
         let (added_connections, mut added_ports) =
             group_ports(&entity.connections, &mut sig_producer);
+        entity.connections.iter_mut().for_each(|conn| {
+            let port_in = added_ports
+                .iter()
+                .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_in.port))
+                .map(|(_, p)| p);
+            let port_out = added_ports
+                .iter()
+                .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_out.port))
+                .map(|(_, p)| p);
+            if let (Some(port_in), true) = (port_in, port_out.is_none()) {
+                conn.origin_mut().joint_in.grouped = Some(port_in.origin().sig.id);
+            } else if let (Some(port_out), true) = (port_out, port_in.is_none()) {
+                conn.origin_mut().joint_out.grouped = Some(port_out.origin().sig.id);
+            }
+        });
         entity.connections.extend(added_connections);
         while let Some((component_id, added_port)) = added_ports.pop() {
             if let Some(component) = entity
@@ -77,6 +92,17 @@ impl Render<Composition> {
                     .origin_mut()
                     .hide(&added_port.origin().contains);
                 component.origin_mut().ports.origin_mut().add(added_port);
+            } else if let Some(composition) = entity
+                .compositions
+                .iter_mut()
+                .find(|c| c.origin().sig.id == component_id)
+            {
+                composition
+                    .origin_mut()
+                    .ports
+                    .origin_mut()
+                    .hide(&added_port.origin().contains);
+                composition.origin_mut().ports.origin_mut().add(added_port);
             }
         }
         entity.components = entity
@@ -201,8 +227,10 @@ impl Render<Composition> {
                 find(components, compositions, &conn.origin().joint_out.component),
             ) {
                 if let (Some(port_in), Some(port_out)) = (
-                    ins.ports().origin().find(&conn.origin().joint_in.port),
-                    outs.ports().origin().find(&conn.origin().joint_out.port),
+                    ins.ports().origin().find(conn.origin().get_joint_in_port()),
+                    outs.ports()
+                        .origin()
+                        .find(conn.origin().get_joint_out_port()),
                 ) {
                     let coors_port_in = port_in.render()?.view.container.get_coors();
                     let coors_port_out = port_out.render()?.view.container.get_coors();
@@ -705,10 +733,12 @@ pub fn group_ports(
                 joint_in: Joint {
                     component: *comp_joint_in,
                     port: joined_port_in.sig.id,
+                    grouped: None,
                 },
                 joint_out: Joint {
                     component: *comp_joint_out,
                     port: joined_port_out.sig.id,
+                    grouped: None,
                 },
                 sig: sig_producer.next_for("joined connection"),
             }));
