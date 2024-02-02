@@ -82,11 +82,11 @@ impl Ports {
         self.ports.iter().find(|p| &p.origin().sig.id == port_id)
     }
 
-    pub fn find_visible(&self, port_id: usize) -> Option<&Representation<Port>> {
-        self.ports
-            .iter()
-            .find(|p| p.origin().sig.id == port_id && p.origin().visibility)
-    }
+    // pub fn find_visible(&self, port_id: &usize) -> Option<&Representation<Port>> {
+    //     self.ports
+    //         .iter()
+    //         .find(|p| &p.origin().sig.id == port_id && p.origin().visibility)
+    // }
 
     pub fn cloned_ports(&self) -> Vec<Representation<Port>> {
         self.ports

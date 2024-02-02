@@ -484,7 +484,7 @@ impl Grid {
 
     fn is_map_point_free(&self, point: &(u32, u32)) -> bool {
         let self_id = self.id.unwrap_or(0).to_string();
-        for (id, (ty, (ax, ay, ax1, ay1))) in self.map.iter() {
+        for (id, (_ty, (ax, ay, ax1, ay1))) in self.map.iter() {
             if &self_id != id
                 && elements::is_point_in(
                     &(point.0 as i32, point.1 as i32),

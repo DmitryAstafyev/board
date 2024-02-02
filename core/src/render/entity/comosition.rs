@@ -211,12 +211,8 @@ impl Render<Composition> {
                 find(components, compositions, &conn.origin().joint_out.component),
             ) {
                 if let (Some(port_in), Some(port_out)) = (
-                    ins.ports()
-                        .origin()
-                        .find_visible(conn.origin().joint_in.port),
-                    outs.ports()
-                        .origin()
-                        .find_visible(conn.origin().joint_out.port),
+                    ins.ports().origin().find(&conn.origin().joint_in.port),
+                    outs.ports().origin().find(&conn.origin().joint_out.port),
                 ) {
                     let coors_port_in = port_in.render()?.view.container.get_coors();
                     let coors_port_out = port_out.render()?.view.container.get_coors();

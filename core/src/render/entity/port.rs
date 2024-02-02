@@ -1,5 +1,3 @@
-use wasm_bindgen_test::console_log;
-
 use crate::{
     entity::{Port, PortType, Ports},
     error::E,
@@ -288,7 +286,7 @@ impl Render<Port> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
-        options: &Options,
+        _options: &Options,
     ) -> Result<(), E> {
         self.view.container.form.calc(context, relative);
         Ok(())

@@ -1,5 +1,3 @@
-use wasm_bindgen_test::console_log;
-
 use crate::render::Relative;
 
 #[derive(Debug)]
