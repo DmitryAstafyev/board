@@ -59,16 +59,6 @@ fn find<'a>(
         })
 }
 
-fn find_port<'a>(
-    components: &'a [Representation<Component>],
-    compositions: &'a [Representation<Composition>],
-    parent_id: &usize,
-    port_id: &usize,
-) -> Option<&'a Port> {
-    find(components, compositions, parent_id)
-        .and_then(|entry| entry.ports().origin().find(port_id).map(|p| p.origin()))
-}
-
 impl Render<Composition> {
     pub fn new(mut entity: Composition, options: &Options) -> Self {
         let mut sig_producer = SignatureProducer::new(100000000);
@@ -502,11 +492,9 @@ impl Render<Composition> {
             return Ok(vec![]);
         }
         let mut found: Vec<ElementCoors> = vec![];
-        let components = &self.entity.components;
-        let compositions = &self.entity.compositions;
         for (id, _, _) in owners.iter() {
             if let Ok(id) = id.parse::<usize>() {
-                if let Some(entry) = find(components, compositions, &id) {
+                if let Some(entry) = self.find_entity(&id) {
                     let mut relative = entry.own_relative()?;
                     relative.set_zoom(zoom);
                     found = [
@@ -600,26 +588,14 @@ impl Render<Composition> {
         &self,
         port: usize,
     ) -> Option<((usize, Vec<usize>, usize), (usize, Vec<usize>, usize))> {
-        let components = &self.entity.components;
-        let compositions = &self.entity.compositions;
         self.entity
             .connections
             .iter()
             .find(|c| c.origin().joint_in.port == port || c.origin().joint_out.port == port)
             .map(|c| {
                 let origin = c.origin();
-                let port_out = find_port(
-                    &components,
-                    &compositions,
-                    &origin.joint_out.component,
-                    &origin.joint_out.port,
-                );
-                let port_in = find_port(
-                    &components,
-                    &compositions,
-                    &origin.joint_in.component,
-                    &origin.joint_in.port,
-                );
+                let port_out = self.find_port(&origin.joint_out.component, &origin.joint_out.port);
+                let port_in = self.find_port(&origin.joint_in.component, &origin.joint_in.port);
                 if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
                     (
                         (
@@ -640,6 +616,26 @@ impl Render<Composition> {
                     )
                 }
             })
+    }
+
+    fn find_entity<'a>(&'a self, id: &usize) -> Option<Entry<'a>> {
+        self.entity
+            .components
+            .iter()
+            .find(|c| c.origin().sig.id == *id)
+            .map(Entry::Component)
+            .or_else(|| {
+                self.entity
+                    .compositions
+                    .iter()
+                    .find(|c| c.origin().sig.id == *id)
+                    .map(Entry::Composition)
+            })
+    }
+
+    fn find_port<'a>(&'a self, parent_id: &usize, port_id: &usize) -> Option<&'a Port> {
+        self.find_entity(parent_id)
+            .and_then(|entry| entry.ports().origin().find(port_id).map(|p| p.origin()))
     }
 }
 

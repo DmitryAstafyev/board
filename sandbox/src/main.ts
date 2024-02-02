@@ -101,20 +101,19 @@ function asPPort(el: IElement): IPPort | undefined {
 }
 
 function getPortRef(
-    components: Representation<Component>[],
+    entries: Representation<Component | Composition>[],
     id: number
 ): Representation<Port> | undefined {
-    const component = components.find(
+    const target = entries.find(
         (c) =>
             c.Origin.ports.Origin.ports.find((p) => p.Origin.sig.id == id) !==
             undefined
     );
-    if (component === undefined) {
+
+    if (target === undefined) {
         return undefined;
     }
-    return component.Origin.ports.Origin.ports.find(
-        (p) => p.Origin.sig.id == id
-    );
+    return target.Origin.ports.Origin.ports.find((p) => p.Origin.sig.id == id);
 }
 const comps: number[] = [];
 const all_ports: number[] = [];
@@ -150,7 +149,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                         class_name: "unknown",
                                     },
                                     port_type: PortType.In,
-                                    visibility: false,
+                                    visibility: true,
                                     contains: [],
                                 },
                             };
@@ -183,7 +182,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                             class_name: "unknown",
                                         },
                                         port_type: PortType.In,
-                                        visibility: false,
+                                        visibility: true,
                                         contains: [],
                                     },
                                 };
@@ -230,8 +229,14 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
             console.error(`No ports`);
             return;
         }
-        const pPortRef = getPortRef(holder.components, pPort.targetPPort);
-        const rPortRef = getPortRef(holder.components, rPort.targetRPort);
+        const pPortRef = getPortRef(
+            [holder.components, holder.compositions].flat(),
+            pPort.targetPPort
+        );
+        const rPortRef = getPortRef(
+            [holder.components, holder.compositions].flat(),
+            rPort.targetRPort
+        );
         if (pPortRef !== undefined) {
             pPortRef.Origin.port_type = PortType.Out;
             pPortRef.Origin.visibility = true;
