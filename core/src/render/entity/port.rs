@@ -57,8 +57,8 @@ impl Render<Ports> {
         if self.entity.ports.is_empty() {
             return 0;
         }
-        let ports_in = self.entity.filter(PortType::In);
-        let ports_out = self.entity.filter(PortType::Out);
+        let ports_in = self.entity.filter(&[PortType::In, PortType::Unbound]);
+        let ports_out = self.entity.filter(&[PortType::Out]);
         let max_in = if self.origin().hide_invisible {
             ports_in
                 .iter()
@@ -103,7 +103,7 @@ impl Render<Ports> {
                 let mut cursor: i32 = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
                 for port in self
                     .entity
-                    .filter_mut(PortType::In)
+                    .filter_mut(&[PortType::In, PortType::Unbound])
                     .iter_mut()
                     .filter(|p| p.origin().visibility || !hide)
                 {
@@ -119,7 +119,7 @@ impl Render<Ports> {
                 cursor = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
                 for port in self
                     .entity
-                    .filter_mut(PortType::Out)
+                    .filter_mut(&[PortType::Out])
                     .iter_mut()
                     .filter(|p| p.origin().visibility || !hide)
                 {
@@ -141,7 +141,7 @@ impl Render<Ports> {
                 let mut cursor: i32 = start_from;
                 for port in self
                     .entity
-                    .filter_mut(PortType::In)
+                    .filter_mut(&[PortType::In, PortType::Unbound])
                     .iter_mut()
                     .filter(|p| p.origin().visibility || !hide)
                 {
@@ -153,7 +153,7 @@ impl Render<Ports> {
                 cursor = start_from;
                 for port in self
                     .entity
-                    .filter_mut(PortType::Out)
+                    .filter_mut(&[PortType::Out])
                     .iter_mut()
                     .filter(|p| p.origin().visibility || !hide)
                 {
@@ -232,7 +232,7 @@ impl Render<Port> {
         };
         let align = match entity.port_type {
             PortType::Out => label::Align::Left,
-            PortType::In => label::Align::Right,
+            PortType::In | PortType::Unbound => label::Align::Right,
         };
         Self {
             entity,
@@ -299,7 +299,12 @@ impl Render<Port> {
         _options: &Options,
         state: &State,
     ) -> Result<(), E> {
-        if state.is_port_selected(&self.entity.sig.id) {
+        if matches!(self.entity.port_type, PortType::Unbound) {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(50,50,50)"),
+                fill_style: String::from("rgb(200,200,240)"),
+            };
+        } else if state.is_port_selected(&self.entity.sig.id) {
             self.view.container.style = Style {
                 stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(150,250,150)"),

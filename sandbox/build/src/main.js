@@ -87,7 +87,7 @@ function load(parent, elements, holder) {
                                         id: port,
                                         class_name: "unknown",
                                     },
-                                    port_type: board_1.PortType.In,
+                                    port_type: board_1.PortType.Unbound,
                                     visibility: true,
                                     contains: [],
                                 },
@@ -121,7 +121,7 @@ function load(parent, elements, holder) {
                                             id: port,
                                             class_name: "unknown",
                                         },
-                                        port_type: board_1.PortType.In,
+                                        port_type: board_1.PortType.Unbound,
                                         visibility: true,
                                         contains: [],
                                     },
@@ -311,6 +311,7 @@ function getLabeledPortsOptions() {
         ports: {
             representation: board_1.PortsRepresentation.Labels,
             grouping: true,
+            group_unbound: true,
         },
         connections: {
             align: board_1.ConnectionsAlign.Straight,

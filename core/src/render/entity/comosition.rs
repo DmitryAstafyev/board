@@ -62,8 +62,18 @@ fn find<'a>(
 impl Render<Composition> {
     pub fn new(mut entity: Composition, options: &Options) -> Self {
         let mut sig_producer = SignatureProducer::new(100000000);
-        let (added_connections, mut added_ports) =
-            group_ports(&entity.connections, &mut sig_producer);
+        let (added_connections, mut added_ports) = if options.ports.grouping {
+            group_ports(&entity.connections, &mut sig_producer)
+        } else {
+            (vec![], vec![])
+        };
+        if options.ports.group_unbound {
+            group_unbound_ports(
+                &mut entity.compositions,
+                &mut entity.components,
+                &mut sig_producer,
+            );
+        }
         entity.connections.iter_mut().for_each(|conn| {
             let port_in = added_ports
                 .iter()
@@ -91,7 +101,11 @@ impl Render<Composition> {
                     .ports
                     .origin_mut()
                     .hide(&added_port.origin().contains);
-                component.origin_mut().ports.origin_mut().add(added_port);
+                component
+                    .origin_mut()
+                    .ports
+                    .origin_mut()
+                    .add(added_port, None);
             } else if let Some(composition) = entity
                 .compositions
                 .iter_mut()
@@ -102,7 +116,11 @@ impl Render<Composition> {
                     .ports
                     .origin_mut()
                     .hide(&added_port.origin().contains);
-                composition.origin_mut().ports.origin_mut().add(added_port);
+                composition
+                    .origin_mut()
+                    .ports
+                    .origin_mut()
+                    .add(added_port, None);
             }
         }
         entity.components = entity
@@ -746,4 +764,65 @@ pub fn group_ports(
             added_ports.push((*comp_joint_out, Representation::Origin(joined_port_out)));
         });
     (added_connections, added_ports)
+}
+
+pub fn group_unbound_ports(
+    compositions: &mut [Representation<Composition>],
+    components: &mut [Representation<Component>],
+    sig_producer: &mut SignatureProducer,
+) {
+    for component in components.iter_mut() {
+        let unbound_ports = component
+            .origin()
+            .ports
+            .origin()
+            .filter(&[PortType::Unbound])
+            .iter()
+            .map(|p| p.origin().sig.id)
+            .collect::<Vec<usize>>();
+        if unbound_ports.is_empty() {
+            continue;
+        }
+        component
+            .origin_mut()
+            .ports
+            .origin_mut()
+            .hide(&unbound_ports);
+        component.origin_mut().ports.origin_mut().add(
+            Representation::Origin(Port {
+                sig: sig_producer.next_for("unbound groupped"),
+                port_type: PortType::Unbound,
+                contains: unbound_ports,
+                visibility: true,
+            }),
+            Some(0),
+        );
+    }
+    for composition in compositions.iter_mut() {
+        let unbound_ports = composition
+            .origin()
+            .ports
+            .origin()
+            .filter(&[PortType::Unbound])
+            .iter()
+            .map(|p| p.origin().sig.id)
+            .collect::<Vec<usize>>();
+        if unbound_ports.is_empty() {
+            continue;
+        }
+        composition
+            .origin_mut()
+            .ports
+            .origin_mut()
+            .hide(&unbound_ports);
+        composition.origin_mut().ports.origin_mut().add(
+            Representation::Origin(Port {
+                sig: sig_producer.next_for("unbound groupped"),
+                port_type: PortType::Unbound,
+                contains: unbound_ports,
+                visibility: true,
+            }),
+            Some(0),
+        );
+    }
 }

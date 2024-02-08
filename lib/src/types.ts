@@ -9,6 +9,7 @@ export interface Signature {
 export enum PortType {
     In = "In",
     Out = "Out",
+    Unbound = "Unbound",
 }
 
 export interface Port {
@@ -77,6 +78,7 @@ export enum PortsRepresentation {
 export interface PortsOptions {
     representation: PortsRepresentation;
     grouping: boolean;
+    group_unbound: boolean;
 }
 
 export enum ConnectionsAlign {
@@ -107,6 +109,7 @@ export function getDefaultsOptions(): Options {
         ports: {
             representation: PortsRepresentation.Blocks,
             grouping: true,
+            group_unbound: true,
         },
         connections: {
             align: ConnectionsAlign.Streamlined,

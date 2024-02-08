@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub enum PortType {
     In,
     Out,
+    Unbound,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,17 +65,17 @@ impl Ports {
         self.ports[index].origin_mut()
     }
 
-    pub fn filter(&self, port_type: PortType) -> Vec<&Representation<Port>> {
+    pub fn filter(&self, targets: &[PortType]) -> Vec<&Representation<Port>> {
         self.ports
             .iter()
-            .filter(|r| r.origin().port_type == port_type)
+            .filter(|r| targets.contains(&r.origin().port_type))
             .collect::<Vec<&Representation<Port>>>()
     }
 
-    pub fn filter_mut(&mut self, port_type: PortType) -> Vec<&mut Representation<Port>> {
+    pub fn filter_mut(&mut self, targets: &[PortType]) -> Vec<&mut Representation<Port>> {
         self.ports
             .iter_mut()
-            .filter(|r| r.origin().port_type == port_type)
+            .filter(|r| targets.contains(&r.origin().port_type))
             .collect::<Vec<&mut Representation<Port>>>()
     }
 
@@ -110,8 +111,12 @@ impl Ports {
         });
     }
 
-    pub fn add(&mut self, port: Representation<Port>) {
-        self.ports.push(port);
+    pub fn add(&mut self, port: Representation<Port>, pos: Option<usize>) {
+        if let Some(pos) = pos {
+            self.ports.insert(pos, port);
+        } else {
+            self.ports.push(port);
+        }
     }
 
     pub fn get_groupped(&self) -> Vec<(usize, Vec<usize>)> {

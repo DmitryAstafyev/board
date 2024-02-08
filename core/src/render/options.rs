@@ -10,6 +10,7 @@ pub enum PortsRepresentation {
 pub struct Ports {
     pub representation: PortsRepresentation,
     pub grouping: bool,
+    pub group_unbound: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -46,6 +47,7 @@ impl Default for Options {
             ports: Ports {
                 representation: PortsRepresentation::Blocks,
                 grouping: true,
+                group_unbound: true,
             },
             connections: Connections {
                 align: ConnectionsAlign::Streamlined,

@@ -148,7 +148,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                         id: port,
                                         class_name: "unknown",
                                     },
-                                    port_type: PortType.In,
+                                    port_type: PortType.Unbound,
                                     visibility: true,
                                     contains: [],
                                 },
@@ -181,7 +181,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                             id: port,
                                             class_name: "unknown",
                                         },
-                                        port_type: PortType.In,
+                                        port_type: PortType.Unbound,
                                         visibility: true,
                                         contains: [],
                                     },
@@ -395,6 +395,7 @@ function getLabeledPortsOptions(): Options {
         ports: {
             representation: PortsRepresentation.Labels,
             grouping: true,
+            group_unbound: true,
         },
         connections: {
             align: ConnectionsAlign.Straight,
