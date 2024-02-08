@@ -62,66 +62,15 @@ fn find<'a>(
 impl Render<Composition> {
     pub fn new(mut entity: Composition, options: &Options) -> Self {
         let mut sig_producer = SignatureProducer::new(100000000);
-        let (added_connections, mut added_ports) = if options.ports.grouping {
-            group_ports(&entity.connections, &mut sig_producer)
-        } else {
-            (vec![], vec![])
-        };
+        if options.ports.grouping {
+            group_ports(&mut entity, &mut sig_producer);
+        }
         if options.ports.group_unbound {
             group_unbound_ports(
                 &mut entity.compositions,
                 &mut entity.components,
                 &mut sig_producer,
             );
-        }
-        entity.connections.iter_mut().for_each(|conn| {
-            let port_in = added_ports
-                .iter()
-                .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_in.port))
-                .map(|(_, p)| p);
-            let port_out = added_ports
-                .iter()
-                .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_out.port))
-                .map(|(_, p)| p);
-            if let (Some(port_in), true) = (port_in, port_out.is_none()) {
-                conn.origin_mut().joint_in.grouped = Some(port_in.origin().sig.id);
-            } else if let (Some(port_out), true) = (port_out, port_in.is_none()) {
-                conn.origin_mut().joint_out.grouped = Some(port_out.origin().sig.id);
-            }
-        });
-        entity.connections.extend(added_connections);
-        while let Some((component_id, added_port)) = added_ports.pop() {
-            if let Some(component) = entity
-                .components
-                .iter_mut()
-                .find(|c| c.origin().sig.id == component_id)
-            {
-                component
-                    .origin_mut()
-                    .ports
-                    .origin_mut()
-                    .hide(&added_port.origin().contains);
-                component
-                    .origin_mut()
-                    .ports
-                    .origin_mut()
-                    .add(added_port, None);
-            } else if let Some(composition) = entity
-                .compositions
-                .iter_mut()
-                .find(|c| c.origin().sig.id == component_id)
-            {
-                composition
-                    .origin_mut()
-                    .ports
-                    .origin_mut()
-                    .hide(&added_port.origin().contains);
-                composition
-                    .origin_mut()
-                    .ports
-                    .origin_mut()
-                    .add(added_port, None);
-            }
         }
         entity.components = entity
             .components
@@ -698,18 +647,11 @@ fn get_forms_by_ids<'a>(
     Ok(found)
 }
 
-type GrouppedPorts = (
-    Vec<Representation<Connection>>,
-    Vec<(usize, Representation<Port>)>,
-);
-pub fn group_ports(
-    connections: &[Representation<Connection>],
-    sig_producer: &mut SignatureProducer,
-) -> GrouppedPorts {
+pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProducer) {
     let mut added_connections: Vec<Representation<Connection>> = vec![];
     let mut added_ports: Vec<(usize, Representation<Port>)> = vec![];
     let mut groupped: HashMap<(usize, usize), Vec<(usize, usize)>> = HashMap::new();
-    connections.iter().for_each(|conn| {
+    entity.connections.iter().for_each(|conn| {
         let uuid = (
             conn.origin().joint_in.component,
             conn.origin().joint_out.component,
@@ -763,7 +705,55 @@ pub fn group_ports(
             added_ports.push((*comp_joint_in, Representation::Origin(joined_port_in)));
             added_ports.push((*comp_joint_out, Representation::Origin(joined_port_out)));
         });
-    (added_connections, added_ports)
+    entity.connections.iter_mut().for_each(|conn| {
+        let port_in = added_ports
+            .iter()
+            .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_in.port))
+            .map(|(_, p)| p);
+        let port_out = added_ports
+            .iter()
+            .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_out.port))
+            .map(|(_, p)| p);
+        if let (Some(port_in), true) = (port_in, port_out.is_none()) {
+            conn.origin_mut().joint_in.grouped = Some(port_in.origin().sig.id);
+        } else if let (Some(port_out), true) = (port_out, port_in.is_none()) {
+            conn.origin_mut().joint_out.grouped = Some(port_out.origin().sig.id);
+        }
+    });
+    entity.connections.extend(added_connections);
+    while let Some((component_id, added_port)) = added_ports.pop() {
+        if let Some(component) = entity
+            .components
+            .iter_mut()
+            .find(|c| c.origin().sig.id == component_id)
+        {
+            component
+                .origin_mut()
+                .ports
+                .origin_mut()
+                .hide(&added_port.origin().contains);
+            component
+                .origin_mut()
+                .ports
+                .origin_mut()
+                .add(added_port, None);
+        } else if let Some(composition) = entity
+            .compositions
+            .iter_mut()
+            .find(|c| c.origin().sig.id == component_id)
+        {
+            composition
+                .origin_mut()
+                .ports
+                .origin_mut()
+                .hide(&added_port.origin().contains);
+            composition
+                .origin_mut()
+                .ports
+                .origin_mut()
+                .add(added_port, None);
+        }
+    }
 }
 
 pub fn group_unbound_ports(
