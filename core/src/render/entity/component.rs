@@ -108,7 +108,7 @@ impl Render<Component> {
         context.set_text_baseline("bottom");
         context.set_font(&format!("{}px serif", relative.zoom(12)));
         let _ = context.stroke_text(
-            &self.origin().sig.id.to_string(),
+            &self.origin().get_label(options, 12),
             relative.x(self.view.container.get_coors().0) as f64,
             relative.y(self.view.container.get_coors().1 - 3) as f64,
         );

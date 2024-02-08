@@ -105,4 +105,34 @@ impl Composition {
             .find(|comp| comp.origin().sig.id == id)
             .map(|comp| comp.origin())
     }
+
+    pub fn get_label(&self, options: &Options, len: usize) -> String {
+        if options.labels.composition_short_name {
+            if self.sig.class_name == "unknown" && self.sig.short_name == "unknown" {
+                self.sig.id.to_string()
+            } else if self.sig.short_name != "unknown" {
+                format!(
+                    "{:.len$}{}",
+                    self.sig.short_name,
+                    if self.sig.short_name.len() > len {
+                        "..."
+                    } else {
+                        ""
+                    }
+                )
+            } else {
+                format!(
+                    "{:.len$}{}",
+                    self.sig.class_name,
+                    if self.sig.class_name.len() > len {
+                        "..."
+                    } else {
+                        ""
+                    }
+                )
+            }
+        } else {
+            self.sig.id.to_string()
+        }
+    }
 }

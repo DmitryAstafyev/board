@@ -80,7 +80,6 @@ export interface PortsOptions {
     representation: PortsRepresentation;
     grouping: boolean;
     group_unbound: boolean;
-    class_name_as_label: boolean;
 }
 
 export enum ConnectionsAlign {
@@ -100,10 +99,17 @@ export interface GridOptions {
     visible: boolean;
     padding: number;
 }
+
+export interface LabelsOptions {
+    ports_short_name: boolean;
+    components_short_name: boolean;
+    composition_short_name: boolean;
+}
 export interface Options {
     ports: PortsOptions;
     connections: ConnectionsOptions;
     grid: GridOptions;
+    labels: LabelsOptions;
 }
 
 export function getDefaultsOptions(): Options {
@@ -112,7 +118,6 @@ export function getDefaultsOptions(): Options {
             representation: PortsRepresentation.Blocks,
             grouping: true,
             group_unbound: true,
-            class_name_as_label: true,
         },
         connections: {
             align: ConnectionsAlign.Streamlined,
@@ -124,6 +129,11 @@ export function getDefaultsOptions(): Options {
             cells_space_vertical: 3,
             cells_space_horizontal: 3,
             visible: true,
+        },
+        labels: {
+            ports_short_name: true,
+            components_short_name: true,
+            composition_short_name: true,
         },
     };
 }

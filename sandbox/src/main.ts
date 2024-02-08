@@ -427,7 +427,6 @@ function getLabeledPortsOptions(): Options {
             representation: PortsRepresentation.Labels,
             grouping: true,
             group_unbound: true,
-            class_name_as_label: true,
         },
         connections: {
             align: ConnectionsAlign.Straight,
@@ -439,6 +438,11 @@ function getLabeledPortsOptions(): Options {
             cells_space_vertical: 3,
             cells_space_horizontal: 6,
             visible: false,
+        },
+        labels: {
+            ports_short_name: true,
+            components_short_name: true,
+            composition_short_name: true,
         },
     };
 }

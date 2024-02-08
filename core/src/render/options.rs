@@ -11,7 +11,6 @@ pub struct Ports {
     pub representation: PortsRepresentation,
     pub grouping: bool,
     pub group_unbound: bool,
-    pub class_name_as_label: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -36,10 +35,18 @@ pub struct GridOptions {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct Labels {
+    pub ports_short_name: bool,
+    pub components_short_name: bool,
+    pub composition_short_name: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Options {
     pub ports: Ports,
     pub connections: Connections,
     pub grid: GridOptions,
+    pub labels: Labels,
 }
 
 impl Default for Options {
@@ -49,7 +56,6 @@ impl Default for Options {
                 representation: PortsRepresentation::Blocks,
                 grouping: true,
                 group_unbound: true,
-                class_name_as_label: true,
             },
             connections: Connections {
                 align: ConnectionsAlign::Streamlined,
@@ -61,6 +67,11 @@ impl Default for Options {
                 cells_space_vertical: 3,
                 cells_space_horizontal: 3,
                 visible: true,
+            },
+            labels: Labels {
+                ports_short_name: true,
+                components_short_name: true,
+                composition_short_name: true,
             },
         }
     }

@@ -26,7 +26,7 @@ impl Port {
         self.port_type = port_type;
     }
     pub fn get_label(&self, options: &Options, len: usize) -> String {
-        if options.ports.class_name_as_label {
+        if options.labels.ports_short_name {
             if self.sig.class_name == "unknown" && self.sig.short_name == "unknown" {
                 self.sig.id.to_string()
             } else if self.sig.short_name != "unknown" {
