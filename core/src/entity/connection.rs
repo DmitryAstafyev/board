@@ -41,6 +41,7 @@ pub struct Connection {
     pub sig: Signature,
     pub joint_in: Joint,
     pub joint_out: Joint,
+    pub visibility: bool,
 }
 
 impl Connection {
@@ -190,11 +191,16 @@ impl Connection {
         )
     }
 
+    pub fn hide(&mut self) {
+        self.visibility = false;
+    }
+
     pub fn new(sig: Signature, joint_in: Joint, joint_out: Joint) -> Self {
         Self {
             sig,
             joint_in,
             joint_out,
+            visibility: true,
         }
     }
 }

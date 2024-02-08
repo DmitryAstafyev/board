@@ -188,7 +188,12 @@ impl Render<Composition> {
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
         let mut failed: Vec<&Connection> = vec![];
-        for conn in self.entity.connections.iter_mut() {
+        for conn in self
+            .entity
+            .connections
+            .iter_mut()
+            .filter(|conn| conn.origin().visibility)
+        {
             if let (Some(ins), Some(outs)) = (
                 find(components, compositions, &conn.origin().joint_in.component),
                 find(components, compositions, &conn.origin().joint_out.component),
@@ -411,9 +416,10 @@ impl Render<Composition> {
                 .draw(context, relative, targets, options, state)?;
         }
         for connection in self.entity.connections.iter_mut().filter(|conn| {
-            state.is_port_selected(&conn.origin().joint_in.port)
-                || state.is_port_selected(&conn.origin().joint_out.port)
-                || state.is_port_highlighted(&conn.origin().joint_out.port)
+            conn.origin().visibility
+                && (state.is_port_selected(&conn.origin().joint_in.port)
+                    || state.is_port_selected(&conn.origin().joint_out.port)
+                    || state.is_port_highlighted(&conn.origin().joint_out.port))
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }
@@ -701,6 +707,7 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                     grouped: None,
                 },
                 sig: sig_producer.next_for("joined connection"),
+                visibility: true,
             }));
             added_ports.push((*comp_joint_in, Representation::Origin(joined_port_in)));
             added_ports.push((*comp_joint_out, Representation::Origin(joined_port_out)));
@@ -718,6 +725,8 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
             conn.origin_mut().joint_in.grouped = Some(port_in.origin().sig.id);
         } else if let (Some(port_out), true) = (port_out, port_in.is_none()) {
             conn.origin_mut().joint_out.grouped = Some(port_out.origin().sig.id);
+        } else if port_in.is_some() && port_out.is_some() {
+            conn.origin_mut().hide();
         }
     });
     entity.connections.extend(added_connections);

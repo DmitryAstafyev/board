@@ -207,6 +207,7 @@ function load(parent, elements, holder) {
                     component: rPort.contextComponent,
                     port: rPort.targetRPort,
                 },
+                visibility: true,
             },
         });
         // if (
@@ -294,6 +295,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
                     component: ports_b[c].comp,
                     port: ports_b[c].port,
                 },
+                visibility: true,
             });
         }
     }

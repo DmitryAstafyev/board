@@ -38,6 +38,7 @@ export interface Connection {
     sig: Signature;
     joint_in: Joint;
     joint_out: Joint;
+    visibility: boolean;
 }
 
 export interface Component {
