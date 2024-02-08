@@ -4,6 +4,7 @@ export type ElementCoors = [string, string, [number, number, number, number]];
 export interface Signature {
     id: number;
     class_name: string;
+    short_name: string;
 }
 
 export enum PortType {
@@ -79,6 +80,7 @@ export interface PortsOptions {
     representation: PortsRepresentation;
     grouping: boolean;
     group_unbound: boolean;
+    class_name_as_label: boolean;
 }
 
 export enum ConnectionsAlign {
@@ -110,6 +112,7 @@ export function getDefaultsOptions(): Options {
             representation: PortsRepresentation.Blocks,
             grouping: true,
             group_unbound: true,
+            class_name_as_label: true,
         },
         connections: {
             align: ConnectionsAlign.Streamlined,

@@ -1,6 +1,9 @@
 use std::usize;
 
-use crate::{entity::Signature, render::Representation};
+use crate::{
+    entity::Signature,
+    render::{options::Options, Representation},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -21,6 +24,35 @@ pub struct Port {
 impl Port {
     pub fn set_type(&mut self, port_type: PortType) {
         self.port_type = port_type;
+    }
+    pub fn get_label(&self, options: &Options, len: usize) -> String {
+        if options.ports.class_name_as_label {
+            if self.sig.class_name == "unknown" && self.sig.short_name == "unknown" {
+                self.sig.id.to_string()
+            } else if self.sig.short_name != "unknown" {
+                format!(
+                    "{:.len$}{}",
+                    self.sig.short_name,
+                    if self.sig.short_name.len() > len {
+                        "..."
+                    } else {
+                        ""
+                    }
+                )
+            } else {
+                format!(
+                    "{:.len$}{}",
+                    self.sig.class_name,
+                    if self.sig.class_name.len() > len {
+                        "..."
+                    } else {
+                        ""
+                    }
+                )
+            }
+        } else {
+            self.sig.id.to_string()
+        }
     }
 }
 
@@ -82,12 +114,6 @@ impl Ports {
     pub fn find(&self, port_id: &usize) -> Option<&Representation<Port>> {
         self.ports.iter().find(|p| &p.origin().sig.id == port_id)
     }
-
-    // pub fn find_visible(&self, port_id: &usize) -> Option<&Representation<Port>> {
-    //     self.ports
-    //         .iter()
-    //         .find(|p| &p.origin().sig.id == port_id && p.origin().visibility)
-    // }
 
     pub fn cloned_ports(&self) -> Vec<Representation<Port>> {
         self.ports

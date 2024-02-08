@@ -224,7 +224,7 @@ impl Render<Port> {
     pub fn new(entity: Port, options: &Options) -> Self {
         let id = entity.sig.id;
         let label = if entity.contains.is_empty() {
-            id.to_string()
+            entity.get_label(options, 9)
         } else if let (1, Some(id)) = (entity.contains.len(), entity.contains.first()) {
             id.to_string()
         } else {

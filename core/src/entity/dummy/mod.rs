@@ -19,6 +19,7 @@ impl SignatureProducer {
         Signature {
             id: self.current,
             class_name: format!("DummyClass_{}", self.current),
+            short_name: format!("DummySN_{}", self.current),
         }
     }
 
@@ -27,6 +28,7 @@ impl SignatureProducer {
         Signature {
             id: self.current,
             class_name: class_name.to_string(),
+            short_name: class_name.to_string(),
         }
     }
 }

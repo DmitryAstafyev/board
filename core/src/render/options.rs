@@ -11,6 +11,7 @@ pub struct Ports {
     pub representation: PortsRepresentation,
     pub grouping: bool,
     pub group_unbound: bool,
+    pub class_name_as_label: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -48,6 +49,7 @@ impl Default for Options {
                 representation: PortsRepresentation::Blocks,
                 grouping: true,
                 group_unbound: true,
+                class_name_as_label: true,
             },
             connections: Connections {
                 align: ConnectionsAlign::Streamlined,

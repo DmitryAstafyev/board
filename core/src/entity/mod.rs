@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 pub struct Signature {
     pub id: usize,
     pub class_name: String,
+    pub short_name: String,
 }
 
 impl Signature {
@@ -21,6 +22,7 @@ impl Signature {
         Self {
             id: 0,
             class_name: "fake".to_string(),
+            short_name: "fake".to_string(),
         }
     }
 }

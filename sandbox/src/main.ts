@@ -13,6 +13,8 @@ import {
     ConnectionsAlign,
 } from "board";
 
+const UNKNOWN = "unknown";
+
 enum Types {
     PPortPrototype = "PPortPrototype",
     AssemblySwConnector = "AssemblySwConnector",
@@ -119,6 +121,15 @@ const comps: number[] = [];
 const all_ports: number[] = [];
 
 function load(parent: IComposition, elements: IElement[], holder: Composition) {
+    function getPortShortClass(id: number): {
+        shortName: string;
+        className: string;
+    } {
+        const element = elements.find((el) => el.id === id);
+        return element === undefined
+            ? { shortName: UNKNOWN, className: UNKNOWN }
+            : element;
+    }
     parent.component.forEach((id: number) => {
         const compPrototype: IComponentPrototype | undefined =
             asComponentPrototype(find(id, elements));
@@ -135,6 +146,10 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                 sig: {
                     id,
                     class_name: composition.className,
+                    short_name:
+                        composition.shortName === undefined
+                            ? UNKNOWN
+                            : composition.shortName,
                 },
                 components: [],
                 connections: [],
@@ -142,11 +157,13 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                 ports: {
                     Origin: {
                         ports: composition.port.map((port: number) => {
+                            const portSignature = getPortShortClass(port);
                             return {
                                 Origin: {
                                     sig: {
                                         id: port,
-                                        class_name: "unknown",
+                                        class_name: portSignature.className,
+                                        short_name: portSignature.shortName,
                                     },
                                     port_type: PortType.Unbound,
                                     visibility: true,
@@ -171,15 +188,21 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                     sig: {
                         id,
                         class_name: componentType.className,
+                        short_name:
+                            componentType.shortName === undefined
+                                ? UNKNOWN
+                                : componentType.shortName,
                     },
                     ports: {
                         Origin: {
                             ports: componentType.port.map((port: number) => {
+                                const portSignature = getPortShortClass(port);
                                 return {
                                     Origin: {
                                         sig: {
                                             id: port,
-                                            class_name: "unknown",
+                                            class_name: portSignature.className,
+                                            short_name: portSignature.shortName,
                                         },
                                         port_type: PortType.Unbound,
                                         visibility: true,
@@ -250,6 +273,10 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                 sig: {
                     id: connectionId,
                     class_name: connection.className,
+                    short_name:
+                        connection.shortName === undefined
+                            ? UNKNOWN
+                            : connection.shortName,
                 },
                 joint_in: {
                     component: pPort.contextComponent,
@@ -291,7 +318,11 @@ let signature: number = 1;
 
 function getSignature(): Signature {
     const id = signature++;
-    return { id, class_name: `class_name_${id}` };
+    return {
+        id,
+        class_name: `class_name_${id}`,
+        short_name: `short_name_${id}`,
+    };
 }
 
 function getDummyComposition(
@@ -396,6 +427,7 @@ function getLabeledPortsOptions(): Options {
             representation: PortsRepresentation.Labels,
             grouping: true,
             group_unbound: true,
+            class_name_as_label: true,
         },
         connections: {
             align: ConnectionsAlign.Straight,
@@ -421,6 +453,10 @@ function real() {
                 sig: {
                     id: rootElement.id,
                     class_name: rootElement.className,
+                    short_name:
+                        rootElement.shortName === undefined
+                            ? UNKNOWN
+                            : rootElement.shortName,
                 },
                 components: [],
                 connections: [],
