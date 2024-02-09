@@ -303,13 +303,15 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn toggle_port(&mut self, id: usize) -> Result<(), String> {
-        if let Some(connection) = self.render.origin().find_connection_by_port(id) {
+        let connections = self.render.origin().find_connections_by_port(id);
+        let inserted = self.state.toggle_port(&id);
+        for connection in connections.iter() {
             let rel_port = if connection.joint_in.port == id {
                 connection.joint_out.port
             } else {
                 connection.joint_in.port
             };
-            if self.state.toggle_port(&id) {
+            if inserted {
                 // Added
                 self.state.insert_port(&rel_port);
                 self.state.insert_component(&connection.joint_out.component);
@@ -332,8 +334,6 @@ impl Board {
                     self.state.remove_component(&connection.joint_out.component);
                 }
             }
-        } else {
-            self.state.toggle_port(&id);
         }
         self.render()
     }

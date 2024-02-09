@@ -53,13 +53,14 @@ impl Composition {
         }
     }
 
-    pub fn find_connection_by_port(&self, port_id: usize) -> Option<&Connection> {
+    pub fn find_connections_by_port(&self, port_id: usize) -> Vec<&Connection> {
         self.connections
             .iter()
-            .find(|conn| {
+            .filter(|conn| {
                 conn.origin().joint_in.port == port_id || conn.origin().joint_out.port == port_id
             })
             .map(|rep| rep.origin())
+            .collect::<Vec<&Connection>>()
     }
 
     pub fn find_connected_port(&self, port_id: usize) -> Option<usize> {

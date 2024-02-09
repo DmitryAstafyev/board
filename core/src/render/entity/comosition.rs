@@ -657,21 +657,42 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
     let mut added_connections: Vec<Representation<Connection>> = vec![];
     let mut added_ports: Vec<(usize, Representation<Port>)> = vec![];
     let mut groupped: HashMap<(usize, usize), Vec<(usize, usize)>> = HashMap::new();
-    entity.connections.iter().for_each(|conn| {
-        let uuid = (
-            conn.origin().joint_in.component,
-            conn.origin().joint_out.component,
-        );
-        groupped
-            .entry(uuid)
-            .and_modify(|ports| {
-                ports.push((conn.origin().joint_in.port, conn.origin().joint_out.port))
-            })
-            .or_insert(vec![(
-                conn.origin().joint_in.port,
-                conn.origin().joint_out.port,
-            )]);
+    // Find ports connected to only 1 component
+    let mut ports: HashMap<usize, usize> = HashMap::new();
+    entity.connections.iter().for_each(|connection| {
+        ports
+            .entry(connection.origin().joint_in.port)
+            .and_modify(|count| *count += 1)
+            .or_insert(1);
+        ports
+            .entry(connection.origin().joint_out.port)
+            .and_modify(|count| *count += 1)
+            .or_insert(1);
     });
+    ports.retain(|_, count| *count == 1);
+    // Take only related connections
+    entity
+        .connections
+        .iter()
+        .filter(|conn| {
+            ports.contains_key(&conn.origin().joint_in.port)
+                && ports.contains_key(&conn.origin().joint_out.port)
+        })
+        .for_each(|conn| {
+            let uuid = (
+                conn.origin().joint_in.component,
+                conn.origin().joint_out.component,
+            );
+            groupped
+                .entry(uuid)
+                .and_modify(|ports| {
+                    ports.push((conn.origin().joint_in.port, conn.origin().joint_out.port))
+                })
+                .or_insert(vec![(
+                    conn.origin().joint_in.port,
+                    conn.origin().joint_out.port,
+                )]);
+        });
     groupped
         .iter()
         .for_each(|((comp_joint_in, comp_joint_out), ports)| {
