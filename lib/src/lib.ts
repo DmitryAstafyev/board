@@ -37,6 +37,14 @@ import("core")
 
 const CLICK_DURATION = 250;
 
+export interface ConnectionInfo {
+    port: number;
+    contains: number[];
+    component: number;
+}
+
+type IncomeConnectionInfo = [number, number[], number];
+
 export interface PortHoverEvent {
     id: number;
     contains: number[];
@@ -349,41 +357,6 @@ export class Board extends Subscriber {
                 const groupped = this.data.groupped.find(
                     (groupped) => groupped[0] === id
                 );
-                const connection = this.getConnectionInfo(id);
-                // if (connection !== undefined) {
-                //     const target =
-                //         connection.inner.port === id
-                //             ? connection.inner
-                //             : connection.outter;
-                //     const coors = this.getCoorsByIds([
-                //         target.port,
-                //         target.component,
-                //     ]);
-                //     const port = coors.find((coor) => coor[1] === "Port");
-                //     const component = coors.find(
-                //         (coor) => coor[1] === "Component"
-                //     );
-                //     if (port !== undefined && component !== undefined) {
-                //         this.connection.show(
-                //             {
-                //                 left: port[2][0] + this.scroll.x(),
-                //                 top: port[2][1] + this.scroll.y(),
-                //                 width: port[2][2] - port[2][0],
-                //                 height: port[2][3] - port[2][1],
-                //             },
-                //             {
-                //                 left: component[2][0] + this.scroll.x(),
-                //                 top: component[2][1] + this.scroll.y(),
-                //                 width: component[2][2] - component[2][0],
-                //                 height: component[2][3] - component[2][1],
-                //             }
-                //         );
-                //     } else {
-                //         this.connection.hide();
-                //     }
-                // } else {
-                //     this.connection.hide();
-                // }
                 this.subjects.get().onPortHover.emit({
                     id,
                     contains: groupped === undefined ? [] : groupped[1],
@@ -547,12 +520,12 @@ export class Board extends Subscriber {
 
     public getConnectionInfo(port: number):
         | {
-              outter: { port: number; contains: number[]; component: number };
-              inner: { port: number; contains: number[]; component: number };
+              outter: ConnectionInfo;
+              inner: ConnectionInfo;
           }
         | undefined {
         const info:
-            | [[number, number[], number], [number, number[], number]]
+            | [IncomeConnectionInfo, IncomeConnectionInfo]
             | undefined
             | string = this.board.get_connection_info(port);
         if (typeof info === "string") {
@@ -574,6 +547,72 @@ export class Board extends Subscriber {
                 component: info[1][2],
             },
         };
+    }
+
+    public getConnectionsInfoByPort(port: number):
+        | {
+              outter: ConnectionInfo;
+              inner: ConnectionInfo;
+          }[]
+        | undefined {
+        const info:
+            | [IncomeConnectionInfo, IncomeConnectionInfo][]
+            | undefined
+            | string = this.board.get_connections_info_by_port(port);
+        if (typeof info === "string") {
+            console.error(info);
+            return undefined;
+        }
+        if (info === undefined || info === null) {
+            return undefined;
+        }
+        return info.map((slot) => {
+            return {
+                outter: {
+                    port: slot[0][0],
+                    contains: slot[0][1],
+                    component: slot[0][2],
+                },
+                inner: {
+                    port: slot[1][0],
+                    contains: slot[1][1],
+                    component: slot[1][2],
+                },
+            };
+        });
+    }
+
+    public getConnectionsInfoByComponent(component: number):
+        | {
+              outter: ConnectionInfo;
+              inner: ConnectionInfo;
+          }[]
+        | undefined {
+        const info:
+            | [IncomeConnectionInfo, IncomeConnectionInfo][]
+            | undefined
+            | string = this.board.get_connections_info_by_component(component);
+        if (typeof info === "string") {
+            console.error(info);
+            return undefined;
+        }
+        if (info === undefined || info === null) {
+            return undefined;
+        }
+        return info.map((slot) => {
+            return {
+                outter: {
+                    port: slot[0][0],
+                    contains: slot[0][1],
+                    component: slot[0][2],
+                },
+                inner: {
+                    port: slot[1][0],
+                    contains: slot[1][1],
+                    component: slot[1][2],
+                },
+            };
+        });
     }
 
     public offsetX(x: number): number {

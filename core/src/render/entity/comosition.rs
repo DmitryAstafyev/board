@@ -585,6 +585,10 @@ impl Render<Composition> {
         Ok(ports)
     }
 
+    /// Returns information about single connection
+    ///
+    /// (port,  contains,   comp )
+    /// (usize, Vec<usize>, usize)
     pub fn get_connection_info(
         &self,
         port: usize,
@@ -617,6 +621,87 @@ impl Render<Composition> {
                     )
                 }
             })
+    }
+
+    /// Returns information about all connections related to port
+    ///
+    /// (port,  contains,   comp )
+    /// (usize, Vec<usize>, usize)
+    pub fn get_connections_info_by_port(
+        &self,
+        port: usize,
+    ) -> Vec<((usize, Vec<usize>, usize), (usize, Vec<usize>, usize))> {
+        self.entity
+            .connections
+            .iter()
+            .filter(|c| c.origin().joint_in.port == port || c.origin().joint_out.port == port)
+            .map(|c| {
+                let origin = c.origin();
+                let port_out = self.find_port(&origin.joint_out.component, &origin.joint_out.port);
+                let port_in = self.find_port(&origin.joint_in.component, &origin.joint_in.port);
+                if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
+                    (
+                        (
+                            origin.joint_out.port,
+                            port_out.contains.clone(),
+                            origin.joint_out.component,
+                        ),
+                        (
+                            origin.joint_in.port,
+                            port_in.contains.clone(),
+                            origin.joint_in.component,
+                        ),
+                    )
+                } else {
+                    (
+                        (origin.joint_out.port, vec![], origin.joint_out.component),
+                        (origin.joint_in.port, vec![], origin.joint_in.component),
+                    )
+                }
+            })
+            .collect()
+    }
+
+    /// Returns information about all connections related to component
+    ///
+    /// (port,  contains,   comp )
+    /// (usize, Vec<usize>, usize)
+    pub fn get_connections_info_by_component(
+        &self,
+        component: usize,
+    ) -> Vec<((usize, Vec<usize>, usize), (usize, Vec<usize>, usize))> {
+        self.entity
+            .connections
+            .iter()
+            .filter(|c| {
+                c.origin().joint_in.component == component
+                    || c.origin().joint_out.component == component
+            })
+            .map(|c| {
+                let origin = c.origin();
+                let port_out = self.find_port(&origin.joint_out.component, &origin.joint_out.port);
+                let port_in = self.find_port(&origin.joint_in.component, &origin.joint_in.port);
+                if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
+                    (
+                        (
+                            origin.joint_out.port,
+                            port_out.contains.clone(),
+                            origin.joint_out.component,
+                        ),
+                        (
+                            origin.joint_in.port,
+                            port_in.contains.clone(),
+                            origin.joint_in.component,
+                        ),
+                    )
+                } else {
+                    (
+                        (origin.joint_out.port, vec![], origin.joint_out.component),
+                        (origin.joint_in.port, vec![], origin.joint_in.component),
+                    )
+                }
+            })
+            .collect()
     }
 
     fn find_entity<'a>(&'a self, id: &usize) -> Option<Entry<'a>> {

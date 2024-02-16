@@ -208,6 +208,18 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn get_connections_info_by_port(&self, port: usize) -> Result<JsValue, String> {
+        let result = self.render.get_connections_info_by_port(port);
+        serde_wasm_bindgen::to_value(&result).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_connections_info_by_component(&self, port: usize) -> Result<JsValue, String> {
+        let result = self.render.get_connections_info_by_component(port);
+        serde_wasm_bindgen::to_value(&result).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
     pub fn draw_by_id(
         &mut self,
         id: usize,
