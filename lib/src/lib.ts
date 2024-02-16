@@ -414,6 +414,7 @@ export class Board extends Subscriber {
                     this.subjects.get().onPortClick.emit(targetId);
                 } else if (elementType === "Component") {
                     this.board.toggle_component(targetId);
+                    this.subjects.get().onComponentClick.emit(targetId);
                 } else if (elementType === "Composition") {
                     this.data.composition !== undefined &&
                         this.data.history.push(this.data.composition);
