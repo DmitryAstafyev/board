@@ -162,6 +162,24 @@ impl Render<Composition> {
         }
     }
 
+    pub fn get_filtered_ports(&self, filter: Option<String>) -> Option<Vec<usize>> {
+        filter.as_ref().map(|filter| {
+            [
+                self.entity
+                    .components
+                    .iter()
+                    .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
+                    .collect::<Vec<usize>>(),
+                self.entity
+                    .compositions
+                    .iter()
+                    .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
+                    .collect::<Vec<usize>>(),
+            ]
+            .concat()
+        })
+    }
+
     pub fn align_to_grid(&mut self, grid: &Grid) -> Result<(), E> {
         for comp in self.entity.components.iter_mut() {
             let relative = grid.relative(comp.origin().sig.id);

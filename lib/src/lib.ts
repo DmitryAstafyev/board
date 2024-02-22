@@ -506,6 +506,10 @@ export class Board extends Subscriber {
         this.board.render();
     }
 
+    public setFilter(filter: string | undefined) {
+        this.board.set_filter(filter);
+    }
+
     public getGrouppedPorts(): [number, number[]][] {
         return this.board.get_groupped_ports() as [number, number[]][];
     }

@@ -31,3 +31,25 @@ body div#info {
     background: rgb(90, 222, 215);
 }
 
+body div.filter {
+    position: absolute;
+    background: black;
+    right: 8px;
+    top: 8px;
+    height: 24px;
+    width: 120px;
+    border-radius: 3px;
+}
+body div.filter input {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    display: block;
+    background: black;
+    color: white;
+    outline: none;
+    border: none;
+}
+

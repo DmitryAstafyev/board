@@ -1,4 +1,3 @@
-use std::convert::From;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

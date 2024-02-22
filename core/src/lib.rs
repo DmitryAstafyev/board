@@ -175,6 +175,13 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn set_filter(&mut self, filter: Option<String>) -> Result<(), String> {
+        self.state
+            .set_filtered(self.render.get_filtered_ports(filter));
+        self.render()?;
+        Ok(())
+    }
+    #[wasm_bindgen]
     pub fn who(&self, target_x: i32, target_y: i32, around: i32) -> Result<JsValue, String> {
         let relative = self.state.get_view_relative();
         let ids = self.grid.point((target_x, target_y), around, &relative);

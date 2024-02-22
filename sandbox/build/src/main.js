@@ -390,6 +390,10 @@ function real() {
             board.render();
             board.subjects.get().onPortHover.subscribe((event) => { });
             board.subjects.get().onComponentHover.subscribe((event) => { });
+            const filter = document.querySelector('input[id="filter"]');
+            filter?.addEventListener("keyup", () => {
+                board.setFilter(filter.value.trim() === "" ? undefined : filter.value.trim());
+            });
         });
     }, 200);
 }

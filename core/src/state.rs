@@ -1,10 +1,11 @@
-use crate::render::Relative;
+use crate::{entity::Port, render::Relative};
 
 #[derive(Debug)]
 pub struct State {
     components: Vec<usize>,
     ports: Vec<usize>,
     ports_highlighted: Vec<usize>,
+    filtered: Option<Vec<usize>>,
     pub x: i32,
     pub y: i32,
     pub zoom: f64,
@@ -16,6 +17,7 @@ impl State {
             components: vec![],
             ports: vec![],
             ports_highlighted: vec![],
+            filtered: None,
             x: 0,
             y: 0,
             zoom: 1.0,
@@ -32,18 +34,17 @@ impl State {
         self.zoom = zoom;
     }
 
-    // pub fn toggle_component(&mut self, id: &usize) {
-    //     if let Some((i, _)) = self
-    //         .components
-    //         .iter()
-    //         .enumerate()
-    //         .find(|(_, comp)| *comp == id)
-    //     {
-    //         let _ = self.components.remove(i);
-    //     } else {
-    //         self.components.push(*id);
-    //     }
-    // }
+    pub fn set_filtered(&mut self, filtered: Option<Vec<usize>>) {
+        self.filtered = filtered;
+    }
+
+    pub fn is_port_filtered(&self, port: &Port) -> bool {
+        if let Some(filtered) = self.filtered.as_ref() {
+            filtered.contains(&port.sig.id)
+        } else {
+            true
+        }
+    }
 
     pub fn toggle_port(&mut self, id: &usize) -> bool {
         if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, port)| *port == id) {

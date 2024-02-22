@@ -155,4 +155,42 @@ impl Ports {
         });
         ports
     }
+
+    pub fn get_filtered_ports(&self, filter: &str) -> Vec<usize> {
+        fn is_filtered(filter: &str, origin: &Port) -> bool {
+            origin
+                .sig
+                .class_name
+                .to_lowercase()
+                .contains(&filter.to_lowercase())
+                || origin
+                    .sig
+                    .short_name
+                    .to_lowercase()
+                    .contains(&filter.to_lowercase())
+                || origin.sig.id.to_string().contains(filter)
+        }
+        let ports = &self.ports;
+        ports
+            .iter()
+            .filter(|port| {
+                let origin = port.origin();
+                if origin.contains.is_empty() {
+                    is_filtered(filter, origin)
+                } else {
+                    let mut found = false;
+                    for port_id in origin.contains.iter() {
+                        if let Some(port) = ports.iter().find(|p| &p.origin().sig.id == port_id) {
+                            if is_filtered(filter, port.origin()) {
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    found
+                }
+            })
+            .map(|p| p.origin().sig.id)
+            .collect()
+    }
 }

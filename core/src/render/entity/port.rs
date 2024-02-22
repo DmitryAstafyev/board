@@ -182,7 +182,7 @@ impl Render<Ports> {
             .entity
             .ports
             .iter_mut()
-            .filter(|p| p.origin().visibility || !hide)
+            .filter(|p| (p.origin().visibility || !hide) && state.is_port_filtered(p.origin()))
         {
             port.render_mut()?
                 .draw(context, &self_relative, options, state)?;
