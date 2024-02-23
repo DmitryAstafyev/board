@@ -162,9 +162,9 @@ impl Render<Composition> {
         }
     }
 
-    pub fn get_filtered_ports(&self, filter: Option<String>) -> Option<Vec<usize>> {
+    pub fn get_filtered_ports(&self, filter: Option<String>) -> Option<(Vec<usize>, Vec<usize>)> {
         filter.as_ref().map(|filter| {
-            [
+            let filtered = [
                 self.entity
                     .components
                     .iter()
@@ -176,7 +176,23 @@ impl Render<Composition> {
                     .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
                     .collect::<Vec<usize>>(),
             ]
-            .concat()
+            .concat();
+            let linked = self
+                .entity
+                .connections
+                .iter()
+                .filter_map(|c| {
+                    let connection = c.origin();
+                    if filtered.contains(&connection.joint_in.port) {
+                        Some(connection.joint_out.port)
+                    } else if filtered.contains(&connection.joint_out.port) {
+                        Some(connection.joint_in.port)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            (filtered, linked)
         })
     }
 
@@ -505,7 +521,7 @@ impl Render<Composition> {
         &self,
         owners: &[ElementCoors],
         position: &(i32, i32),
-        zoom: f64,
+        state: &State,
     ) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(vec![]);
@@ -515,12 +531,13 @@ impl Render<Composition> {
             if let Ok(id) = id.parse::<usize>() {
                 if let Some(entry) = self.find_entity(&id) {
                     let mut relative = entry.own_relative()?;
-                    relative.set_zoom(zoom);
+                    relative.set_zoom(state.zoom);
                     found = [
                         found,
                         entry.ports().render()?.find(
                             &(position.0 - relative.x(0), position.1 - relative.y(0)),
                             &relative,
+                            state,
                         )?,
                     ]
                     .concat();

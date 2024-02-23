@@ -5,7 +5,8 @@ pub struct State {
     components: Vec<usize>,
     ports: Vec<usize>,
     ports_highlighted: Vec<usize>,
-    filtered: Option<Vec<usize>>,
+    // (filtered ports, linked ports)
+    filtered: Option<(Vec<usize>, Vec<usize>)>,
     pub x: i32,
     pub y: i32,
     pub zoom: f64,
@@ -34,13 +35,29 @@ impl State {
         self.zoom = zoom;
     }
 
-    pub fn set_filtered(&mut self, filtered: Option<Vec<usize>>) {
+    pub fn set_filtered(&mut self, filtered: Option<(Vec<usize>, Vec<usize>)>) {
         self.filtered = filtered;
     }
 
     pub fn is_port_filtered(&self, port: &Port) -> bool {
-        if let Some(filtered) = self.filtered.as_ref() {
+        if let Some((filtered, _linked)) = self.filtered.as_ref() {
             filtered.contains(&port.sig.id)
+        } else {
+            false
+        }
+    }
+
+    pub fn is_port_linked(&self, port: &Port) -> bool {
+        if let Some((_filtered, linked)) = self.filtered.as_ref() {
+            linked.contains(&port.sig.id)
+        } else {
+            false
+        }
+    }
+
+    pub fn is_port_filtered_or_linked(&self, port: &Port) -> bool {
+        if let Some((filtered, linked)) = self.filtered.as_ref() {
+            filtered.contains(&port.sig.id) || linked.contains(&port.sig.id)
         } else {
             true
         }

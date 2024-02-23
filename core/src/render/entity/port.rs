@@ -178,18 +178,20 @@ impl Render<Ports> {
     ) -> Result<(), E> {
         let self_relative = self.relative(relative);
         let hide = self.origin().hide_invisible;
-        for port in self
-            .entity
-            .ports
-            .iter_mut()
-            .filter(|p| (p.origin().visibility || !hide) && state.is_port_filtered(p.origin()))
-        {
+        for port in self.entity.ports.iter_mut().filter(|p| {
+            (p.origin().visibility || !hide) && state.is_port_filtered_or_linked(p.origin())
+        }) {
             port.render_mut()?
                 .draw(context, &self_relative, options, state)?;
         }
         Ok(())
     }
-    pub fn find(&self, position: &(i32, i32), relative: &Relative) -> Result<Vec<ElementCoors>, E> {
+    pub fn find(
+        &self,
+        position: &(i32, i32),
+        relative: &Relative,
+        state: &State,
+    ) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(vec![]);
         }
@@ -203,7 +205,9 @@ impl Render<Ports> {
             let (x, y) = port.render()?.view.container.get_coors_with_zoom(relative);
             let (w, h) = port.render()?.view.container.get_box_size();
             let area = (x, y, x + w, y + h);
-            if elements::is_point_in(position, &area) {
+            if elements::is_point_in(position, &area)
+                && state.is_port_filtered_or_linked(port.origin())
+            {
                 found.push((
                     port.origin().sig.id.to_string(),
                     ElementType::Port,
@@ -313,6 +317,11 @@ impl Render<Port> {
             self.view.container.style = Style {
                 stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(200,250,200)"),
+            };
+        } else if state.is_port_linked(&self.entity) {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(150,150,150)"),
+                fill_style: String::from("rgb(250,250,250)"),
             };
         } else {
             self.view.container.style = Style {

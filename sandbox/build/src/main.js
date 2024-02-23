@@ -382,9 +382,6 @@ function real() {
                 !unique.includes(el.className) && unique.push(el.className);
             });
             load(rootElement, elements, root);
-            console.log(root);
-            // console.log(JSON.stringify(root));
-            // console.log(elements);
             const board = new board_1.Board(`div#container`, getLabeledPortsOptions());
             board.bind(root, []);
             board.render();

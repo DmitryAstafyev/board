@@ -181,6 +181,7 @@ impl Board {
         self.render()?;
         Ok(())
     }
+
     #[wasm_bindgen]
     pub fn who(&self, target_x: i32, target_y: i32, around: i32) -> Result<JsValue, String> {
         let relative = self.state.get_view_relative();
@@ -193,7 +194,7 @@ impl Board {
                 &relative,
             ),
             &(target_x, target_y),
-            self.state.zoom,
+            &self.state,
         )?;
         let elements = [ids, inner, ports].concat();
         serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())
