@@ -497,6 +497,10 @@ export class Board extends Subscriber {
         this.data.groupped = this.getGrouppedPorts();
     }
 
+    public refresh() {
+        this.board.recalc();
+    }
+
     public render() {
         this.board.set_view_state(
             this.position.x,

@@ -1,12 +1,18 @@
-use crate::{entity::Port, render::Relative};
+use crate::{
+    entity::{Port, Ports},
+    render::Relative,
+};
 
 #[derive(Debug)]
 pub struct State {
     components: Vec<usize>,
     ports: Vec<usize>,
     ports_highlighted: Vec<usize>,
-    // (filtered ports, linked ports)
-    filtered: Option<(Vec<usize>, Vec<usize>)>,
+    // (ports, linked, owners)
+    // ports - filtered ports
+    // linked - ports linked to filtered ports
+    // owners - components and compositions onwers of filtered and linked ports
+    filtered: Option<(Vec<usize>, Vec<usize>, Vec<usize>)>,
     pub x: i32,
     pub y: i32,
     pub zoom: f64,
@@ -35,12 +41,12 @@ impl State {
         self.zoom = zoom;
     }
 
-    pub fn set_filtered(&mut self, filtered: Option<(Vec<usize>, Vec<usize>)>) {
+    pub fn set_filtered(&mut self, filtered: Option<(Vec<usize>, Vec<usize>, Vec<usize>)>) {
         self.filtered = filtered;
     }
 
     pub fn is_port_filtered(&self, port: &Port) -> bool {
-        if let Some((filtered, _linked)) = self.filtered.as_ref() {
+        if let Some((filtered, _linked, _owners)) = self.filtered.as_ref() {
             filtered.contains(&port.sig.id)
         } else {
             false
@@ -48,15 +54,23 @@ impl State {
     }
 
     pub fn is_port_linked(&self, port: &Port) -> bool {
-        if let Some((_filtered, linked)) = self.filtered.as_ref() {
+        if let Some((_filtered, linked, _owners)) = self.filtered.as_ref() {
             linked.contains(&port.sig.id)
         } else {
             false
         }
     }
 
+    pub fn is_port_owner_filtered(&self, id: &usize) -> bool {
+        if let Some((_filtered, _linked, owners)) = self.filtered.as_ref() {
+            owners.contains(id)
+        } else {
+            true
+        }
+    }
+
     pub fn is_port_filtered_or_linked(&self, port: &Port) -> bool {
-        if let Some((filtered, linked)) = self.filtered.as_ref() {
+        if let Some((filtered, linked, _owners)) = self.filtered.as_ref() {
             filtered.contains(&port.sig.id) || linked.contains(&port.sig.id)
         } else {
             true

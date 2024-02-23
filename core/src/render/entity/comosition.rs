@@ -1,5 +1,3 @@
-use wasm_bindgen_test::console_log;
-
 use crate::{
     entity::{
         dummy::SignatureProducer, Component, Composition, Connection, Joint, Port, PortType, Ports,
@@ -15,6 +13,8 @@ use crate::{
     state::State,
 };
 use std::collections::HashMap;
+use wasm_bindgen::JsValue;
+use wasm_bindgen_test::console_log;
 
 enum Entry<'a> {
     Component(&'a Representation<Component>),
@@ -162,7 +162,10 @@ impl Render<Composition> {
         }
     }
 
-    pub fn get_filtered_ports(&self, filter: Option<String>) -> Option<(Vec<usize>, Vec<usize>)> {
+    pub fn get_filtered_ports(
+        &self,
+        filter: Option<String>,
+    ) -> Option<(Vec<usize>, Vec<usize>, Vec<usize>)> {
         filter.as_ref().map(|filter| {
             let filtered = [
                 self.entity
@@ -191,8 +194,43 @@ impl Render<Composition> {
                         None
                     }
                 })
-                .collect();
-            (filtered, linked)
+                .collect::<Vec<usize>>();
+            let owners = [
+                self.entity
+                    .compositions
+                    .iter()
+                    .filter_map(|c| {
+                        let ports = &c.origin().ports.origin().ports;
+                        if ports.is_empty() {
+                            None
+                        } else if ports.iter().any(|p| filtered.contains(&p.origin().sig.id))
+                            || ports.iter().any(|p| linked.contains(&p.origin().sig.id))
+                        {
+                            Some(c.origin().sig.id)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<usize>>(),
+                self.entity
+                    .components
+                    .iter()
+                    .filter_map(|c| {
+                        let ports = &c.origin().ports.origin().ports;
+                        if ports.is_empty() {
+                            None
+                        } else if ports.iter().any(|p| filtered.contains(&p.origin().sig.id))
+                            || ports.iter().any(|p| linked.contains(&p.origin().sig.id))
+                        {
+                            Some(c.origin().sig.id)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<usize>>(),
+            ]
+            .concat();
+            (filtered, linked, owners)
         })
     }
 
@@ -218,16 +256,21 @@ impl Render<Composition> {
         Ok(())
     }
 
-    pub fn setup_connections(&mut self, grid: &Grid, options: &Options) -> Result<(), E> {
+    pub fn setup_connections(
+        &mut self,
+        grid: &Grid,
+        options: &Options,
+        state: &State,
+    ) -> Result<(), E> {
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
         let mut failed: Vec<&Connection> = vec![];
-        for conn in self
-            .entity
-            .connections
-            .iter_mut()
-            .filter(|conn| conn.origin().visibility)
-        {
+        for conn in self.entity.connections.iter_mut().filter(|conn| {
+            let origin = conn.origin();
+            origin.visibility
+                && state.is_port_owner_filtered(&origin.joint_in.component)
+                && state.is_port_owner_filtered(&origin.joint_out.component)
+        }) {
             if let (Some(ins), Some(outs)) = (
                 find(components, compositions, &conn.origin().joint_in.component),
                 find(components, compositions, &conn.origin().joint_out.component),
@@ -324,20 +367,24 @@ impl Render<Composition> {
         context: &mut web_sys::CanvasRenderingContext2d,
         grid: &mut Grid,
         expanded: &[usize],
-        relative: &Relative,
+        state: &State,
         options: &Options,
     ) -> Result<(), E> {
+        let relative = &state.get_view_relative();
         // Create composition grid
         let mut composition_grid = Grid::new(&options.grid);
         // Order components by connections number
         self.entity.order();
         for composition in self.entity.compositions.iter_mut() {
+            if !state.is_port_owner_filtered(&composition.origin().sig.id) {
+                continue;
+            }
             if expanded.contains(&composition.origin().sig.id) {
                 composition.render_mut()?.calc(
                     context,
                     &mut composition_grid,
                     expanded,
-                    relative,
+                    state,
                     options,
                 )?;
                 composition.render_mut()?.show();
@@ -353,12 +400,17 @@ impl Render<Composition> {
             }
         }
         for component in self.entity.components.iter_mut() {
-            component.render_mut()?.calc(context, relative, options)?;
+            if !state.is_port_owner_filtered(&component.origin().sig.id) {
+                continue;
+            }
+            component
+                .render_mut()?
+                .calc(context, relative, options, state)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
         let mut dependencies: Vec<(usize, usize)> = vec![];
         let mut located: Vec<usize> = vec![];
-        let ordered_linked = Connection::get_ordered_linked(&self.entity.connections, &[]);
+        let ordered_linked = Connection::get_ordered_linked(&self.entity.connections, state);
         for (host_id, _, _) in ordered_linked.iter() {
             if located.contains(host_id) {
                 continue;
@@ -377,7 +429,12 @@ impl Render<Composition> {
             let component_grid = Grid::from(Layout::Pair(a, b), &options.grid)?;
             composition_grid.insert(&component_grid);
         }
-        for component in self.entity.components.iter() {
+        for component in self
+            .entity
+            .components
+            .iter()
+            .filter(|c| state.is_port_owner_filtered(&c.origin().sig.id))
+        {
             if !located.contains(&component.origin().sig.id) {
                 let component_grid = Grid::from(
                     Layout::Pair(
@@ -393,7 +450,7 @@ impl Render<Composition> {
         self.align_to_grid(&composition_grid)?;
         let grid_size = composition_grid.get_size_px();
         let grid_height_px =
-            composition_grid.set_min_height(self.entity.ports.render()?.height() as u32);
+            composition_grid.set_min_height(self.entity.ports.render()?.height(state) as u32);
         self.view
             .container
             .set_box_size(Some(grid_size.0 as i32), Some(grid_height_px as i32));
@@ -404,13 +461,14 @@ impl Render<Composition> {
             self.view.container.get_box_size().0,
             &self_relative,
             options,
+            state,
         )?;
         // Add composition as itself into grid
         composition_grid.insert_self(self.entity.sig.id, ElementType::Composition);
         if let Some(container) = self.view.elements.first_mut() {
             container.set_coors(Some(grid_size.0 as i32), None);
         }
-        self.setup_connections(&composition_grid, options)?;
+        self.setup_connections(&composition_grid, options, state)?;
         // Add into global
         grid.insert(&composition_grid);
         Ok(())
@@ -461,6 +519,7 @@ impl Render<Composition> {
             .ports
             .render_mut()?
             .draw(context, &self_relative, options, state)?;
+        context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
         context.set_text_baseline("bottom");
         context.set_font(&format!("{}px serif", relative.zoom(12)));
         let _ = context.stroke_text(

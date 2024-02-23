@@ -7,6 +7,7 @@ use crate::{
     },
     state::State,
 };
+use wasm_bindgen::JsValue;
 
 const MIN_HEIGHT: i32 = 64;
 const MIN_WIDTH: i32 = 64;
@@ -53,12 +54,13 @@ impl Render<Component> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
         options: &Options,
+        state: &State,
     ) -> Result<(), E> {
         // Set self size
         self.view.container.set_box_size(
             None,
             Some(elements::max(
-                &[MIN_HEIGHT, self.entity.ports.render()?.height()],
+                &[MIN_HEIGHT, self.entity.ports.render()?.height(state)],
                 MIN_HEIGHT,
             )),
         );
@@ -69,6 +71,7 @@ impl Render<Component> {
             self.view.container.get_box_size().0,
             &self_relative,
             options,
+            state,
         )?;
         Ok(())
     }
@@ -106,6 +109,7 @@ impl Render<Component> {
             .render_mut()?
             .draw(context, &self_relative, options, state)?;
         context.set_text_baseline("bottom");
+        context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
         context.set_font(&format!("{}px serif", relative.zoom(12)));
         let _ = context.stroke_text(
             &self.origin().get_label(options, 12),

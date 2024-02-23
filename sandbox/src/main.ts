@@ -483,10 +483,13 @@ function real() {
             const filter = document.querySelector(
                 'input[id="filter"]'
             ) as HTMLInputElement;
-            filter?.addEventListener("keyup", () => {
+            filter.addEventListener("keyup", () => {
                 board.setFilter(
                     filter.value.trim() === "" ? undefined : filter.value.trim()
                 );
+            });
+            filter.addEventListener("change", () => {
+                board.refresh();
             });
         });
     }, 200);

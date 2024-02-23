@@ -1,4 +1,4 @@
-use crate::{entity::Signature, render::Representation};
+use crate::{entity::Signature, render::Representation, state::State};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -71,13 +71,13 @@ impl Connection {
 
     pub fn get_ordered_linked(
         connections: &[Representation<Connection>],
-        ignore: &[usize],
+        state: &State,
         // id, IN, OUT
     ) -> Vec<(usize, usize, usize)> {
         let mut map: HashMap<usize, (usize, usize, usize)> = HashMap::new();
         connections.iter().for_each(|c| {
-            if !ignore.contains(&c.origin().joint_out.component)
-                && !ignore.contains(&c.origin().joint_in.component)
+            if state.is_port_owner_filtered(&c.origin().joint_out.component)
+                && state.is_port_owner_filtered(&c.origin().joint_in.component)
             {
                 map.entry(c.origin().joint_out.component)
                     .and_modify(|(_, _, outs)| {

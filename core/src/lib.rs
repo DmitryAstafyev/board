@@ -139,13 +139,29 @@ impl Board {
         let mut grid_options = self.options.grid.clone();
         grid_options.padding = 0;
         self.grid = Grid::new(&grid_options);
+        self.state.set_filtered(None);
         Ok(self.render.calc(
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
             &mut self.grid,
             &expanded,
-            &self.state.get_view_relative(),
+            &self.state,
             &self.options,
         )?)
+    }
+
+    #[wasm_bindgen]
+    pub fn recalc(&mut self) -> Result<(), String> {
+        let mut grid_options = self.options.grid.clone();
+        grid_options.padding = 0;
+        self.grid = Grid::new(&grid_options);
+        self.render.calc(
+            self.context.as_mut().ok_or(E::NoCanvasContext)?,
+            &mut self.grid,
+            &[],
+            &self.state,
+            &self.options,
+        )?;
+        self.render()
     }
 
     #[wasm_bindgen]
