@@ -390,9 +390,10 @@ function real() {
             const filter = document.querySelector('input[id="filter"]');
             filter.addEventListener("keyup", () => {
                 board.setFilter(filter.value.trim() === "" ? undefined : filter.value.trim());
+                board.refresh();
             });
             filter.addEventListener("change", () => {
-                board.refresh();
+                // board.refresh();
             });
         });
     }, 200);

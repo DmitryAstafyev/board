@@ -12,7 +12,7 @@ pub struct State {
     // ports - filtered ports
     // linked - ports linked to filtered ports
     // owners - components and compositions onwers of filtered and linked ports
-    filtered: Option<(Vec<usize>, Vec<usize>, Vec<usize>)>,
+    pub filtered: Option<(Vec<usize>, Vec<usize>, Vec<usize>)>,
     pub x: i32,
     pub y: i32,
     pub zoom: f64,
@@ -144,7 +144,12 @@ impl State {
     }
 
     pub fn is_port_selected(&self, id: &usize) -> bool {
-        self.ports.contains(id)
+        let visible = if let Some((filtered, linked, _owners)) = self.filtered.as_ref() {
+            filtered.contains(id) || linked.contains(id)
+        } else {
+            true
+        };
+        self.ports.contains(id) && visible
     }
 
     pub fn is_port_highlighted(&self, id: &usize) -> bool {

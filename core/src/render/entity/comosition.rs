@@ -388,7 +388,12 @@ impl Render<Composition> {
                     options,
                 )?;
                 composition.render_mut()?.show();
-            } else {
+            } else if !self
+                .entity
+                .components
+                .iter()
+                .any(|comp| comp.origin().sig.id == composition.origin().sig.id)
+            {
                 self.entity
                     .components
                     .push(Representation::Render(Render::<Component>::new(
@@ -510,8 +515,7 @@ impl Render<Composition> {
         for connection in self.entity.connections.iter_mut().filter(|conn| {
             conn.origin().visibility
                 && (state.is_port_selected(&conn.origin().joint_in.port)
-                    || state.is_port_selected(&conn.origin().joint_out.port)
-                    || state.is_port_highlighted(&conn.origin().joint_out.port))
+                    && state.is_port_selected(&conn.origin().joint_out.port))
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }

@@ -487,9 +487,10 @@ function real() {
                 board.setFilter(
                     filter.value.trim() === "" ? undefined : filter.value.trim()
                 );
+                board.refresh();
             });
             filter.addEventListener("change", () => {
-                board.refresh();
+                // board.refresh();
             });
         });
     }, 200);

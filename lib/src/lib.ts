@@ -499,6 +499,7 @@ export class Board extends Subscriber {
 
     public refresh() {
         this.board.recalc();
+        this.updateSize();
     }
 
     public render() {
