@@ -160,15 +160,9 @@ impl Ports {
         fn is_filtered(filter: &str, origin: &Port) -> bool {
             origin
                 .sig
-                .class_name
+                .short_name
                 .to_lowercase()
                 .contains(&filter.to_lowercase())
-                || origin
-                    .sig
-                    .short_name
-                    .to_lowercase()
-                    .contains(&filter.to_lowercase())
-                || origin.sig.id.to_string().contains(filter)
         }
         let ports = &self.ports;
         ports
