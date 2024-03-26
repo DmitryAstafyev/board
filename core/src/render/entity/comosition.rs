@@ -7,7 +7,7 @@ use crate::{
     render::{
         elements,
         form::{button, Button, Path, Point, Rectangle},
-        grid::{ElementCoors, ElementType, Layout},
+        grid::{ElementCoors, ElementType},
         options::Options,
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
@@ -400,7 +400,7 @@ impl Render<Composition> {
         for (a_id, b_id) in dependencies {
             let a = get_forms_by_ids(&self.entity.components, &[a_id])?;
             let b = get_forms_by_ids(&self.entity.components, &[b_id])?;
-            let component_grid = Grid::from(Layout::Pair(a, b), &options.grid)?;
+            let component_grid = Grid::forms_as_pair(a, b, &options.grid)?;
             composition_grid.insert(&component_grid);
         }
         for component in self
@@ -410,11 +410,9 @@ impl Render<Composition> {
             .filter(|c| state.is_port_owner_filtered(&c.sig().id))
         {
             if !located.contains(&component.sig().id) {
-                let component_grid = Grid::from(
-                    Layout::Pair(
-                        get_forms_by_ids(&self.entity.components, &[component.sig().id])?,
-                        [].to_vec(),
-                    ),
+                let component_grid = Grid::forms_as_pair(
+                    get_forms_by_ids(&self.entity.components, &[component.sig().id])?,
+                    [].to_vec(),
                     &options.grid,
                 )?;
                 composition_grid.insert(&component_grid);

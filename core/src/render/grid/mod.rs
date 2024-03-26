@@ -20,12 +20,6 @@ pub enum ElementType {
 }
 pub type ElementCoors = (String, ElementType, (i32, i32, i32, i32));
 
-#[derive(Debug)]
-pub enum Layout<'a> {
-    // Put form near
-    Pair(Vec<&'a Form>, Vec<&'a Form>),
-}
-
 pub fn as_u32(n: i32) -> u32 {
     (if n < 0 { 0 } else { n }) as u32
 }
@@ -54,9 +48,61 @@ impl Grid {
         }
     }
 
-    pub fn from(layout: Layout<'_>, options: &GridOptions) -> Result<Self, E> {
-        Ok(match layout {
-            Layout::Pair(a, b) => forms_as_pair(a, b, options)?,
+    pub fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<Self, E> {
+        let on_left = get_sizes(a)?;
+        let on_right = get_sizes(b)?;
+        let mut map: HashMap<String, ElementCoor> = HashMap::new();
+        let mut cursor_by_y: u32 = 0;
+        let mut size: (u32, u32) = (0, 0);
+        if !on_left.is_empty() {
+            on_left.iter().for_each(|(id, ty, (w, h))| {
+                map.insert(
+                    id.to_string(),
+                    (ty.clone(), (0, cursor_by_y, w - 1, cursor_by_y + (h - 1))),
+                );
+                cursor_by_y += h + options.cells_space_vertical;
+                if size.0 < *w {
+                    size.0 = *w;
+                    if *w > 3 {
+                        console_log!("OOPPS: {w}");
+                    }
+                }
+            });
+            size.1 = cursor_by_y - options.cells_space_vertical;
+            if !on_right.is_empty() {
+                size.0 += options.cells_space_horizontal;
+            }
+        };
+        if !on_right.is_empty() {
+            cursor_by_y = 0;
+            let mut max_w = 0;
+            on_right.iter().for_each(|(id, ty, (w, h))| {
+                map.insert(
+                    id.to_string(),
+                    (
+                        ty.clone(),
+                        (size.0, cursor_by_y, size.0 + (w - 1), cursor_by_y + (h - 1)),
+                    ),
+                );
+                cursor_by_y += h + options.cells_space_vertical;
+                if max_w < *w {
+                    max_w = *w;
+                }
+            });
+            size.1 = if cursor_by_y - options.cells_space_vertical > size.1 {
+                cursor_by_y - options.cells_space_vertical
+            } else {
+                size.1
+            };
+            size.0 += max_w;
+        }
+        let mut options = options.clone();
+        options.padding = 0;
+        Ok(Grid {
+            options,
+            size,
+            map,
+            id: None,
         })
     }
 
@@ -353,62 +399,4 @@ fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
         data.push((form.id(), form.get_el_ty().clone(), form.cells()?));
     }
     Ok(data)
-}
-
-fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<Grid, E> {
-    let on_left = get_sizes(a)?;
-    let on_right = get_sizes(b)?;
-    let mut map: HashMap<String, ElementCoor> = HashMap::new();
-    let mut cursor_by_y: u32 = 0;
-    let mut size: (u32, u32) = (0, 0);
-    if !on_left.is_empty() {
-        on_left.iter().for_each(|(id, ty, (w, h))| {
-            map.insert(
-                id.to_string(),
-                (ty.clone(), (0, cursor_by_y, w - 1, cursor_by_y + (h - 1))),
-            );
-            cursor_by_y += h + options.cells_space_vertical;
-            if size.0 < *w {
-                size.0 = *w;
-                if *w > 3 {
-                    console_log!("OOPPS: {w}");
-                }
-            }
-        });
-        size.1 = cursor_by_y - options.cells_space_vertical;
-        if !on_right.is_empty() {
-            size.0 += options.cells_space_horizontal;
-        }
-    };
-    if !on_right.is_empty() {
-        cursor_by_y = 0;
-        let mut max_w = 0;
-        on_right.iter().for_each(|(id, ty, (w, h))| {
-            map.insert(
-                id.to_string(),
-                (
-                    ty.clone(),
-                    (size.0, cursor_by_y, size.0 + (w - 1), cursor_by_y + (h - 1)),
-                ),
-            );
-            cursor_by_y += h + options.cells_space_vertical;
-            if max_w < *w {
-                max_w = *w;
-            }
-        });
-        size.1 = if cursor_by_y - options.cells_space_vertical > size.1 {
-            cursor_by_y - options.cells_space_vertical
-        } else {
-            size.1
-        };
-        size.0 += max_w;
-    }
-    let mut options = options.clone();
-    options.padding = 0;
-    Ok(Grid {
-        options,
-        size,
-        map,
-        id: None,
-    })
 }
