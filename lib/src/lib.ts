@@ -146,7 +146,9 @@ export class Board extends Subscriber {
         this.id = getId();
         this.canvas = document.createElement("canvas");
         this.canvas.setAttribute("id", this.id);
-        this.canvas.style.position = "absolute";
+        this.canvas.style.position = "sticky";
+        this.canvas.style.top = "0px";
+        this.canvas.style.left = "0px";
         this.parent.appendChild(this.canvas);
         this.setSize();
         this.board = new wasm.core.Board(options);
@@ -205,8 +207,6 @@ export class Board extends Subscriber {
             this.size
         );
         this.scroll.moveTo(0, 0);
-        this.canvas.style.left = `0px`;
-        this.canvas.style.top = `0px`;
         this.position.x = 0;
         this.position.y = 0;
         this.render();
@@ -268,8 +268,6 @@ export class Board extends Subscriber {
             -this.position.x * this.position.zoom,
             -this.position.y * this.position.zoom
         );
-        this.canvas.style.left = `${-this.position.x * this.position.zoom}px`;
-        this.canvas.style.top = `${-this.position.y * this.position.zoom}px`;
         this.render();
     }
 
@@ -303,8 +301,6 @@ export class Board extends Subscriber {
     protected onScroll(event: ScrollEvent) {
         this.position.x = -event.x / this.position.zoom;
         this.position.y = -event.y / this.position.zoom;
-        this.canvas.style.left = `${event.x}px`;
-        this.canvas.style.top = `${event.y}px`;
         this.render();
     }
 
@@ -434,8 +430,6 @@ export class Board extends Subscriber {
             -this.position.x * this.position.zoom,
             -this.position.y * this.position.zoom
         );
-        this.canvas.style.left = `${-this.position.x * this.position.zoom}px`;
-        this.canvas.style.top = `${-this.position.y * this.position.zoom}px`;
         this.hover.component.hide();
         this.hover.port.hide();
         this.render();
