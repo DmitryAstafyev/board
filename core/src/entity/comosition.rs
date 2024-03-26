@@ -1,5 +1,8 @@
 use crate::{
-    entity::{Component, Connection, Ports, Signature},
+    entity::{
+        Component, Connection, GetIncludedComponent, IsComponentIncluded, IsPortIncluded, Ports,
+        Signature, SignatureEqual, SignatureGetter,
+    },
     render::{options::Options, Render, Representation},
 };
 use serde::{Deserialize, Serialize};
@@ -12,6 +15,12 @@ pub struct Composition {
     pub compositions: Vec<Representation<Composition>>,
     pub ports: Representation<Ports>,
     pub parent: Option<usize>,
+}
+
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Composition {
+    fn sig(&'b self) -> &'a Signature {
+        &self.sig
+    }
 }
 
 impl Composition {
@@ -37,8 +46,8 @@ impl Composition {
     pub fn order(&mut self) {
         let connections = &self.connections;
         self.components.sort_by(|a, b| {
-            Connection::count(connections, a.origin().sig.id)
-                .cmp(&Connection::count(connections, b.origin().sig.id))
+            Connection::count(connections, &a.sig().id)
+                .cmp(&Connection::count(connections, &b.sig().id))
         });
     }
 
@@ -53,87 +62,41 @@ impl Composition {
         }
     }
 
-    pub fn find_connections_by_port(&self, port_id: usize) -> Vec<&Connection> {
+    pub fn find_connections_by_port(&self, id: &usize) -> Vec<&Connection> {
         self.connections
             .iter()
-            .filter(|conn| {
-                conn.origin().joint_in.port == port_id || conn.origin().joint_out.port == port_id
-            })
+            .filter(|c| id.included_as_port(*c).is_some())
             .map(|rep| rep.origin())
             .collect::<Vec<&Connection>>()
     }
 
-    pub fn find_connected_port(&self, port_id: usize) -> Option<usize> {
-        self.connections
-            .iter()
-            .find(|conn| {
-                conn.origin().joint_in.port == port_id || conn.origin().joint_out.port == port_id
-            })
-            .map(|conn| {
-                if conn.origin().joint_in.port == port_id {
-                    conn.origin().joint_out.port
-                } else {
-                    conn.origin().joint_in.port
-                }
-            })
+    pub fn find_connected_port(&self, id: &usize) -> Option<usize> {
+        self.connections.iter().find_map(|c| id.included_as_port(c))
     }
 
-    pub fn find_ports_by_component(&self, component_id: usize) -> Vec<&usize> {
+    pub fn find_ports_by_component(&self, id: &usize) -> Vec<&usize> {
         self.connections
             .iter()
-            .filter(|conn| {
-                conn.origin().joint_in.component == component_id
-                    || conn.origin().joint_out.component == component_id
-            })
-            .flat_map(|conn| [&conn.origin().joint_in.port, &conn.origin().joint_out.port])
+            .filter(|c| id.included_as_component(*c))
+            .flat_map(|conn| conn.origin().get_ports())
             .collect::<Vec<&usize>>()
     }
 
-    pub fn find_connections_by_component(&self, component_id: usize) -> Vec<&Connection> {
+    pub fn find_connections_by_component(&self, id: &usize) -> Vec<&Connection> {
         self.connections
             .iter()
-            .filter(|conn| {
-                conn.origin().joint_in.component == component_id
-                    || conn.origin().joint_out.component == component_id
-            })
-            .map(|rep| rep.origin())
+            .filter_map(|c| id.get_included_component(c))
             .collect()
     }
 
-    pub fn get_component(&self, id: usize) -> Option<&Component> {
+    pub fn get_component(&self, id: &usize) -> Option<&Component> {
         self.components
             .iter()
-            .find(|comp| comp.origin().sig.id == id)
-            .map(|comp| comp.origin())
+            .find_map(|c| id.get_if_equal(c.origin()))
     }
 
     pub fn get_label(&self, options: &Options, len: usize) -> String {
-        if options.labels.composition_short_name {
-            if self.sig.class_name == "unknown" && self.sig.short_name == "unknown" {
-                self.sig.id.to_string()
-            } else if self.sig.short_name != "unknown" {
-                format!(
-                    "{:.len$}{}",
-                    self.sig.short_name,
-                    if self.sig.short_name.len() > len {
-                        "..."
-                    } else {
-                        ""
-                    }
-                )
-            } else {
-                format!(
-                    "{:.len$}{}",
-                    self.sig.class_name,
-                    if self.sig.class_name.len() > len {
-                        "..."
-                    } else {
-                        ""
-                    }
-                )
-            }
-        } else {
-            self.sig.id.to_string()
-        }
+        self.sig
+            .as_label(options.labels.composition_short_name, len)
     }
 }

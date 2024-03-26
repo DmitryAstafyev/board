@@ -1,4 +1,8 @@
-use crate::{error::E, render::Render};
+use crate::{
+    entity::{Signature, SignatureGetter},
+    error::E,
+    render::Render,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -8,7 +12,13 @@ pub enum Representation<T> {
     Render(Render<T>),
 }
 
-impl<T> Representation<T> {
+impl<'a, 'b: 'a, T: SignatureGetter<'a, 'b>> Representation<T> {
+    pub fn sig(&'b self) -> &'a Signature {
+        match self {
+            Self::Origin(t) => t.sig(),
+            Self::Render(r) => r.origin().sig(),
+        }
+    }
     pub fn origin(&self) -> &T {
         match self {
             Self::Origin(t) => t,

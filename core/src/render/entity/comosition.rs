@@ -1,6 +1,7 @@
 use crate::{
     entity::{
         dummy::SignatureProducer, Component, Composition, Connection, Joint, Port, PortType, Ports,
+        Signature, SignatureGetter,
     },
     error::E,
     render::{
@@ -36,8 +37,8 @@ impl<'a> Entry<'a> {
     }
     pub fn _id(&self) -> usize {
         match self {
-            Entry::Component(c) => c.origin().sig.id,
-            Entry::Composition(c) => c.origin().sig.id,
+            Entry::Component(c) => c.sig().id,
+            Entry::Composition(c) => c.sig().id,
         }
     }
 }
@@ -49,14 +50,20 @@ fn find<'a>(
 ) -> Option<Entry<'a>> {
     components
         .iter()
-        .find(|c| c.origin().sig.id == *id)
+        .find(|c| c.sig().id == *id)
         .map(Entry::Component)
         .or_else(|| {
             compositions
                 .iter()
-                .find(|c| c.origin().sig.id == *id)
+                .find(|c| c.sig().id == *id)
                 .map(Entry::Composition)
         })
+}
+
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Composition> {
+    fn sig(&'b self) -> &'a Signature {
+        &self.origin().sig
+    }
 }
 
 impl Render<Composition> {
@@ -203,10 +210,10 @@ impl Render<Composition> {
                         let ports = &c.origin().ports.origin().ports;
                         if ports.is_empty() {
                             None
-                        } else if ports.iter().any(|p| filtered.contains(&p.origin().sig.id))
-                            || ports.iter().any(|p| linked.contains(&p.origin().sig.id))
+                        } else if ports.iter().any(|p| filtered.contains(&p.sig().id))
+                            || ports.iter().any(|p| linked.contains(&p.sig().id))
                         {
-                            Some(c.origin().sig.id)
+                            Some(c.sig().id)
                         } else {
                             None
                         }
@@ -219,10 +226,10 @@ impl Render<Composition> {
                         let ports = &c.origin().ports.origin().ports;
                         if ports.is_empty() {
                             None
-                        } else if ports.iter().any(|p| filtered.contains(&p.origin().sig.id))
-                            || ports.iter().any(|p| linked.contains(&p.origin().sig.id))
+                        } else if ports.iter().any(|p| filtered.contains(&p.sig().id))
+                            || ports.iter().any(|p| linked.contains(&p.sig().id))
                         {
-                            Some(c.origin().sig.id)
+                            Some(c.sig().id)
                         } else {
                             None
                         }
@@ -236,7 +243,7 @@ impl Render<Composition> {
 
     pub fn align_to_grid(&mut self, grid: &Grid) -> Result<(), E> {
         for comp in self.entity.components.iter_mut() {
-            let relative = grid.relative(comp.origin().sig.id);
+            let relative = grid.relative(comp.sig().id);
             comp.render_mut()?
                 .view
                 .container
@@ -346,7 +353,7 @@ impl Render<Composition> {
                                 .collect::<Vec<Point>>()
                         }
                     };
-                    let path = Path::new(conn.origin().sig.id.to_string(), points);
+                    let path = Path::new(conn.sig().id.to_string(), points);
                     conn.render_mut()?
                         .view
                         .container
@@ -376,10 +383,10 @@ impl Render<Composition> {
         // Order components by connections number
         self.entity.order();
         for composition in self.entity.compositions.iter_mut() {
-            if !state.is_port_owner_filtered(&composition.origin().sig.id) {
+            if !state.is_port_owner_filtered(&composition.sig().id) {
                 continue;
             }
-            if expanded.contains(&composition.origin().sig.id) {
+            if expanded.contains(&composition.sig().id) {
                 composition.render_mut()?.calc(
                     context,
                     &mut composition_grid,
@@ -392,7 +399,7 @@ impl Render<Composition> {
                 .entity
                 .components
                 .iter()
-                .any(|comp| comp.origin().sig.id == composition.origin().sig.id)
+                .any(|comp| comp.sig().id == composition.sig().id)
             {
                 self.entity
                     .components
@@ -405,7 +412,7 @@ impl Render<Composition> {
             }
         }
         for component in self.entity.components.iter_mut() {
-            if !state.is_port_owner_filtered(&component.origin().sig.id) {
+            if !state.is_port_owner_filtered(&component.sig().id) {
                 continue;
             }
             component
@@ -438,12 +445,12 @@ impl Render<Composition> {
             .entity
             .components
             .iter()
-            .filter(|c| state.is_port_owner_filtered(&c.origin().sig.id))
+            .filter(|c| state.is_port_owner_filtered(&c.sig().id))
         {
-            if !located.contains(&component.origin().sig.id) {
+            if !located.contains(&component.sig().id) {
                 let component_grid = Grid::from(
                     Layout::Pair(
-                        get_forms_by_ids(&self.entity.components, &[component.origin().sig.id])?,
+                        get_forms_by_ids(&self.entity.components, &[component.sig().id])?,
                         [].to_vec(),
                     ),
                     &options.grid,
@@ -496,7 +503,7 @@ impl Render<Composition> {
             .entity
             .components
             .iter_mut()
-            .filter(|comp| targets.contains(&comp.origin().sig.id))
+            .filter(|comp| targets.contains(&comp.sig().id))
         {
             component
                 .render_mut()?
@@ -506,7 +513,7 @@ impl Render<Composition> {
             .entity
             .compositions
             .iter_mut()
-            .filter(|comp| targets.contains(&comp.origin().sig.id))
+            .filter(|comp| targets.contains(&comp.sig().id))
         {
             composition
                 .render_mut()?
@@ -549,7 +556,7 @@ impl Render<Composition> {
             .entity
             .components
             .iter_mut()
-            .find(|comp| comp.origin().sig.id == id)
+            .find(|comp| comp.sig().id == id)
         {
             component.render_mut()?.set_over_style(style);
             component
@@ -630,14 +637,14 @@ impl Render<Composition> {
                 .entity
                 .ports
                 .iter()
-                .filter(|p| ids.contains(&p.origin().sig.id))
+                .filter(|p| ids.contains(&p.sig().id))
                 .for_each(|p| {
                     if let Ok(render) = p.render() {
                         let view = &render.view.container;
                         let (x, y) = view.get_coors_with_zoom(relative);
                         let (w, h) = view.get_box_size();
                         found.push((
-                            p.origin().sig.id.to_string(),
+                            p.sig().id.to_string(),
                             ElementType::Port,
                             (
                                 relative.x(own_relative.x(0)) + x,
@@ -806,13 +813,13 @@ impl Render<Composition> {
         self.entity
             .components
             .iter()
-            .find(|c| c.origin().sig.id == *id)
+            .find(|c| c.sig().id == *id)
             .map(Entry::Component)
             .or_else(|| {
                 self.entity
                     .compositions
                     .iter()
-                    .find(|c| c.origin().sig.id == *id)
+                    .find(|c| c.sig().id == *id)
                     .map(Entry::Composition)
             })
     }
@@ -829,7 +836,7 @@ fn get_forms_by_ids<'a>(
 ) -> Result<Vec<&'a Form>, E> {
     let mut found: Vec<&Form> = vec![];
     for comp in components.iter() {
-        if ids.contains(&comp.origin().sig.id) {
+        if ids.contains(&comp.sig().id) {
             found.push(&comp.render()?.view.container.form);
         }
     }
@@ -926,9 +933,9 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
             .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_out.port))
             .map(|(_, p)| p);
         if let (Some(port_in), true) = (port_in, port_out.is_none()) {
-            conn.origin_mut().joint_in.grouped = Some(port_in.origin().sig.id);
+            conn.origin_mut().joint_in.grouped = Some(port_in.sig().id);
         } else if let (Some(port_out), true) = (port_out, port_in.is_none()) {
-            conn.origin_mut().joint_out.grouped = Some(port_out.origin().sig.id);
+            conn.origin_mut().joint_out.grouped = Some(port_out.sig().id);
         } else if port_in.is_some() && port_out.is_some() {
             conn.origin_mut().hide();
         }
@@ -938,7 +945,7 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
         if let Some(component) = entity
             .components
             .iter_mut()
-            .find(|c| c.origin().sig.id == component_id)
+            .find(|c| c.sig().id == component_id)
         {
             component
                 .origin_mut()
@@ -953,7 +960,7 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
         } else if let Some(composition) = entity
             .compositions
             .iter_mut()
-            .find(|c| c.origin().sig.id == component_id)
+            .find(|c| c.sig().id == component_id)
         {
             composition
                 .origin_mut()
@@ -981,7 +988,7 @@ pub fn group_unbound_ports(
             .origin()
             .filter(&[PortType::Unbound])
             .iter()
-            .map(|p| p.origin().sig.id)
+            .map(|p| p.sig().id)
             .collect::<Vec<usize>>();
         if unbound_ports.is_empty() {
             continue;
@@ -1008,7 +1015,7 @@ pub fn group_unbound_ports(
             .origin()
             .filter(&[PortType::Unbound])
             .iter()
-            .map(|p| p.origin().sig.id)
+            .map(|p| p.sig().id)
             .collect::<Vec<usize>>();
         if unbound_ports.is_empty() {
             continue;

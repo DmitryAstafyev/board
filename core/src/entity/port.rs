@@ -1,7 +1,7 @@
 use std::usize;
 
 use crate::{
-    entity::Signature,
+    entity::{Signature, SignatureGetter},
     render::{options::Options, Representation},
 };
 use serde::{Deserialize, Serialize};
@@ -21,38 +21,18 @@ pub struct Port {
     pub visibility: bool,
 }
 
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Port {
+    fn sig(&'b self) -> &'a Signature {
+        &self.sig
+    }
+}
+
 impl Port {
     pub fn set_type(&mut self, port_type: PortType) {
         self.port_type = port_type;
     }
     pub fn get_label(&self, options: &Options, len: usize) -> String {
-        if options.labels.ports_short_name {
-            if self.sig.class_name == "unknown" && self.sig.short_name == "unknown" {
-                self.sig.id.to_string()
-            } else if self.sig.short_name != "unknown" {
-                format!(
-                    "{:.len$}{}",
-                    self.sig.short_name,
-                    if self.sig.short_name.len() > len {
-                        "..."
-                    } else {
-                        ""
-                    }
-                )
-            } else {
-                format!(
-                    "{:.len$}{}",
-                    self.sig.class_name,
-                    if self.sig.class_name.len() > len {
-                        "..."
-                    } else {
-                        ""
-                    }
-                )
-            }
-        } else {
-            self.sig.id.to_string()
-        }
+        self.sig.as_label(options.labels.ports_short_name, len)
     }
 }
 
@@ -61,13 +41,22 @@ pub struct Ports {
     pub ports: Vec<Representation<Port>>,
     // #[serde(skip_serializing, skip_deserializing)]
     pub hide_invisible: bool,
+    pub sig: Signature,
 }
+
 impl Default for Ports {
     fn default() -> Self {
         Self {
             ports: vec![],
             hide_invisible: true,
+            sig: Signature::default(),
         }
+    }
+}
+
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Ports {
+    fn sig(&'b self) -> &'a Signature {
+        &self.sig
     }
 }
 
@@ -76,6 +65,7 @@ impl Ports {
         Self {
             ports: vec![],
             hide_invisible: true,
+            sig: Signature::default(),
         }
     }
 
@@ -112,7 +102,7 @@ impl Ports {
     }
 
     pub fn find(&self, port_id: &usize) -> Option<&Representation<Port>> {
-        self.ports.iter().find(|p| &p.origin().sig.id == port_id)
+        self.ports.iter().find(|p| &p.sig().id == port_id)
     }
 
     pub fn cloned_ports(&self) -> Vec<Representation<Port>> {
@@ -126,12 +116,13 @@ impl Ports {
         Ports {
             ports: self.cloned_ports(),
             hide_invisible: self.hide_invisible,
+            sig: Signature::default(),
         }
     }
 
     pub fn hide(&mut self, ids: &[usize]) {
         self.ports.iter_mut().for_each(|port| {
-            if ids.contains(&port.origin().sig.id) {
+            if ids.contains(&port.sig().id) {
                 port.origin_mut().visibility = false;
             }
         });
@@ -151,7 +142,7 @@ impl Ports {
             if p.origin().contains.is_empty() {
                 return;
             }
-            ports.push((p.origin().sig.id, p.origin().contains.clone()));
+            ports.push((p.sig().id, p.origin().contains.clone()));
         });
         ports
     }
@@ -174,7 +165,7 @@ impl Ports {
                 } else {
                     let mut found = false;
                     for port_id in origin.contains.iter() {
-                        if let Some(port) = ports.iter().find(|p| &p.origin().sig.id == port_id) {
+                        if let Some(port) = ports.iter().find(|p| &p.sig().id == port_id) {
                             if is_filtered(filter, port.origin()) {
                                 found = true;
                                 break;
@@ -184,7 +175,7 @@ impl Ports {
                     found
                 }
             })
-            .map(|p| p.origin().sig.id)
+            .map(|p| p.sig().id)
             .collect()
     }
 }

@@ -33,7 +33,6 @@ impl Dummy<Composition, (RangeInclusive<usize>, RangeInclusive<usize>)> for Comp
             .cloned()
             .min()
             .unwrap_or(0);
-            // let count = rand::thread_rng().gen_range(0..min);
             for _ in 0..min {
                 let selected: usize = rand::thread_rng().gen_range(0..min);
                 comp[0]
@@ -54,11 +53,11 @@ impl Dummy<Composition, (RangeInclusive<usize>, RangeInclusive<usize>)> for Comp
                     producer.next(),
                     Joint::new(
                         left.origin().ports.origin().get(selected).sig.id,
-                        left.origin().sig.id,
+                        left.sig().id,
                     ),
                     Joint::new(
                         right.origin().ports.origin().get(selected).sig.id,
-                        right.origin().sig.id,
+                        right.sig().id,
                     ),
                 ))
             }

@@ -27,6 +27,7 @@ export interface Representation<T> {
 export interface Ports {
     ports: Representation<Port>[];
     hide_invisible: boolean;
+    sig: Signature;
 }
 
 export interface Joint {

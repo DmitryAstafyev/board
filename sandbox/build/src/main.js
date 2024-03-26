@@ -106,6 +106,7 @@ function load(parent, elements, holder) {
                             };
                         }),
                         hide_invisible: true,
+                        sig: getSignature(),
                     },
                 },
                 parent: holder.sig.id,
@@ -145,6 +146,7 @@ function load(parent, elements, holder) {
                                 };
                             }),
                             hide_invisible: true,
+                            sig: getSignature(),
                         },
                     },
                     composition: false,
@@ -265,6 +267,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
                         };
                     }),
                     hide_invisible: true,
+                    sig: getSignature(),
                 },
             },
             composition: false,
@@ -328,7 +331,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
         compositions: compositions.map((c) => {
             return { Origin: c };
         }),
-        ports: { Origin: { ports, hide_invisible: true } },
+        ports: { Origin: { ports, hide_invisible: true, sig: getSignature() } },
         parent,
     };
 }
@@ -374,7 +377,13 @@ function real() {
                 components: [],
                 connections: [],
                 compositions: [],
-                ports: { Origin: { ports: [], hide_invisible: true } },
+                ports: {
+                    Origin: {
+                        ports: [],
+                        hide_invisible: true,
+                        sig: getSignature(),
+                    },
+                },
                 parent: undefined,
             };
             const unique = [];

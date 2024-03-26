@@ -68,7 +68,7 @@ impl Board {
                 Options::default()
             }
         };
-        let render = Render::<Composition>::new(Composition::new(Signature::fake()), &options);
+        let render = Render::<Composition>::new(Composition::new(Signature::default()), &options);
         let mut grid_options = options.grid.clone();
         grid_options.padding = 0;
         let grid = Grid::new(&grid_options);
@@ -296,8 +296,8 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn toggle_component(&mut self, id: usize) -> Result<(), String> {
-        if let Some(comp) = self.render.origin().get_component(id) {
-            let rel_connections = self.render.origin().find_connections_by_component(id);
+        if let Some(comp) = self.render.origin().get_component(&id) {
+            let rel_connections = self.render.origin().find_connections_by_component(&id);
             let rel_ports = [
                 rel_connections
                     .iter()
@@ -307,7 +307,7 @@ impl Board {
                     .origin()
                     .ports
                     .iter()
-                    .map(|port| &port.origin().sig.id)
+                    .map(|port| &port.sig().id)
                     .collect::<Vec<&usize>>(),
             ]
             .concat();
@@ -339,7 +339,7 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn toggle_port(&mut self, id: usize) -> Result<(), String> {
-        let connections = self.render.origin().find_connections_by_port(id);
+        let connections = self.render.origin().find_connections_by_port(&id);
         let inserted = self.state.toggle_port(&id);
         for connection in connections.iter() {
             let rel_port = if connection.joint_in.port == id {
@@ -358,14 +358,14 @@ impl Board {
                 if !self.state.is_any_port_selected(
                     self.render
                         .origin()
-                        .find_ports_by_component(connection.joint_in.component),
+                        .find_ports_by_component(&connection.joint_in.component),
                 ) {
                     self.state.remove_component(&connection.joint_in.component);
                 }
                 if !self.state.is_any_port_selected(
                     self.render
                         .origin()
-                        .find_ports_by_component(connection.joint_out.component),
+                        .find_ports_by_component(&connection.joint_out.component),
                 ) {
                     self.state.remove_component(&connection.joint_out.component);
                 }
@@ -413,7 +413,7 @@ impl Board {
     #[wasm_bindgen]
     pub fn highlight_connection_by_port(&mut self, id: usize) -> Result<(), String> {
         let has_to_be_rendered =
-            if let Some(rel_port) = self.render.origin().find_connected_port(id) {
+            if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
                 self.state.highlight_port(&rel_port)
             } else {
                 false
@@ -428,7 +428,7 @@ impl Board {
     #[wasm_bindgen]
     pub fn unhighlight_connection_by_port(&mut self, id: usize) -> Result<(), String> {
         let has_to_be_rendered =
-            if let Some(rel_port) = self.render.origin().find_connected_port(id) {
+            if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
                 self.state.unhighlight_port(&rel_port)
             } else {
                 false

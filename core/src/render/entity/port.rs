@@ -1,5 +1,5 @@
 use crate::{
-    entity::{Port, PortType, Ports},
+    entity::{Port, PortType, Ports, Signature, SignatureGetter},
     error::E,
     render::{
         elements,
@@ -13,6 +13,12 @@ use crate::{
 
 pub const PORT_SIDE: i32 = 8;
 const PORTS_VERTICAL_OFFSET: i32 = CELL as i32;
+
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Ports> {
+    fn sig(&'b self) -> &'a Signature {
+        &self.origin().sig
+    }
+}
 
 impl Render<Ports> {
     pub fn new(mut entity: Ports, options: &Options) -> Self {
@@ -219,7 +225,7 @@ impl Render<Ports> {
                 && state.is_port_filtered_or_linked(port.origin())
             {
                 found.push((
-                    port.origin().sig.id.to_string(),
+                    port.sig().id.to_string(),
                     ElementType::Port,
                     (
                         relative.x(0) + x,
@@ -231,6 +237,12 @@ impl Render<Ports> {
             }
         }
         Ok(found)
+    }
+}
+
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Port> {
+    fn sig(&'b self) -> &'a Signature {
+        &self.origin().sig
     }
 }
 

@@ -1,7 +1,4 @@
-use crate::{
-    entity::{Port, Ports},
-    render::Relative,
-};
+use crate::{entity::Port, render::Relative};
 
 #[derive(Debug)]
 pub struct State {
@@ -43,14 +40,6 @@ impl State {
 
     pub fn set_filtered(&mut self, filtered: Option<(Vec<usize>, Vec<usize>, Vec<usize>)>) {
         self.filtered = filtered;
-    }
-
-    pub fn is_port_filtered(&self, port: &Port) -> bool {
-        if let Some((filtered, _linked, _owners)) = self.filtered.as_ref() {
-            filtered.contains(&port.sig.id)
-        } else {
-            false
-        }
     }
 
     pub fn is_port_linked(&self, port: &Port) -> bool {

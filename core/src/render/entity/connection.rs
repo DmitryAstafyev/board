@@ -1,8 +1,14 @@
 use crate::{
-    entity::Connection,
+    entity::{Connection, Signature, SignatureGetter},
     error::E,
     render::{form::Path, grid::ElementType, Container, Form, Relative, Render, Style, View},
 };
+
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Connection> {
+    fn sig(&'b self) -> &'a Signature {
+        &self.origin().sig
+    }
+}
 
 impl Render<Connection> {
     pub fn new(entity: Connection) -> Self {

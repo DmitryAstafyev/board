@@ -1,5 +1,5 @@
 use crate::{
-    entity::{Component, Ports},
+    entity::{Component, Ports, Signature, SignatureGetter},
     error::E,
     render::{
         elements, form::GridRectangle, grid::ElementType, options::Options, Container, Form,
@@ -11,6 +11,12 @@ use wasm_bindgen::JsValue;
 
 const MIN_HEIGHT: i32 = 64;
 const MIN_WIDTH: i32 = 64;
+
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Component> {
+    fn sig(&'b self) -> &'a Signature {
+        &self.origin().sig
+    }
+}
 
 impl Render<Component> {
     pub fn new(mut entity: Component, options: &Options, mut ty: Option<ElementType>) -> Self {

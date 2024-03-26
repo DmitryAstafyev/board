@@ -1,6 +1,98 @@
-use crate::{entity::Signature, render::Representation, state::State};
+use crate::{
+    entity::{Signature, SignatureGetter},
+    render::Representation,
+    state::State,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+pub trait IsComponentIncluded<T> {
+    fn included_as_component(&self, connection: &T) -> bool;
+}
+
+impl IsComponentIncluded<Connection> for &usize {
+    fn included_as_component(&self, connection: &Connection) -> bool {
+        &&connection.joint_in.component == self || &&connection.joint_out.component == self
+    }
+}
+
+impl IsComponentIncluded<Representation<Connection>> for &usize {
+    fn included_as_component(&self, connection: &Representation<Connection>) -> bool {
+        &&connection.origin().joint_in.component == self
+            || &&connection.origin().joint_out.component == self
+    }
+}
+
+pub trait GetIncludedComponent<'a, I, O> {
+    fn get_included_component(&self, connection: &'a I) -> Option<&'a O>;
+}
+
+impl<'a> GetIncludedComponent<'a, Connection, Connection> for &usize {
+    fn get_included_component(&self, connection: &'a Connection) -> Option<&'a Connection> {
+        if &&connection.joint_in.component == self || &&connection.joint_out.component == self {
+            Some(connection)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> GetIncludedComponent<'a, Representation<Connection>, Connection> for &usize {
+    fn get_included_component(
+        &self,
+        connection: &'a Representation<Connection>,
+    ) -> Option<&'a Connection> {
+        if &&connection.origin().joint_in.component == self
+            || &&connection.origin().joint_out.component == self
+        {
+            Some(connection.origin())
+        } else {
+            None
+        }
+    }
+}
+
+pub trait IsPortIncluded<T> {
+    fn included_as_port(&self, connection: &T) -> Option<usize>;
+}
+
+impl IsPortIncluded<Connection> for &usize {
+    fn included_as_port(&self, connection: &Connection) -> Option<usize> {
+        if &&connection.joint_in.port == self || &&connection.joint_out.port == self {
+            Some(**self)
+        } else {
+            None
+        }
+    }
+}
+
+impl IsPortIncluded<Representation<Connection>> for &usize {
+    fn included_as_port(&self, connection: &Representation<Connection>) -> Option<usize> {
+        if &&connection.origin().joint_in.port == self
+            || &&connection.origin().joint_out.port == self
+        {
+            Some(**self)
+        } else {
+            None
+        }
+    }
+}
+
+pub trait IsInputPort<T> {
+    fn is_input_port(&self, connection: &T) -> bool;
+}
+
+impl IsInputPort<Connection> for &usize {
+    fn is_input_port(&self, connection: &Connection) -> bool {
+        &&connection.joint_in.port == self
+    }
+}
+
+impl IsInputPort<Representation<Connection>> for &usize {
+    fn is_input_port(&self, connection: &Representation<Connection>) -> bool {
+        &&connection.origin().joint_in.port == self
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Joint {
@@ -19,29 +111,19 @@ impl Joint {
         }
     }
 }
-// Function order connection by center like:
-//        =
-//    = = = = =
-//  = = = = = = =
-// In center will be bigest and go lowest to left and right
-fn _order_connections(src: &mut [(usize, usize)]) -> Vec<usize> {
-    src.sort_by(|(_, count_a), (_, count_b)| count_a.cmp(count_b));
-    let mut ordered: Vec<usize> = vec![];
-    src.iter().enumerate().for_each(|(i, (id, _))| {
-        if i % 2 == 0 {
-            ordered.push(*id);
-        } else {
-            ordered.insert(0, *id);
-        }
-    });
-    ordered
-}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Connection {
     pub sig: Signature,
     pub joint_in: Joint,
     pub joint_out: Joint,
     pub visibility: bool,
+}
+
+impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Connection {
+    fn sig(&'b self) -> &'a Signature {
+        &self.sig
+    }
 }
 
 impl Connection {
@@ -59,13 +141,13 @@ impl Connection {
             &self.joint_out.port
         }
     }
-    pub fn count(connections: &[Representation<Connection>], component_id: usize) -> usize {
+    pub fn get_ports(&self) -> [&usize; 2] {
+        [&self.joint_in.port, &self.joint_out.port]
+    }
+    pub fn count(connections: &[Representation<Connection>], component_id: &usize) -> usize {
         connections
             .iter()
-            .filter(|c| {
-                c.origin().joint_in.component == component_id
-                    || c.origin().joint_out.component == component_id
-            })
+            .filter(|c| component_id.included_as_component(c.origin()))
             .count()
     }
 
@@ -138,57 +220,6 @@ impl Connection {
         components
             .sort_by(|(_, a_in, a_out), (_, b_in, b_out)| (b_in + b_out).cmp(&(a_in + a_out)));
         components
-    }
-
-    // Returns ids of all linked components to host as (linked IN, linked OUT)
-    pub fn _linked(
-        connections: &[Representation<Connection>],
-        host_id: usize,
-        ignore: &[usize],
-    ) -> (Vec<usize>, Vec<usize>) {
-        let mut map: HashMap<usize, (usize, usize)> = HashMap::new();
-        connections.iter().for_each(|c| {
-            if c.origin().joint_in.component == host_id || c.origin().joint_out.component == host_id
-            {
-                let in_connection = c.origin().joint_in.component != host_id;
-                let connected_comp_id = if in_connection {
-                    c.origin().joint_in.component
-                } else {
-                    c.origin().joint_out.component
-                };
-                let entry = map.entry(connected_comp_id);
-                entry
-                    .and_modify(|(ins, outs)| {
-                        if in_connection {
-                            *ins += 1;
-                        } else {
-                            *outs += 1;
-                        }
-                    })
-                    .or_insert(if in_connection { (1, 0) } else { (0, 1) });
-            }
-        });
-        let mut connected_in: Vec<(usize, usize)> = vec![];
-        let mut connected_out: Vec<(usize, usize)> = vec![];
-        map.iter().for_each(|(k, (ins, outs))| {
-            if ignore.contains(k) {
-                return;
-            }
-            if ins > outs {
-                connected_in.push((*k, *ins));
-            } else {
-                connected_out.push((*k, *ins));
-            }
-        });
-        connected_in.sort_by(|(_, a), (_, b)| b.cmp(a));
-        connected_out.sort_by(|(_, a), (_, b)| b.cmp(a));
-        (
-            connected_in.iter().map(|(k, _)| *k).collect::<Vec<usize>>(),
-            connected_out
-                .iter()
-                .map(|(k, _)| *k)
-                .collect::<Vec<usize>>(),
-        )
     }
 
     pub fn hide(&mut self) {

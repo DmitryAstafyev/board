@@ -12,7 +12,3 @@ impl Style {
         context.set_stroke_style(&JsValue::from_str(self.stroke_style.as_str()));
     }
 }
-
-pub trait Default {
-    fn init() -> Style;
-}
