@@ -51,7 +51,6 @@ impl Render<Ports> {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: String::from("rgb(0,0,0)"),
                     },
-                    hover: None,
                 },
                 elements: vec![],
             },
@@ -279,7 +278,6 @@ impl Render<Port> {
                             stroke_style: String::from("rgb(0,0,0)"),
                             fill_style: String::from("rgb(50,50,50)"),
                         },
-                        hover: None,
                     },
                     options::PortsRepresentation::Labels => Container {
                         form: Form::Label(
@@ -299,7 +297,6 @@ impl Render<Port> {
                             stroke_style: String::from("rgb(0,0,0)"),
                             fill_style: String::from("rgb(220,220,220)"),
                         },
-                        hover: None,
                     },
                 },
                 elements: vec![],

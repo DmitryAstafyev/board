@@ -1,14 +1,14 @@
 use crate::{
     entity::{
-        dummy::SignatureProducer, Component, Composition, Connection, Joint, Port, PortType, Ports,
-        Signature, SignatureGetter,
+        dummy::SignatureProducer, Component, Composition, Connection, IsComponentIncluded,
+        IsPortIncluded, Joint, Port, PortType, Ports, Signature, SignatureGetter,
     },
     error::E,
     render::{
         elements,
         form::{button, Button, Path, Point, Rectangle},
-        grid::{Cell, ElementCoors, ElementType, Layout, CELL},
-        options::{ConnectionsAlign, Options},
+        grid::{ElementCoors, ElementType, Layout},
+        options::Options,
         Container, Form, Grid, Relative, Render, Representation, Style, View,
     },
     state::State,
@@ -16,6 +16,10 @@ use crate::{
 use std::collections::HashMap;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::console_log;
+
+/// (port,  contains,   comp )
+/// (usize, Vec<usize>, usize)
+pub type ConnectionData = (usize, Vec<usize>, usize);
 
 enum Entry<'a> {
     Component(&'a Representation<Component>),
@@ -138,7 +142,6 @@ impl Render<Composition> {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: String::from("rgb(200,200,230)"),
                     },
-                    hover: None,
                 },
                 elements: if let Some(id) = parent {
                     vec![Container {
@@ -159,7 +162,6 @@ impl Render<Composition> {
                             stroke_style: String::from("rgb(0,0,0)"),
                             fill_style: String::from("rgb(100,150,255)"),
                         },
-                        hover: None,
                     }]
                 } else {
                     vec![]
@@ -193,10 +195,10 @@ impl Render<Composition> {
                 .iter()
                 .filter_map(|c| {
                     let connection = c.origin();
-                    if filtered.contains(&connection.joint_in.port) {
-                        Some(connection.joint_out.port)
-                    } else if filtered.contains(&connection.joint_out.port) {
-                        Some(connection.joint_in.port)
+                    if filtered.contains(connection.in_port()) {
+                        Some(*connection.out_port())
+                    } else if filtered.contains(connection.out_port()) {
+                        Some(*connection.in_comp())
                     } else {
                         None
                     }
@@ -265,8 +267,8 @@ impl Render<Composition> {
 
     pub fn setup_connections(
         &mut self,
-        grid: &Grid,
-        options: &Options,
+        _grid: &Grid,
+        _options: &Options,
         state: &State,
     ) -> Result<(), E> {
         let components = &self.entity.components;
@@ -275,84 +277,44 @@ impl Render<Composition> {
         for conn in self.entity.connections.iter_mut().filter(|conn| {
             let origin = conn.origin();
             origin.visibility
-                && state.is_port_owner_filtered(&origin.joint_in.component)
-                && state.is_port_owner_filtered(&origin.joint_out.component)
+                && state.is_port_owner_filtered(origin.in_comp())
+                && state.is_port_owner_filtered(origin.out_comp())
         }) {
             if let (Some(ins), Some(outs)) = (
-                find(components, compositions, &conn.origin().joint_in.component),
-                find(components, compositions, &conn.origin().joint_out.component),
+                find(components, compositions, conn.origin().in_comp()),
+                find(components, compositions, conn.origin().out_comp()),
             ) {
                 if let (Some(port_in), Some(port_out)) = (
-                    ins.ports().origin().find(conn.origin().get_joint_in_port()),
-                    outs.ports()
-                        .origin()
-                        .find(conn.origin().get_joint_out_port()),
+                    ins.ports().origin().find(conn.origin().in_port()),
+                    outs.ports().origin().find(conn.origin().out_port()),
                 ) {
                     let coors_port_in = port_in.render()?.view.container.get_coors();
                     let coors_port_out = port_out.render()?.view.container.get_coors();
                     let relative_inns = ins.own_relative()?;
                     let relative_outs = outs.own_relative()?;
-                    let points: Vec<Point> = match options.connections.align {
-                        ConnectionsAlign::Straight => {
-                            let size_port_in = port_in.render()?.view.container.get_box_size();
-                            let size_port_out = port_out.render()?.view.container.get_box_size();
-                            vec![
-                                Point {
-                                    x: relative_inns.x(coors_port_in.0)
-                                        + if matches!(port_in.origin().port_type, PortType::Out) {
-                                            size_port_in.0
-                                        } else {
-                                            0
-                                        },
-                                    y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
+                    let size_port_in = port_in.render()?.view.container.get_box_size();
+                    let size_port_out = port_out.render()?.view.container.get_box_size();
+                    let points: Vec<Point> = vec![
+                        Point {
+                            x: relative_inns.x(coors_port_in.0)
+                                + if matches!(port_in.origin().port_type, PortType::Out) {
+                                    size_port_in.0
+                                } else {
+                                    0
                                 },
-                                Point {
-                                    x: relative_outs.x(coors_port_out.0)
-                                        + if matches!(port_out.origin().port_type, PortType::Out) {
-                                            size_port_out.0
-                                        } else {
-                                            0
-                                        },
-                                    y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
+                            y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
+                        },
+                        Point {
+                            x: relative_outs.x(coors_port_out.0)
+                                + if matches!(port_out.origin().port_type, PortType::Out) {
+                                    size_port_out.0
+                                } else {
+                                    0
                                 },
-                            ]
-                        }
-                        ConnectionsAlign::Streamlined => {
-                            let a = Cell::new(
-                                relative_inns.x(coors_port_in.0) as u32,
-                                relative_inns.y(coors_port_in.1) as u32,
-                                grid,
-                            )?;
-                            let b = Cell::new(
-                                relative_outs.x(coors_port_out.0) as u32,
-                                relative_outs.y(coors_port_out.1) as u32,
-                                grid,
-                            )?;
-                            let (left, right) = if a.x < b.x { (a, b) } else { (b, a) };
-                            let a = (left.x, left.y);
-                            let b = (right.x, left.y);
-                            let c = (right.x, right.y);
-                            let mut coors: Vec<(u32, u32)> = vec![];
-                            if let Err(e) = Cell::normalize(&a, &b, grid, &mut coors) {
-                                console_log!("Error: {e}");
-                                return Ok(());
-                            }
-                            if let Err(e) = Cell::normalize(&b, &c, grid, &mut coors) {
-                                console_log!("Error: {e}");
-                                return Ok(());
-                            }
-                            fn coors_to_px(cell: &u32) -> i32 {
-                                (*cell as i32 * CELL as i32) + ((CELL as f64) / 2.0).ceil() as i32
-                            }
-                            coors
-                                .iter()
-                                .map(|(x, y)| Point {
-                                    x: coors_to_px(x),
-                                    y: coors_to_px(y),
-                                })
-                                .collect::<Vec<Point>>()
-                        }
-                    };
+                            y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
+                        },
+                    ];
+
                     let path = Path::new(conn.sig().id.to_string(), points);
                     conn.render_mut()?
                         .view
@@ -521,8 +483,8 @@ impl Render<Composition> {
         }
         for connection in self.entity.connections.iter_mut().filter(|conn| {
             conn.origin().visibility
-                && (state.is_port_selected(&conn.origin().joint_in.port)
-                    && state.is_port_selected(&conn.origin().joint_out.port))
+                && (state.is_port_selected(conn.origin().in_port())
+                    && state.is_port_selected(conn.origin().out_port()))
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }
@@ -542,6 +504,7 @@ impl Render<Composition> {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn draw_by_id(
         &mut self,
         grid: &Grid,
@@ -691,76 +654,67 @@ impl Render<Composition> {
     }
 
     /// Returns information about single connection
-    ///
-    /// (port,  contains,   comp )
-    /// (usize, Vec<usize>, usize)
-    pub fn get_connection_info(
-        &self,
-        port: usize,
-    ) -> Option<((usize, Vec<usize>, usize), (usize, Vec<usize>, usize))> {
+    pub fn get_connection_info(&self, port: usize) -> Option<(ConnectionData, ConnectionData)> {
         self.entity
             .connections
             .iter()
-            .find(|c| c.origin().joint_in.port == port || c.origin().joint_out.port == port)
+            .find(|c| (&port).included_as_port(*c).is_some())
             .map(|c| {
                 let origin = c.origin();
-                let port_out = self.find_port(&origin.joint_out.component, &origin.joint_out.port);
-                let port_in = self.find_port(&origin.joint_in.component, &origin.joint_in.port);
+                let port_out = self.find_port(origin.out_comp(), origin.out_port());
+                let port_in = self.find_port(origin.in_comp(), origin.in_port());
                 if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
                     (
                         (
-                            origin.joint_out.port,
+                            *origin.out_port(),
                             port_out.contains.clone(),
-                            origin.joint_out.component,
+                            *origin.out_comp(),
                         ),
                         (
-                            origin.joint_in.port,
+                            *origin.in_port(),
                             port_in.contains.clone(),
-                            origin.joint_in.component,
+                            *origin.in_comp(),
                         ),
                     )
                 } else {
                     (
-                        (origin.joint_out.port, vec![], origin.joint_out.component),
-                        (origin.joint_in.port, vec![], origin.joint_in.component),
+                        (*origin.out_port(), vec![], *origin.out_comp()),
+                        (*origin.in_port(), vec![], origin.joint_in.component),
                     )
                 }
             })
     }
 
     /// Returns information about all connections related to port
-    ///
-    /// (port,  contains,   comp )
-    /// (usize, Vec<usize>, usize)
     pub fn get_connections_info_by_port(
         &self,
         port: usize,
-    ) -> Vec<((usize, Vec<usize>, usize), (usize, Vec<usize>, usize))> {
+    ) -> Vec<(ConnectionData, ConnectionData)> {
         self.entity
             .connections
             .iter()
-            .filter(|c| c.origin().joint_in.port == port || c.origin().joint_out.port == port)
+            .filter(|c| (&port).included_as_port(*c).is_some())
             .map(|c| {
                 let origin = c.origin();
-                let port_out = self.find_port(&origin.joint_out.component, &origin.joint_out.port);
-                let port_in = self.find_port(&origin.joint_in.component, &origin.joint_in.port);
+                let port_out = self.find_port(origin.out_comp(), origin.out_port());
+                let port_in = self.find_port(origin.in_comp(), origin.in_port());
                 if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
                     (
                         (
-                            origin.joint_out.port,
+                            *origin.out_port(),
                             port_out.contains.clone(),
-                            origin.joint_out.component,
+                            *origin.out_comp(),
                         ),
                         (
-                            origin.joint_in.port,
+                            *origin.in_port(),
                             port_in.contains.clone(),
                             origin.joint_in.component,
                         ),
                     )
                 } else {
                     (
-                        (origin.joint_out.port, vec![], origin.joint_out.component),
-                        (origin.joint_in.port, vec![], origin.joint_in.component),
+                        (*origin.out_port(), vec![], *origin.out_comp()),
+                        (*origin.in_port(), vec![], origin.joint_in.component),
                     )
                 }
             })
@@ -774,35 +728,32 @@ impl Render<Composition> {
     pub fn get_connections_info_by_component(
         &self,
         component: usize,
-    ) -> Vec<((usize, Vec<usize>, usize), (usize, Vec<usize>, usize))> {
+    ) -> Vec<(ConnectionData, ConnectionData)> {
         self.entity
             .connections
             .iter()
-            .filter(|c| {
-                c.origin().joint_in.component == component
-                    || c.origin().joint_out.component == component
-            })
+            .filter(|c| (&component).included_as_component(*c))
             .map(|c| {
                 let origin = c.origin();
-                let port_out = self.find_port(&origin.joint_out.component, &origin.joint_out.port);
-                let port_in = self.find_port(&origin.joint_in.component, &origin.joint_in.port);
+                let port_out = self.find_port(origin.out_comp(), origin.out_port());
+                let port_in = self.find_port(origin.in_comp(), origin.in_port());
                 if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
                     (
                         (
-                            origin.joint_out.port,
+                            *origin.out_port(),
                             port_out.contains.clone(),
-                            origin.joint_out.component,
+                            *origin.out_comp(),
                         ),
                         (
-                            origin.joint_in.port,
+                            *origin.in_port(),
                             port_in.contains.clone(),
-                            origin.joint_in.component,
+                            *origin.in_comp(),
                         ),
                     )
                 } else {
                     (
-                        (origin.joint_out.port, vec![], origin.joint_out.component),
-                        (origin.joint_in.port, vec![], origin.joint_in.component),
+                        (*origin.out_port(), vec![], *origin.out_comp()),
+                        (*origin.in_port(), vec![], *origin.in_comp()),
                     )
                 }
             })
@@ -851,11 +802,11 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
     let mut ports: HashMap<usize, usize> = HashMap::new();
     entity.connections.iter().for_each(|connection| {
         ports
-            .entry(connection.origin().joint_in.port)
+            .entry(*connection.origin().in_port())
             .and_modify(|count| *count += 1)
             .or_insert(1);
         ports
-            .entry(connection.origin().joint_out.port)
+            .entry(*connection.origin().out_port())
             .and_modify(|count| *count += 1)
             .or_insert(1);
     });
@@ -865,23 +816,17 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
         .connections
         .iter()
         .filter(|conn| {
-            ports.contains_key(&conn.origin().joint_in.port)
-                && ports.contains_key(&conn.origin().joint_out.port)
+            ports.contains_key(conn.origin().in_port())
+                && ports.contains_key(conn.origin().out_port())
         })
         .for_each(|conn| {
-            let uuid = (
-                conn.origin().joint_in.component,
-                conn.origin().joint_out.component,
-            );
+            let uuid = (*conn.origin().in_comp(), *conn.origin().out_comp());
             groupped
                 .entry(uuid)
                 .and_modify(|ports| {
-                    ports.push((conn.origin().joint_in.port, conn.origin().joint_out.port))
+                    ports.push((*conn.origin().in_port(), *conn.origin().out_port()))
                 })
-                .or_insert(vec![(
-                    conn.origin().joint_in.port,
-                    conn.origin().joint_out.port,
-                )]);
+                .or_insert(vec![(*conn.origin().in_port(), *conn.origin().out_port())]);
         });
     groupped
         .iter()
@@ -926,11 +871,11 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
     entity.connections.iter_mut().for_each(|conn| {
         let port_in = added_ports
             .iter()
-            .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_in.port))
+            .find(|(_, p)| p.origin().contains.contains(conn.origin().in_port()))
             .map(|(_, p)| p);
         let port_out = added_ports
             .iter()
-            .find(|(_, p)| p.origin().contains.contains(&conn.origin().joint_out.port))
+            .find(|(_, p)| p.origin().contains.contains(conn.origin().out_port()))
             .map(|(_, p)| p);
         if let (Some(port_in), true) = (port_in, port_out.is_none()) {
             conn.origin_mut().joint_in.grouped = Some(port_in.sig().id);

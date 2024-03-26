@@ -47,7 +47,6 @@ impl Render<Component> {
                             String::from("rgb(200,250,200)")
                         },
                     },
-                    hover: None,
                 },
                 elements: vec![],
             },

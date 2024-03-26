@@ -14,14 +14,7 @@ pub struct Ports {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub enum ConnectionsAlign {
-    Streamlined,
-    Straight,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
 pub struct Connections {
-    pub align: ConnectionsAlign,
     pub hide: bool,
 }
 
@@ -57,10 +50,7 @@ impl Default for Options {
                 grouping: true,
                 group_unbound: true,
             },
-            connections: Connections {
-                align: ConnectionsAlign::Streamlined,
-                hide: false,
-            },
+            connections: Connections { hide: false },
             grid: GridOptions {
                 padding: 3,
                 cell_size_px: 25,

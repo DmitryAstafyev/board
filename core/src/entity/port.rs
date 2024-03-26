@@ -68,7 +68,9 @@ impl Ports {
             sig: Signature::default(),
         }
     }
-
+    pub fn iter(&self) -> core::slice::Iter<'_, Representation<Port>> {
+        self.ports.iter()
+    }
     pub fn len(&self) -> usize {
         self.ports.len()
     }

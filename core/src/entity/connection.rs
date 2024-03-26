@@ -127,19 +127,25 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Connection {
 }
 
 impl Connection {
-    pub fn get_joint_in_port(&self) -> &usize {
+    pub fn in_port(&self) -> &usize {
         if let Some(id) = self.joint_in.grouped.as_ref() {
             id
         } else {
             &self.joint_in.port
         }
     }
-    pub fn get_joint_out_port(&self) -> &usize {
+    pub fn out_port(&self) -> &usize {
         if let Some(id) = self.joint_out.grouped.as_ref() {
             id
         } else {
             &self.joint_out.port
         }
+    }
+    pub fn in_comp(&self) -> &usize {
+        &self.joint_in.component
+    }
+    pub fn out_comp(&self) -> &usize {
+        &self.joint_out.component
     }
     pub fn get_ports(&self) -> [&usize; 2] {
         [&self.joint_in.port, &self.joint_out.port]

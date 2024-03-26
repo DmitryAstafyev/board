@@ -8,7 +8,7 @@ mod state;
 
 use entity::{
     dummy::{Dummy, SignatureProducer},
-    Composition, Signature,
+    Composition, IsInputPort, Signature,
 };
 use error::E;
 use render::{options::Options, Grid, Render, Style};
@@ -301,11 +301,10 @@ impl Board {
             let rel_ports = [
                 rel_connections
                     .iter()
-                    .flat_map(|conn| [&conn.joint_in.port, &conn.joint_out.port])
+                    .flat_map(|conn| conn.get_ports())
                     .collect::<Vec<&usize>>(),
                 comp.ports
                     .origin()
-                    .ports
                     .iter()
                     .map(|port| &port.sig().id)
                     .collect::<Vec<&usize>>(),
@@ -313,7 +312,7 @@ impl Board {
             .concat();
             let components = rel_connections
                 .iter()
-                .flat_map(|conn| [&conn.joint_in.component, &conn.joint_out.component])
+                .flat_map(|conn| [conn.in_comp(), conn.out_comp()])
                 .collect::<Vec<&usize>>();
             if self.state.is_component_selected(&id) {
                 rel_ports.iter().for_each(|id| {
@@ -342,32 +341,32 @@ impl Board {
         let connections = self.render.origin().find_connections_by_port(&id);
         let inserted = self.state.toggle_port(&id);
         for connection in connections.iter() {
-            let rel_port = if connection.joint_in.port == id {
-                connection.joint_out.port
+            let rel_port = if (&id).is_input_port(*connection) {
+                connection.out_port()
             } else {
-                connection.joint_in.port
+                connection.in_port()
             };
             if inserted {
                 // Added
-                self.state.insert_port(&rel_port);
-                self.state.insert_component(&connection.joint_out.component);
-                self.state.insert_component(&connection.joint_in.component);
+                self.state.insert_port(rel_port);
+                self.state.insert_component(connection.out_comp());
+                self.state.insert_component(connection.in_comp());
             } else {
                 // Removed
-                self.state.remove_port(&rel_port);
+                self.state.remove_port(rel_port);
                 if !self.state.is_any_port_selected(
                     self.render
                         .origin()
-                        .find_ports_by_component(&connection.joint_in.component),
+                        .find_ports_by_component(connection.in_comp()),
                 ) {
-                    self.state.remove_component(&connection.joint_in.component);
+                    self.state.remove_component(connection.in_comp());
                 }
                 if !self.state.is_any_port_selected(
                     self.render
                         .origin()
-                        .find_ports_by_component(&connection.joint_out.component),
+                        .find_ports_by_component(connection.out_comp()),
                 ) {
-                    self.state.remove_component(&connection.joint_out.component);
+                    self.state.remove_component(connection.out_comp());
                 }
             }
         }

@@ -33,7 +33,6 @@ impl View {
 pub struct Container {
     pub form: Form,
     pub style: Style,
-    pub hover: Option<Style>,
 }
 
 impl Container {

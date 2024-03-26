@@ -10,7 +10,6 @@ import {
     Options,
     getDefaultsOptions,
     PortsRepresentation,
-    ConnectionsAlign,
 } from "board";
 
 const UNKNOWN = "unknown";
@@ -434,7 +433,6 @@ function getLabeledPortsOptions(): Options {
             group_unbound: true,
         },
         connections: {
-            align: ConnectionsAlign.Straight,
             hide: false,
         },
         grid: {

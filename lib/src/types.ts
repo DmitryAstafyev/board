@@ -84,13 +84,7 @@ export interface PortsOptions {
     group_unbound: boolean;
 }
 
-export enum ConnectionsAlign {
-    Streamlined = "Streamlined",
-    Straight = "Straight",
-}
-
 export interface ConnectionsOptions {
-    align: ConnectionsAlign;
     hide: boolean;
 }
 
@@ -122,7 +116,6 @@ export function getDefaultsOptions(): Options {
             group_unbound: true,
         },
         connections: {
-            align: ConnectionsAlign.Streamlined,
             hide: false,
         },
         grid: {

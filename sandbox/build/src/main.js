@@ -343,7 +343,6 @@ function getLabeledPortsOptions() {
             group_unbound: true,
         },
         connections: {
-            align: board_1.ConnectionsAlign.Straight,
             hide: false,
         },
         grid: {

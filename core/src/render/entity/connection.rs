@@ -28,7 +28,6 @@ impl Render<Connection> {
                         stroke_style: String::from("rgb(0,0,0)"),
                         fill_style: String::from("rgb(200,200,200)"),
                     },
-                    hover: None,
                 },
                 elements: vec![],
             },
