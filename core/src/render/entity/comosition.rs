@@ -164,7 +164,7 @@ impl Render<Composition> {
                         },
                     }]
                 } else {
-                    vec![]
+                    Vec::new()
                 },
             },
             hidden: false,
@@ -273,7 +273,7 @@ impl Render<Composition> {
     ) -> Result<(), E> {
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
-        let mut failed: Vec<&Connection> = vec![];
+        let mut failed: Vec<&Connection> = Vec::new();
         for conn in self.entity.connections.iter_mut().filter(|conn| {
             let origin = conn.origin();
             origin.visibility
@@ -382,8 +382,8 @@ impl Render<Composition> {
                 .calc(context, relative, options, state)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
-        let mut dependencies: Vec<(usize, usize)> = vec![];
-        let mut located: Vec<usize> = vec![];
+        let mut dependencies: Vec<(usize, usize)> = Vec::new();
+        let mut located: Vec<usize> = Vec::new();
         let ordered_linked = Connection::get_ordered_linked(&self.entity.connections, state);
         for (host_id, _, _) in ordered_linked.iter() {
             if located.contains(host_id) {
@@ -530,10 +530,10 @@ impl Render<Composition> {
 
     pub fn find(&self, position: &(i32, i32), zoom: f64) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
-            return Ok(vec![]);
+            return Ok(Vec::new());
         }
         let relative = Relative::new(0, 0, Some(zoom));
-        let mut found: Vec<ElementCoors> = vec![];
+        let mut found: Vec<ElementCoors> = Vec::new();
         for el in self.view.elements.iter() {
             let (x, y) = el.form.get_coors_with_zoom(&relative);
             let (w, h) = el.form.get_box_size();
@@ -555,9 +555,9 @@ impl Render<Composition> {
         state: &State,
     ) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
-            return Ok(vec![]);
+            return Ok(Vec::new());
         }
-        let mut found: Vec<ElementCoors> = vec![];
+        let mut found: Vec<ElementCoors> = Vec::new();
         for (id, _, _) in owners.iter() {
             if let Ok(id) = id.parse::<usize>() {
                 if let Some(entry) = self.find_entity(&id) {
@@ -584,7 +584,7 @@ impl Render<Composition> {
         relative: &Relative,
     ) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
-            return Ok(vec![]);
+            return Ok(Vec::new());
         }
         fn scan(
             found: &mut Vec<ElementCoors>,
@@ -618,7 +618,7 @@ impl Render<Composition> {
                 });
             Ok(())
         }
-        let mut found: Vec<ElementCoors> = vec![];
+        let mut found: Vec<ElementCoors> = Vec::new();
         for component in self.entity.components.iter() {
             scan(
                 &mut found,
@@ -641,7 +641,7 @@ impl Render<Composition> {
     }
 
     pub fn get_groupped_ports(&self) -> Result<Vec<(usize, Vec<usize>)>, E> {
-        let mut ports: Vec<(usize, Vec<usize>)> = vec![];
+        let mut ports: Vec<(usize, Vec<usize>)> = Vec::new();
         for component in self.entity.components.iter() {
             ports = [ports, component.origin().ports.origin().get_groupped()].concat();
         }
@@ -676,8 +676,8 @@ impl Render<Composition> {
                     )
                 } else {
                     (
-                        (*origin.out_port(), vec![], *origin.out_comp()),
-                        (*origin.in_port(), vec![], origin.joint_in.component),
+                        (*origin.out_port(), Vec::new(), *origin.out_comp()),
+                        (*origin.in_port(), Vec::new(), origin.joint_in.component),
                     )
                 }
             })
@@ -711,8 +711,8 @@ impl Render<Composition> {
                     )
                 } else {
                     (
-                        (*origin.out_port(), vec![], *origin.out_comp()),
-                        (*origin.in_port(), vec![], origin.joint_in.component),
+                        (*origin.out_port(), Vec::new(), *origin.out_comp()),
+                        (*origin.in_port(), Vec::new(), origin.joint_in.component),
                     )
                 }
             })
@@ -750,8 +750,8 @@ impl Render<Composition> {
                     )
                 } else {
                     (
-                        (*origin.out_port(), vec![], *origin.out_comp()),
-                        (*origin.in_port(), vec![], *origin.in_comp()),
+                        (*origin.out_port(), Vec::new(), *origin.out_comp()),
+                        (*origin.in_port(), Vec::new(), *origin.in_comp()),
                     )
                 }
             })
@@ -783,7 +783,7 @@ fn get_forms_by_ids<'a>(
     components: &'a [Representation<Component>],
     ids: &[usize],
 ) -> Result<Vec<&'a Form>, E> {
-    let mut found: Vec<&Form> = vec![];
+    let mut found: Vec<&Form> = Vec::new();
     for comp in components.iter() {
         if ids.contains(&comp.sig().id) {
             found.push(&comp.render()?.view.container.form);
@@ -793,8 +793,8 @@ fn get_forms_by_ids<'a>(
 }
 
 pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProducer) {
-    let mut added_connections: Vec<Representation<Connection>> = vec![];
-    let mut added_ports: Vec<(usize, Representation<Port>)> = vec![];
+    let mut added_connections: Vec<Representation<Connection>> = Vec::new();
+    let mut added_ports: Vec<(usize, Representation<Port>)> = Vec::new();
     let mut groupped: HashMap<(usize, usize), Vec<(usize, usize)>> = HashMap::new();
     // Find ports connected to only 1 component
     let mut ports: HashMap<usize, usize> = HashMap::new();

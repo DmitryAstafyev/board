@@ -1,5 +1,4 @@
 import { Hover } from "./hover";
-import { Connection } from "./connection";
 import { ScrollBars, ScrollEvent } from "./scrollbars";
 import { Subject, Subjects, Subscriber } from "./subscriber";
 
@@ -67,7 +66,6 @@ export class Board extends Subscriber {
         component: Hover;
         port: Hover;
     };
-    protected connection: Connection;
     protected readonly size: {
         height: number;
         width: number;
@@ -138,10 +136,9 @@ export class Board extends Subscriber {
         }
         this.parent = node;
         this.hover = {
-            component: new Hover(`rgba(0,0,0,0.25)`, node),
-            port: new Hover(`rgba(0,0,0,0.25)`, node),
+            component: new Hover(),
+            port: new Hover(),
         };
-        this.connection = new Connection(node);
         this.scroll = new ScrollBars(node);
         this.id = getId();
         this.canvas = document.createElement("canvas");
@@ -171,15 +168,25 @@ export class Board extends Subscriber {
         this.parent.addEventListener("click", this.onClick);
         window.addEventListener("keydown", this.onKeyDown);
         window.addEventListener("keyup", this.onKeyUp);
-        this.hover.component.onHide(() => {
-            this.subjects.get().onComponentHoverOver.emit();
-        });
         this.hover.port.onHide((id: number) => {
             this.board.unhighlight_connection_by_port(id);
+            this.board.unhover();
+            this.board.render();
             this.subjects.get().onPortHoverOver.emit();
         });
         this.hover.port.onShow((id: number) => {
             this.board.highlight_connection_by_port(id);
+            this.board.hover(id);
+            this.board.render();
+        });
+        this.hover.component.onHide((_id: number) => {
+            this.board.unhover();
+            this.board.render();
+            this.subjects.get().onComponentHoverOver.emit();
+        });
+        this.hover.component.onShow((id: number) => {
+            this.board.hover(id);
+            this.board.render();
         });
         this.register(this.scroll.scroll.subscribe(this.onScroll));
         this.resize = new ResizeObserver(this.onResize);
@@ -279,23 +286,51 @@ export class Board extends Subscriber {
         clearTimeout(this.movement.clickTimer);
     }
 
-    protected getTargetsOnMouse(event: MouseEvent): Types.ElementCoors[] {
+    protected getTargetsOnMouse(event: MouseEvent): {
+        ports: Types.ElementCoors[];
+        components: Types.ElementCoors[];
+        compositions: Types.ElementCoors[];
+        back: number | undefined;
+    } {
         let x = event.offsetX - this.position.x * this.position.zoom;
         let y = event.offsetY - this.position.y * this.position.zoom;
         if (x < 0 || y < 0) {
-            return [];
+            return {
+                ports: [],
+                components: [],
+                compositions: [],
+                back: undefined,
+            };
         }
         this.board.set_view_state(
             this.position.x,
             this.position.y,
             this.position.zoom
         );
-        return this.board
+        const targets: Types.ElementCoors[] = this.board
             .who(x, y, 2)
             .filter(
                 (element: Types.ElementCoors) =>
                     element[0] !== this.data.composition?.toString()
             );
+        const back = targets.find((element: Types.ElementCoors) =>
+            element[0].startsWith("back::")
+        );
+        if (back !== undefined) {
+            return {
+                ports: [],
+                components: [],
+                compositions: [],
+                back: parseInt(back[0].replace("back::", ""), 10),
+            };
+        } else {
+            return {
+                components: targets.filter((t) => t[1] === "Component"),
+                ports: targets.filter((t) => t[1] === "Port"),
+                compositions: targets.filter((t) => t[1] === "Composition"),
+                back: undefined,
+            };
+        }
     }
 
     protected onScroll(event: ScrollEvent) {
@@ -308,48 +343,32 @@ export class Board extends Subscriber {
         if (this.movement.processing) {
             return;
         }
-        const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
-        const component = targets.filter(
-            (t) => t[1] === "Component" || t[1] === "Composition"
-        );
-        if (component.length === 1) {
-            const id = parseInt(component[0][0], 10);
+        const targets = this.getTargetsOnMouse(event);
+        this.hover.port.hide();
+        this.hover.component.hide();
+        if (
+            (targets.components.length === 1 ||
+                targets.compositions.length === 1) &&
+            targets.ports.length === 0
+        ) {
+            const id = parseInt(
+                targets.components.length === 1
+                    ? targets.components[0][0]
+                    : targets.compositions[0][0],
+                10
+            );
             if (!this.hover.component.isActive(id)) {
-                this.hover.component.show(
-                    id,
-                    component[0][2][0] +
-                        this.scroll.x() +
-                        this.position.x * this.position.zoom,
-                    component[0][2][1] +
-                        this.scroll.y() +
-                        this.position.y * this.position.zoom,
-                    component[0][2][2] - component[0][2][0],
-                    component[0][2][3] - component[0][2][1]
-                );
+                this.hover.component.show(id);
                 this.subjects.get().onComponentHover.emit({
                     id,
                     x: event.offsetX,
                     y: event.offsetY,
                 });
             }
-        } else {
-            this.hover.component.hide();
-        }
-        const port = targets.filter((t) => t[1] === "Port");
-        if (port.length === 1) {
-            const id = parseInt(port[0][0], 10);
+        } else if (targets.ports.length === 1) {
+            const id = parseInt(targets.ports[0][0], 10);
             if (!this.hover.port.isActive(id)) {
-                this.hover.port.show(
-                    id,
-                    port[0][2][0] +
-                        this.scroll.x() +
-                        this.position.x * this.position.zoom,
-                    port[0][2][1] +
-                        this.scroll.y() +
-                        this.position.y * this.position.zoom,
-                    port[0][2][2] - port[0][2][0],
-                    port[0][2][3] - port[0][2][1]
-                );
+                this.hover.port.show(id);
                 const groupped = this.data.groupped.find(
                     (groupped) => groupped[0] === id
                 );
@@ -360,13 +379,10 @@ export class Board extends Subscriber {
                     y: event.offsetY,
                 });
             }
-        } else {
-            this.hover.port.hide();
-            this.connection.hide();
         }
     }
 
-    protected onHoverOver(event: MouseEvent): void {
+    protected onHoverOver(_board_canvas_id_$event: MouseEvent): void {
         this.hover.component.hide();
         this.hover.port.hide();
     }
@@ -388,34 +404,23 @@ export class Board extends Subscriber {
             return;
         }
         if (event.button == 0) {
-            const targets: Types.ElementCoors[] = this.getTargetsOnMouse(event);
-            const back = targets.find((element: Types.ElementCoors) =>
-                element[0].startsWith("back::")
-            );
-            if (back !== undefined) {
-                const target = parseInt(back[0].replace("back::", ""), 10);
+            const targets = this.getTargetsOnMouse(event);
+            if (targets.back !== undefined) {
                 this.data.history.pop();
-                this.goToComposition(target);
-            } else if (targets.length > 1) {
-                console.log(
-                    `Cannot detect target too many ids: ${targets.join(", ")}`
-                );
-                return;
-            } else if (targets.length === 1) {
-                const element = targets[0] as Types.ElementCoors;
-                const targetId = parseInt(element[0], 10);
-                const elementType = element[1];
-                if (elementType === "Port") {
-                    this.board.toggle_port(targetId);
-                    this.subjects.get().onPortClick.emit(targetId);
-                } else if (elementType === "Component") {
-                    this.board.toggle_component(targetId);
-                    this.subjects.get().onComponentClick.emit(targetId);
-                } else if (elementType === "Composition") {
-                    this.data.composition !== undefined &&
-                        this.data.history.push(this.data.composition);
-                    this.goToComposition(targetId);
-                }
+                this.goToComposition(targets.back);
+            } else if (targets.ports.length === 1) {
+                const targetId = parseInt(targets.ports[0][0], 10);
+                this.board.toggle_port(targetId);
+                this.subjects.get().onPortClick.emit(targetId);
+            } else if (targets.components.length === 1) {
+                const targetId = parseInt(targets.components[0][0], 10);
+                this.board.toggle_component(targetId);
+                this.subjects.get().onComponentClick.emit(targetId);
+            } else if (targets.compositions.length === 1) {
+                const targetId = parseInt(targets.compositions[0][0], 10);
+                this.data.composition !== undefined &&
+                    this.data.history.push(this.data.composition);
+                this.goToComposition(targetId);
             }
         }
     }
@@ -477,8 +482,6 @@ export class Board extends Subscriber {
         window.removeEventListener("mouseup", this.onMouseUp);
         window.removeEventListener("keydown", this.onKeyDown);
         window.removeEventListener("keyup", this.onKeyUp);
-        this.hover.component.destroy();
-        this.hover.port.destroy();
         this.subjects.destroy();
         this.unsubscribe();
     }

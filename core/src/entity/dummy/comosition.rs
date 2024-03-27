@@ -14,7 +14,7 @@ impl Dummy<Composition, (RangeInclusive<usize>, RangeInclusive<usize>)> for Comp
     ) -> Self {
         let (components, ports) = options;
         let mut instance = Self::new(producer.next());
-        let mut connections: Vec<Connection> = vec![];
+        let mut connections: Vec<Connection> = Vec::new();
         let count = rand::thread_rng().gen_range(components);
         for _ in 0..count {
             instance.push_component(Component::dummy(producer, ports.clone()));

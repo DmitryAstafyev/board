@@ -52,7 +52,7 @@ impl Render<Ports> {
                         fill_style: String::from("rgb(0,0,0)"),
                     },
                 },
-                elements: vec![],
+                elements: Vec::new(),
             },
             hidden: false,
         }
@@ -146,8 +146,8 @@ impl Render<Ports> {
                 let label_height = (CELL as f64 * 0.7).ceil() as i32;
                 let step_between = CELL as i32 - label_height;
                 let start_from = (step_between as f64 / 2.0).ceil() as i32;
-                // let start_from = 0;
                 let mut cursor: i32 = start_from;
+                let over = (container_width as f64 * 0.8 / 2.0) as i32;
                 for port in self
                     .entity
                     .filter_mut(&[PortType::In, PortType::Unbound])
@@ -158,7 +158,7 @@ impl Render<Ports> {
                     })
                 {
                     let render = port.render_mut()?;
-                    render.view.container.set_coors(Some(0), Some(cursor));
+                    render.view.container.set_coors(Some(over), Some(cursor));
                     cursor += step_between + label_height;
                 }
                 // Order ports on a right side
@@ -176,7 +176,7 @@ impl Render<Ports> {
                     render
                         .view
                         .container
-                        .set_coors(Some(container_width), Some(cursor));
+                        .set_coors(Some(container_width - over), Some(cursor));
                     cursor += step_between + label_height;
                 }
             }
@@ -208,14 +208,14 @@ impl Render<Ports> {
         state: &State,
     ) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
-            return Ok(vec![]);
+            return Ok(Vec::new());
         }
         // Take into account: position already considers zoom-factor.
         // That's why we need consider zoom-factor only for areas.
         // With width and height a little more complicated situation:
         // these props are calculated during render and it means: height
         // width also already consider zoom factor
-        let mut found: Vec<ElementCoors> = vec![];
+        let mut found: Vec<ElementCoors> = Vec::new();
         for port in self.entity.ports.iter() {
             let (x, y) = port.render()?.view.container.get_coors_with_zoom(relative);
             let (w, h) = port.render()?.view.container.get_box_size();
@@ -249,7 +249,7 @@ impl Render<Port> {
     pub fn new(entity: Port, options: &Options) -> Self {
         let id = entity.sig.id;
         let label = if entity.contains.is_empty() {
-            entity.get_label(options, 9)
+            entity.get_label(options, 20)
         } else if let (1, Some(id)) = (entity.contains.len(), entity.contains.first()) {
             id.to_string()
         } else {
@@ -299,7 +299,7 @@ impl Render<Port> {
                         },
                     },
                 },
-                elements: vec![],
+                elements: Vec::new(),
             },
             hidden: false,
         }
@@ -322,7 +322,12 @@ impl Render<Port> {
         _options: &Options,
         state: &State,
     ) -> Result<(), E> {
-        if matches!(self.entity.port_type, PortType::Unbound) {
+        if state.is_hovered(&self.entity.sig.id) {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(50,50,50)"),
+                fill_style: String::from("rgb(200,200,200)"),
+            };
+        } else if matches!(self.entity.port_type, PortType::Unbound) {
             self.view.container.style = Style {
                 stroke_style: String::from("rgb(50,50,50)"),
                 fill_style: String::from("rgb(200,200,240)"),

@@ -114,6 +114,8 @@ impl Board {
                     e.to_string()
                 ))
             })?;
+        // cx.set_global_alpha(0.0);
+        // cx.set_global_composite_operation("saturation");
         let _ = cx.translate(0.5, 0.5);
         let _ = self.context.insert(cx);
         let _ = self.canvas.insert(canvas);
@@ -410,32 +412,32 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn highlight_connection_by_port(&mut self, id: usize) -> Result<(), String> {
-        let has_to_be_rendered =
-            if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
-                self.state.highlight_port(&rel_port)
-            } else {
-                false
-            };
-        if self.state.highlight_port(&id) || has_to_be_rendered {
-            self.render()
-        } else {
-            Ok(())
-        }
+    pub fn hover(&mut self, id: usize) -> bool {
+        self.state.hover(&id)
     }
 
     #[wasm_bindgen]
-    pub fn unhighlight_connection_by_port(&mut self, id: usize) -> Result<(), String> {
-        let has_to_be_rendered =
-            if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
+    pub fn unhover(&mut self) -> bool {
+        self.state.unhover()
+    }
+
+    #[wasm_bindgen]
+    pub fn highlight_connection_by_port(&mut self, id: usize) -> bool {
+        self.state.highlight_port(&id)
+            || if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
+                self.state.highlight_port(&rel_port)
+            } else {
+                false
+            }
+    }
+
+    #[wasm_bindgen]
+    pub fn unhighlight_connection_by_port(&mut self, id: usize) -> bool {
+        self.state.unhighlight_port(&id)
+            || if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
                 self.state.unhighlight_port(&rel_port)
             } else {
                 false
-            };
-        if self.state.unhighlight_port(&id) || has_to_be_rendered {
-            self.render()
-        } else {
-            Ok(())
-        }
+            }
     }
 }

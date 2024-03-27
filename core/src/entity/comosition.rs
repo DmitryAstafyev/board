@@ -27,9 +27,9 @@ impl Composition {
     pub fn new(sig: Signature) -> Self {
         Self {
             sig,
-            components: vec![],
-            connections: vec![],
-            compositions: vec![],
+            components: Vec::new(),
+            connections: Vec::new(),
+            compositions: Vec::new(),
             ports: Representation::Origin(Ports::new()),
             parent: None,
         }

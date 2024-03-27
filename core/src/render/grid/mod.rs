@@ -144,7 +144,7 @@ impl Grid {
     }
 
     pub fn get_coors_by_ids(&self, ids: &[usize], relative: &Relative) -> Vec<ElementCoors> {
-        let mut found: Vec<ElementCoors> = vec![];
+        let mut found: Vec<ElementCoors> = Vec::new();
         self.map.iter().for_each(|(id, (ty, area))| {
             if let Ok(id) = id.parse::<usize>() {
                 if !ids.contains(&id) {
@@ -394,7 +394,7 @@ impl Grid {
 pub type FormSize = (String, ElementType, (u32, u32));
 pub type ElementCoor = (ElementType, (u32, u32, u32, u32));
 fn get_sizes(forms: Vec<&Form>) -> Result<Vec<FormSize>, E> {
-    let mut data = vec![];
+    let mut data = Vec::new();
     for form in forms {
         data.push((form.id(), form.get_el_ty().clone(), form.cells()?));
     }

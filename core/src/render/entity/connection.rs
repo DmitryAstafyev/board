@@ -20,7 +20,7 @@ impl Render<Connection> {
                     form: Form::Path(
                         ElementType::Connection,
                         Path {
-                            points: vec![],
+                            points: Vec::new(),
                             id: id.to_string(),
                         },
                     ),
@@ -29,7 +29,7 @@ impl Render<Connection> {
                         fill_style: String::from("rgb(200,200,200)"),
                     },
                 },
-                elements: vec![],
+                elements: Vec::new(),
             },
             hidden: false,
         }

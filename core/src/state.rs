@@ -5,6 +5,7 @@ pub struct State {
     components: Vec<usize>,
     ports: Vec<usize>,
     ports_highlighted: Vec<usize>,
+    hovered: Option<usize>,
     // (ports, linked, owners)
     // ports - filtered ports
     // linked - ports linked to filtered ports
@@ -18,9 +19,10 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self {
-            components: vec![],
-            ports: vec![],
-            ports_highlighted: vec![],
+            components: Vec::new(),
+            ports: Vec::new(),
+            ports_highlighted: Vec::new(),
+            hovered: None,
             filtered: None,
             x: 0,
             y: 0,
@@ -113,6 +115,28 @@ impl State {
         }
     }
 
+    pub fn hover(&mut self, id: &usize) -> bool {
+        if self.hovered.is_some_and(|v| &v == id) {
+            false
+        } else {
+            self.hovered = Some(*id);
+            true
+        }
+    }
+
+    pub fn unhover(&mut self) -> bool {
+        if self.hovered.is_some() {
+            self.hovered = None;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_hovered(&self, id: &usize) -> bool {
+        self.hovered.is_some_and(|v| &v == id)
+    }
+
     pub fn highlight_port(&mut self, id: &usize) -> bool {
         if !self.ports_highlighted.contains(id) {
             self.ports_highlighted.push(*id);
@@ -125,11 +149,14 @@ impl State {
     pub fn unhighlight_port(&mut self, id: &usize) -> bool {
         if let Some(i) = self.ports_highlighted.iter().position(|v| v == id) {
             let _ = self.ports_highlighted.remove(i);
-
             true
         } else {
             false
         }
+    }
+
+    pub fn is_port_highlighted(&self, id: &usize) -> bool {
+        self.ports_highlighted.contains(id)
     }
 
     pub fn is_port_selected(&self, id: &usize) -> bool {
@@ -139,10 +166,6 @@ impl State {
             true
         };
         self.ports.contains(id) && visible
-    }
-
-    pub fn is_port_highlighted(&self, id: &usize) -> bool {
-        self.ports_highlighted.contains(id)
     }
 
     pub fn is_component_selected(&self, id: &usize) -> bool {

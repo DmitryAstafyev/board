@@ -48,7 +48,7 @@ impl Render<Component> {
                         },
                     },
                 },
-                elements: vec![],
+                elements: Vec::new(),
             },
             hidden: false,
         }
@@ -88,12 +88,17 @@ impl Render<Component> {
         options: &Options,
         state: &State,
     ) -> Result<(), E> {
-        if matches!(
+        if state.is_hovered(&self.entity.sig.id) {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(0,0,0)"),
+                fill_style: String::from("rgb(200,200,200)"),
+            };
+        } else if matches!(
             self.view.container.form.get_el_ty(),
             ElementType::Composition
         ) {
             self.view.container.style = Style {
-                stroke_style: String::from("rgb(30,30,30)"),
+                stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(250,200,200)"),
             };
         } else if state.is_component_selected(&self.entity.sig.id) {
@@ -103,10 +108,11 @@ impl Render<Component> {
             };
         } else {
             self.view.container.style = Style {
-                stroke_style: String::from("rgb(30,30,30)"),
+                stroke_style: String::from("rgb(0,0,0)"),
                 fill_style: String::from("rgb(250,250,250)"),
             };
         }
+
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
         self.entity

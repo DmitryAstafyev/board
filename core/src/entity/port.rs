@@ -47,7 +47,7 @@ pub struct Ports {
 impl Default for Ports {
     fn default() -> Self {
         Self {
-            ports: vec![],
+            ports: Vec::new(),
             hide_invisible: true,
             sig: Signature::default(),
         }
@@ -63,7 +63,7 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Ports {
 impl Ports {
     pub fn new() -> Self {
         Self {
-            ports: vec![],
+            ports: Vec::new(),
             hide_invisible: true,
             sig: Signature::default(),
         }
@@ -139,7 +139,7 @@ impl Ports {
     }
 
     pub fn get_groupped(&self) -> Vec<(usize, Vec<usize>)> {
-        let mut ports: Vec<(usize, Vec<usize>)> = vec![];
+        let mut ports: Vec<(usize, Vec<usize>)> = Vec::new();
         self.ports.iter().for_each(|p| {
             if p.origin().contains.is_empty() {
                 return;
