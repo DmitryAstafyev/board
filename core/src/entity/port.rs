@@ -31,8 +31,11 @@ impl Port {
     pub fn set_type(&mut self, port_type: PortType) {
         self.port_type = port_type;
     }
-    pub fn get_label(&self, options: &Options, len: usize) -> String {
-        self.sig.as_label(options.labels.ports_short_name, len)
+    pub fn get_label(&self, options: &Options) -> String {
+        self.sig.as_label(
+            options.labels.ports_short_name,
+            options.labels.port_label_max_len,
+        )
     }
 }
 

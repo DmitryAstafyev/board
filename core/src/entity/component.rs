@@ -18,7 +18,10 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Component {
 }
 
 impl Component {
-    pub fn get_label(&self, options: &Options, len: usize) -> String {
-        self.sig.as_label(options.labels.components_short_name, len)
+    pub fn get_label(&self, options: &Options) -> String {
+        self.sig.as_label(
+            options.labels.components_short_name,
+            options.labels.comp_label_max_len,
+        )
     }
 }

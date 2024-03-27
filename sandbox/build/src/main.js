@@ -212,18 +212,6 @@ function load(parent, elements, holder) {
                 visibility: true,
             },
         });
-        // if (
-        //     !parent.component.includes(pPort.contextComponent) ||
-        //     !parent.component.includes(rPort.contextComponent)
-        // ) {
-        //     console.error(`contextComponent isn't found in components IDs`);
-        // }
-        // if (
-        //     !comps.includes(pPort.contextComponent) ||
-        //     !comps.includes(rPort.contextComponent)
-        // ) {
-        //     console.error(`contextComponent isn't found in comps IDs`);
-        // }
     });
     if (notFoundConnectors > 0) {
         console.error(`Fail to find ${notFoundConnectors} connectors `);
@@ -356,6 +344,8 @@ function getLabeledPortsOptions() {
             ports_short_name: true,
             components_short_name: true,
             composition_short_name: true,
+            port_label_max_len: 16,
+            comp_label_max_len: 12,
         },
     };
 }

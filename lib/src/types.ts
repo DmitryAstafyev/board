@@ -100,6 +100,8 @@ export interface LabelsOptions {
     ports_short_name: boolean;
     components_short_name: boolean;
     composition_short_name: boolean;
+    port_label_max_len: number;
+    comp_label_max_len: number;
 }
 export interface Options {
     ports: PortsOptions;
@@ -129,6 +131,8 @@ export function getDefaultsOptions(): Options {
             ports_short_name: true,
             components_short_name: true,
             composition_short_name: true,
+            port_label_max_len: 16,
+            comp_label_max_len: 12,
         },
     };
 }

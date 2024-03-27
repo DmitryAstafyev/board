@@ -95,8 +95,10 @@ impl Composition {
             .find_map(|c| id.get_if_equal(c.origin()))
     }
 
-    pub fn get_label(&self, options: &Options, len: usize) -> String {
-        self.sig
-            .as_label(options.labels.composition_short_name, len)
+    pub fn get_label(&self, options: &Options) -> String {
+        self.sig.as_label(
+            options.labels.composition_short_name,
+            options.labels.comp_label_max_len,
+        )
     }
 }

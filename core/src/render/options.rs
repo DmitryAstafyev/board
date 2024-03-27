@@ -32,6 +32,8 @@ pub struct Labels {
     pub ports_short_name: bool,
     pub components_short_name: bool,
     pub composition_short_name: bool,
+    pub port_label_max_len: usize,
+    pub comp_label_max_len: usize,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -62,6 +64,8 @@ impl Default for Options {
                 ports_short_name: true,
                 components_short_name: true,
                 composition_short_name: true,
+                port_label_max_len: 16,
+                comp_label_max_len: 12,
             },
         }
     }
