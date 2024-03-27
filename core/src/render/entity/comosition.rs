@@ -421,20 +421,21 @@ impl Render<Composition> {
         // Align to composition grid
         self.align_to_grid(&composition_grid)?;
         let grid_size = composition_grid.get_size_px();
-        let grid_height_px =
-            composition_grid.set_min_height(self.entity.ports.render()?.height(state) as u32);
+        // let grid_height_px =
+        //     composition_grid.set_min_height(self.entity.ports.render()?.height(state) as u32);
+        let grid_height_px = composition_grid.set_min_height(50);
         self.view
             .container
             .set_box_size(Some(grid_size.0 as i32), Some(grid_height_px as i32));
         // Calc ports
-        let self_relative = self.relative(relative);
-        self.entity.ports.render_mut()?.calc(
-            context,
-            self.view.container.get_box_size().0,
-            &self_relative,
-            options,
-            state,
-        )?;
+        // let self_relative = self.relative(relative);
+        // self.entity.ports.render_mut()?.calc(
+        //     context,
+        //     self.view.container.get_box_size().0,
+        //     &self_relative,
+        //     options,
+        //     state,
+        // )?;
         // Add composition as itself into grid
         composition_grid.insert_self(self.entity.sig.id, ElementType::Composition);
         if let Some(container) = self.view.elements.first_mut() {
@@ -458,7 +459,6 @@ impl Render<Composition> {
             return Ok(());
         }
         self.view.render(context, relative);
-        let self_relative = self.relative(relative);
         for component in self
             .entity
             .components
@@ -486,10 +486,11 @@ impl Render<Composition> {
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }
-        self.entity
-            .ports
-            .render_mut()?
-            .draw(context, &self_relative, options, state)?;
+        // let self_relative = self.relative(relative);
+        // self.entity
+        //     .ports
+        //     .render_mut()?
+        //     .draw(context, &self_relative, options, state)?;
         context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
         context.set_text_baseline("bottom");
         context.set_font(&format!("{}px serif", relative.zoom(12)));

@@ -35,6 +35,7 @@ import("core")
     });
 
 const CLICK_DURATION = 250;
+const SCROLLBAR_SIZE = 16;
 
 export interface ConnectionInfo {
     port: number;
@@ -201,8 +202,8 @@ export class Board extends Subscriber {
         const size = this.parent.getBoundingClientRect();
         this.size.width = size.width;
         this.size.height = size.height;
-        this.canvas.width = size.width;
-        this.canvas.height = size.height;
+        this.canvas.width = size.width - SCROLLBAR_SIZE;
+        this.canvas.height = size.height - SCROLLBAR_SIZE;
     }
 
     protected updateSize(): void {
@@ -254,13 +255,13 @@ export class Board extends Subscriber {
         if (!this.movement.processing) {
             return;
         }
+        const canvas = this.board.get_size();
         this.position.x -=
             (this.movement.x - event.offsetX) / this.position.zoom;
         this.position.y -=
             (this.movement.y - event.offsetY) / this.position.zoom;
         this.position.x = this.position.x > 0 ? 0 : this.position.x;
         this.position.y = this.position.y > 0 ? 0 : this.position.y;
-        const canvas = this.board.get_size();
         this.position.x =
             -this.position.x > canvas[0] - this.size.width / this.position.zoom
                 ? -(canvas[0] - this.size.width / this.position.zoom)
@@ -269,6 +270,8 @@ export class Board extends Subscriber {
             -this.position.y > canvas[1] - this.size.height / this.position.zoom
                 ? -(canvas[1] - this.size.height / this.position.zoom)
                 : this.position.y;
+        this.position.x = this.position.x > 0 ? 0 : this.position.x;
+        this.position.y = this.position.y > 0 ? 0 : this.position.y;
         this.movement.x = event.offsetX;
         this.movement.y = event.offsetY;
         this.scroll.moveTo(

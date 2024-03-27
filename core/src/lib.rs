@@ -142,6 +142,7 @@ impl Board {
         grid_options.padding = 0;
         self.grid = Grid::new(&grid_options);
         self.state.set_filtered(None);
+        self.state.set_view_state(0, 0, 1.0);
         Ok(self.render.calc(
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
             &mut self.grid,

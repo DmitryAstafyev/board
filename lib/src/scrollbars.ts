@@ -77,14 +77,24 @@ export class ScrollBars {
     public calc() {
         const x = this.current.x;
         const y = this.current.y;
-        this.current.x =
-            this.parent.scrollLeft + this.container.width >= this.canvas.zWidth
-                ? this.canvas.zWidth - this.container.width
-                : this.parent.scrollLeft;
-        this.current.y =
-            this.parent.scrollTop + this.container.height >= this.canvas.zHeight
-                ? this.canvas.zHeight - this.container.height
-                : this.parent.scrollTop;
+        if (this.container.width > this.canvas.zWidth) {
+            this.current.x = 0;
+        } else {
+            this.current.x =
+                this.parent.scrollLeft + this.container.width >=
+                this.canvas.zWidth
+                    ? this.canvas.zWidth - this.container.width
+                    : this.parent.scrollLeft;
+        }
+        if (this.container.height > this.canvas.zHeight) {
+            this.current.y = 0;
+        } else {
+            this.current.y =
+                this.parent.scrollTop + this.container.height >=
+                this.canvas.zHeight
+                    ? this.canvas.zHeight - this.container.height
+                    : this.parent.scrollTop;
+        }
         if (x !== this.current.x || y !== this.current.y) {
             this.scroll.emit({
                 x: this.current.x,
