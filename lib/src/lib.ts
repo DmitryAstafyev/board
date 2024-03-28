@@ -1,6 +1,7 @@
 import { Hover } from "./hover";
 import { ScrollBars, ScrollEvent } from "./scrollbars";
 import { Subject, Subjects, Subscriber } from "./subscriber";
+import { Position, IPosition } from "./position";
 
 import * as Core from "core";
 import * as Types from "./types";
@@ -57,6 +58,7 @@ export interface HoverMouseEvent {
     x: number;
     y: number;
 }
+
 export class Board extends Subscriber {
     protected readonly board: Core.Board;
     protected readonly canvas: HTMLCanvasElement;
@@ -74,15 +76,8 @@ export class Board extends Subscriber {
         height: 0,
         width: 0,
     };
-    protected readonly position: {
-        x: number;
-        y: number;
-        zoom: number;
-    } = {
-        x: 0,
-        y: 0,
-        zoom: 1,
-    };
+    protected position: Position = new Position();
+    protected readonly history: Map<number, IPosition> = new Map();
     protected readonly movement: {
         x: number;
         y: number;
@@ -209,14 +204,14 @@ export class Board extends Subscriber {
     protected updateSize(): void {
         this.setSize();
         this.board.update_size();
+        const used = this.board.get_size() as [number, number];
         this.scroll.setZoom(this.position.zoom);
-        this.scroll.setSize(
-            this.board.get_size() as [number, number],
-            this.size
+        this.scroll.setSize(used, this.size);
+        this.position.update(used, this.size);
+        this.scroll.moveTo(
+            -this.position.x * this.position.zoom,
+            -this.position.y * this.position.zoom
         );
-        this.scroll.moveTo(0, 0);
-        this.position.x = 0;
-        this.position.y = 0;
         this.render();
     }
 
@@ -256,22 +251,28 @@ export class Board extends Subscriber {
             return;
         }
         const canvas = this.board.get_size();
-        this.position.x -=
-            (this.movement.x - event.offsetX) / this.position.zoom;
-        this.position.y -=
-            (this.movement.y - event.offsetY) / this.position.zoom;
-        this.position.x = this.position.x > 0 ? 0 : this.position.x;
-        this.position.y = this.position.y > 0 ? 0 : this.position.y;
-        this.position.x =
-            -this.position.x > canvas[0] - this.size.width / this.position.zoom
-                ? -(canvas[0] - this.size.width / this.position.zoom)
-                : this.position.x;
-        this.position.y =
-            -this.position.y > canvas[1] - this.size.height / this.position.zoom
-                ? -(canvas[1] - this.size.height / this.position.zoom)
-                : this.position.y;
-        this.position.x = this.position.x > 0 ? 0 : this.position.x;
-        this.position.y = this.position.y > 0 ? 0 : this.position.y;
+        if (!this.position.xLocked) {
+            this.position.x -=
+                (this.movement.x - event.offsetX) / this.position.zoom;
+            this.position.x = this.position.x > 0 ? 0 : this.position.x;
+            this.position.x =
+                -this.position.x >
+                canvas[0] - this.size.width / this.position.zoom
+                    ? -(canvas[0] - this.size.width / this.position.zoom)
+                    : this.position.x;
+            this.position.x = this.position.x > 0 ? 0 : this.position.x;
+        }
+        if (!this.position.yLocked) {
+            this.position.y -=
+                (this.movement.y - event.offsetY) / this.position.zoom;
+            this.position.y = this.position.y > 0 ? 0 : this.position.y;
+            this.position.y =
+                -this.position.y >
+                canvas[1] - this.size.height / this.position.zoom
+                    ? -(canvas[1] - this.size.height / this.position.zoom)
+                    : this.position.y;
+            this.position.y = this.position.y > 0 ? 0 : this.position.y;
+        }
         this.movement.x = event.offsetX;
         this.movement.y = event.offsetY;
         this.scroll.moveTo(
@@ -454,8 +455,16 @@ export class Board extends Subscriber {
             return;
         }
         this.board.bind(composition, Uint32Array.from([]));
+        this.data.composition !== undefined &&
+            this.history.set(this.data.composition, this.position.clone());
         this.data.composition = id;
         this.data.groupped = this.board.get_groupped_ports();
+        const recent = this.history.get(id);
+        if (recent !== undefined) {
+            this.position = Position.from(recent);
+        } else {
+            this.position.dropCoors();
+        }
         this.updateSize();
     }
 
