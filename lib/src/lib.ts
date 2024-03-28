@@ -189,8 +189,12 @@ export class Board extends Subscriber {
         this.resize.observe(this.parent);
     }
 
-    protected onResize(entries: ResizeObserverEntry[]): void {
-        this.updateSize();
+    protected onResize(_entries: ResizeObserverEntry[]): void {
+        try {
+            this.updateSize();
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     protected setSize(): void {

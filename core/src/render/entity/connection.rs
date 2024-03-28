@@ -25,8 +25,8 @@ impl Render<Connection> {
                         },
                     ),
                     style: Style {
-                        stroke_style: String::from("rgb(0,0,0)"),
-                        fill_style: String::from("rgb(200,200,200)"),
+                        stroke_style: String::from("rgb(30,30,30)"),
+                        fill_style: String::from("rgb(30,30,30)"),
                     },
                 },
                 elements: Vec::new(),
@@ -39,11 +39,6 @@ impl Render<Connection> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
     ) -> Result<(), E> {
-        // if let Some(over) = self.over_style.as_ref() {
-        //     over.apply(context);
-        // } else {
-        //     self.style.apply(context);
-        // }
         self.view.render(context, relative);
         Ok(())
     }

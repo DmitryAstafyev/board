@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use crate::render::Relative;
 
 #[derive(Debug)]
@@ -51,5 +53,27 @@ impl Path {
             context.line_to(relative.x(p.x) as f64, relative.y(p.y) as f64);
         });
         context.stroke();
+        context.begin_path();
+        let _ = context.ellipse(
+            relative.x(self.points[0].x) as f64,
+            relative.y(self.points[0].y) as f64,
+            3.0,
+            3.0,
+            0.0,
+            0.0,
+            360.0 * (PI / 180.0),
+        );
+        context.fill();
+        context.begin_path();
+        let _ = context.ellipse(
+            relative.x(self.points[self.points.len() - 1].x) as f64,
+            relative.y(self.points[self.points.len() - 1].y) as f64,
+            3.0,
+            3.0,
+            0.0,
+            0.0,
+            360.0 * (PI / 180.0),
+        );
+        context.fill();
     }
 }

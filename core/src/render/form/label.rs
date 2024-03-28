@@ -1,6 +1,7 @@
 use crate::render::{grid::CELL, Relative};
 
-const TEXT_PADDING: u32 = 3;
+const TEXT_V_PADDING: u32 = 3;
+const TEXT_H_PADDING: u32 = 8;
 
 #[derive(Debug)]
 pub enum Align {
@@ -49,7 +50,7 @@ impl Label {
     }
 
     pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
-        let text_padding = relative.zoom(TEXT_PADDING as i32) as f64;
+        let text_hor_padding = relative.zoom(TEXT_H_PADDING as i32) as f64;
         self.h = relative.zoom((CELL as f64 * 0.7).floor() as i32);
         context.set_text_baseline("top");
         context.set_font(&format!("{}px serif", (self.h as f64 * 0.7).round()));
@@ -57,13 +58,14 @@ impl Label {
             metric.width() as i32
         } else {
             64
-        } + (text_padding as i32) * 2;
+        } + (text_hor_padding as i32) * 2;
     }
     // Take into account self.w already condiser zooming, because it's calculated by
     // render and already reflects zoom-factor.
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         self.calc(context, relative);
-        let text_padding = relative.zoom(TEXT_PADDING as i32) as f64;
+        let text_hor_padding = relative.zoom(TEXT_H_PADDING as i32) as f64;
+        let text_ver_padding = relative.zoom(TEXT_V_PADDING as i32) as f64;
         let x = match self.align {
             Align::Left => relative.x(self.x + self.padding),
             Align::Right => relative.x(self.x - self.padding) - self.w,
@@ -71,6 +73,6 @@ impl Label {
         let y = relative.y(self.y) as f64;
         context.fill_rect(x, y, self.w as f64, self.h as f64);
         context.stroke_rect(x, y, self.w as f64, self.h as f64);
-        let _ = context.stroke_text(&self.label, x + text_padding, y + text_padding);
+        let _ = context.stroke_text(&self.label, x + text_hor_padding, y + text_ver_padding);
     }
 }

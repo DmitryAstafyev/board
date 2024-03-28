@@ -157,6 +157,9 @@ impl Board {
         let mut grid_options = self.options.grid.clone();
         grid_options.padding = 0;
         self.grid = Grid::new(&grid_options);
+        let zoom = self.state.zoom;
+        // Calculation goes without considering zoom factor. During calculation zoom factor should be 1.0
+        self.state.zoom = 1.0;
         self.render.calc(
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
             &mut self.grid,
@@ -164,6 +167,7 @@ impl Board {
             &self.state,
             &self.options,
         )?;
+        self.state.zoom = zoom;
         self.render()
     }
 
@@ -194,11 +198,9 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn set_filter(&mut self, filter: Option<String>) -> Result<(), String> {
+    pub fn set_filter(&mut self, filter: Option<String>) {
         self.state
             .set_filtered(self.render.get_filtered_ports(filter));
-        self.render()?;
-        Ok(())
     }
 
     #[wasm_bindgen]
