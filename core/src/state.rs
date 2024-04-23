@@ -61,6 +61,17 @@ impl State {
     }
 
     pub fn is_port_filtered_or_linked(&self, port: &Port) -> bool {
+        // if let Some((filtered, linked, _owners)) = self.filtered.as_ref() {
+        //     if port.contains.is_empty() {
+        //         filtered.contains(&port.sig.id) || linked.contains(&port.sig.id)
+        //     } else {
+        //         port.contains
+        //             .iter()
+        //             .any(|id| filtered.contains(id) || linked.contains(id))
+        //     }
+        // } else {
+        //     true
+        // }
         if let Some((filtered, linked, _owners)) = self.filtered.as_ref() {
             filtered.contains(&port.sig.id) || linked.contains(&port.sig.id)
         } else {

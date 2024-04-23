@@ -1,5 +1,3 @@
-use std::usize;
-
 use crate::{
     entity::{Signature, SignatureGetter},
     render::{options::Options, Representation},

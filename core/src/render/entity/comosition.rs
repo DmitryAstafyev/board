@@ -198,7 +198,7 @@ impl Render<Composition> {
                     if filtered.contains(connection.in_port()) {
                         Some(*connection.out_port())
                     } else if filtered.contains(connection.out_port()) {
-                        Some(*connection.in_comp())
+                        Some(*connection.in_port())
                     } else {
                         None
                     }
