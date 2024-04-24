@@ -20,6 +20,51 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Ports> {
     }
 }
 
+struct Filter<'a> {
+    bound: &'a mut Render<Ports>,
+}
+
+impl<'a> Filter<'a> {
+    pub fn new(bound: &'a mut Render<Ports>) -> Self {
+        Self { bound }
+    }
+
+    pub fn all(&mut self, state: &State) -> Vec<&mut Representation<Port>> {
+        let hide = self.bound.origin().hide_invisible;
+        self.bound
+            .entity
+            .ports
+            .iter_mut()
+            .filter(|p| {
+                (p.origin().visibility || !hide) && state.is_port_filtered_or_linked(p.origin())
+            })
+            .collect::<Vec<&mut Representation<Port>>>()
+    }
+
+    pub fn left(&mut self, state: &State) -> Vec<&mut Representation<Port>> {
+        let hide = self.bound.origin().hide_invisible;
+        self.bound
+            .entity
+            .filter_mut(&[PortType::In, PortType::Unbound])
+            .into_iter()
+            .filter(|p| {
+                (p.origin().visibility || !hide) && state.is_port_filtered_or_linked(p.origin())
+            })
+            .collect::<Vec<&mut Representation<Port>>>()
+    }
+
+    pub fn right(&mut self, state: &State) -> Vec<&mut Representation<Port>> {
+        let hide = self.bound.origin().hide_invisible;
+        self.bound
+            .entity
+            .filter_mut(&[PortType::Out])
+            .into_iter()
+            .filter(|p| {
+                (p.origin().visibility || !hide) && state.is_port_filtered_or_linked(p.origin())
+            })
+            .collect::<Vec<&mut Representation<Port>>>()
+    }
+}
 impl Render<Ports> {
     pub fn new(mut entity: Ports, options: &Options) -> Self {
         entity.ports = entity
@@ -58,30 +103,16 @@ impl Render<Ports> {
         }
     }
 
-    pub fn height(&self, state: &State) -> i32 {
+    fn filter(&mut self) -> Filter<'_> {
+        Filter::new(self)
+    }
+
+    pub fn height(&mut self, state: &State) -> i32 {
         if self.entity.ports.is_empty() {
             return 0;
         }
-        let ports_in = self.entity.filter(&[PortType::In, PortType::Unbound]);
-        let ports_out = self.entity.filter(&[PortType::Out]);
-        let max_in = if self.origin().hide_invisible {
-            ports_in
-                .iter()
-                .filter(|r| r.origin().visibility && state.is_port_filtered_or_linked(r.origin()))
-                .collect::<Vec<&&Representation<Port>>>()
-                .len()
-        } else {
-            ports_in.len()
-        };
-        let max_out = if self.origin().hide_invisible {
-            ports_out
-                .iter()
-                .filter(|r| r.origin().visibility && state.is_port_filtered_or_linked(r.origin()))
-                .collect::<Vec<&&Representation<Port>>>()
-                .len()
-        } else {
-            ports_in.len()
-        };
+        let max_in = self.filter().left(state).len();
+        let max_out = self.filter().right(state).len();
         elements::max(&[max_in, max_out], 0) as i32 * PORTS_VERTICAL_OFFSET + PORTS_VERTICAL_OFFSET
     }
 
@@ -93,26 +124,15 @@ impl Render<Ports> {
         options: &Options,
         state: &State,
     ) -> Result<(), E> {
-        let hide = self.origin().hide_invisible;
         // Calc ports
-        for port in self.entity.ports.iter_mut().filter(|p| {
-            (p.origin().visibility || !hide) && state.is_port_filtered_or_linked(p.origin())
-        }) {
+        for port in self.filter().all(state) {
             port.render_mut()?.calc(context, relative, options)?;
         }
         match options.ports.representation {
             options::PortsRepresentation::Blocks => {
                 // Order ports on a left side
                 let mut cursor: i32 = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
-                for port in self
-                    .entity
-                    .filter_mut(&[PortType::In, PortType::Unbound])
-                    .iter_mut()
-                    .filter(|p| {
-                        (p.origin().visibility || !hide)
-                            && state.is_port_filtered_or_linked(p.origin())
-                    })
-                {
+                for port in self.filter().left(state) {
                     let render = port.render_mut()?;
                     let (w, _h) = render.view.container.get_box_size();
                     render
@@ -123,15 +143,7 @@ impl Render<Ports> {
                 }
                 // Order ports on a right side
                 cursor = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
-                for port in self
-                    .entity
-                    .filter_mut(&[PortType::Out])
-                    .iter_mut()
-                    .filter(|p| {
-                        (p.origin().visibility || !hide)
-                            && state.is_port_filtered_or_linked(p.origin())
-                    })
-                {
+                for port in self.filter().right(state) {
                     let render = port.render_mut()?;
                     let (w, _h) = render.view.container.get_box_size();
                     render
@@ -142,38 +154,23 @@ impl Render<Ports> {
                 }
             }
             options::PortsRepresentation::Labels => {
-                // Order ports on a left side
                 let label_height = (CELL as f64 * 0.7).ceil() as i32;
                 let step_between = CELL as i32 - label_height;
                 let start_from = (step_between as f64 / 2.0).ceil() as i32;
-                let mut cursor: i32 = start_from;
                 let over = (container_width as f64 * 0.8 / 2.0) as i32;
-                for port in self
-                    .entity
-                    .filter_mut(&[PortType::In, PortType::Unbound])
-                    .iter_mut()
-                    .filter(|p| {
-                        (p.origin().visibility || !hide)
-                            && state.is_port_filtered_or_linked(p.origin())
-                    })
-                {
-                    let render = port.render_mut()?;
-                    render.view.container.set_coors(Some(over), Some(cursor));
+                // Order ports on a left side
+                let mut cursor: i32 = start_from;
+                for port in self.filter().left(state) {
+                    port.render_mut()?
+                        .view
+                        .container
+                        .set_coors(Some(over), Some(cursor));
                     cursor += step_between + label_height;
                 }
                 // Order ports on a right side
                 cursor = start_from;
-                for port in self
-                    .entity
-                    .filter_mut(&[PortType::Out])
-                    .iter_mut()
-                    .filter(|p| {
-                        (p.origin().visibility || !hide)
-                            && state.is_port_filtered_or_linked(p.origin())
-                    })
-                {
-                    let render = port.render_mut()?;
-                    render
+                for port in self.filter().right(state) {
+                    port.render_mut()?
                         .view
                         .container
                         .set_coors(Some(container_width - over), Some(cursor));
@@ -192,10 +189,7 @@ impl Render<Ports> {
         state: &State,
     ) -> Result<(), E> {
         let self_relative = self.relative(relative);
-        let hide = self.origin().hide_invisible;
-        for port in self.entity.ports.iter_mut().filter(|p| {
-            (p.origin().visibility || !hide) && state.is_port_filtered_or_linked(p.origin())
-        }) {
+        for port in self.filter().all(state) {
             port.render_mut()?
                 .draw(context, &self_relative, options, state)?;
         }

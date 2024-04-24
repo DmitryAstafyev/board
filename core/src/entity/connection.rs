@@ -176,7 +176,7 @@ impl Connection {
                     .and_modify(|(_, ins, _)| {
                         *ins += 1;
                     })
-                    .or_insert((c.origin().joint_in.component, 0, 1));
+                    .or_insert((c.origin().joint_in.component, 1, 0));
             }
         });
         let mut components: Vec<(usize, usize, usize)> =
@@ -190,6 +190,7 @@ impl Connection {
         connections: &[Representation<Connection>],
         host_id: usize,
         ignore: &[usize],
+        state: &State,
         // id, IN, OUT
     ) -> Vec<(usize, usize, usize)> {
         let mut map: HashMap<usize, (usize, usize, usize)> = HashMap::new();
@@ -205,20 +206,22 @@ impl Connection {
                 } else {
                     c.origin().joint_out.component
                 };
-                let entry = map.entry(connected_comp_id);
-                entry
-                    .and_modify(|(_, ins, outs)| {
-                        if in_connection {
-                            *ins += 1;
+                if state.is_port_owner_filtered(&connected_comp_id) {
+                    let entry = map.entry(connected_comp_id);
+                    entry
+                        .and_modify(|(_, ins, outs)| {
+                            if in_connection {
+                                *ins += 1;
+                            } else {
+                                *outs += 1;
+                            }
+                        })
+                        .or_insert(if in_connection {
+                            (connected_comp_id, 1, 0)
                         } else {
-                            *outs += 1;
-                        }
-                    })
-                    .or_insert(if in_connection {
-                        (connected_comp_id, 1, 0)
-                    } else {
-                        (connected_comp_id, 0, 1)
-                    });
+                            (connected_comp_id, 0, 1)
+                        });
+                }
             }
         });
         let mut components: Vec<(usize, usize, usize)> =

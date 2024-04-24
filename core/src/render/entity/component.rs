@@ -54,6 +54,13 @@ impl Render<Component> {
         }
     }
 
+    pub fn is_composition(&self) -> bool {
+        matches!(
+            self.view.container.form.get_el_ty(),
+            ElementType::Composition
+        )
+    }
+
     pub fn calc(
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
@@ -61,14 +68,6 @@ impl Render<Component> {
         options: &Options,
         state: &State,
     ) -> Result<(), E> {
-        // Set self size
-        self.view.container.set_box_size(
-            None,
-            Some(elements::max(
-                &[MIN_HEIGHT, self.entity.ports.render()?.height(state)],
-                MIN_HEIGHT,
-            )),
-        );
         // Calc ports
         let self_relative = self.relative(relative);
         self.entity.ports.render_mut()?.calc(
@@ -78,6 +77,14 @@ impl Render<Component> {
             options,
             state,
         )?;
+        // Set self size
+        self.view.container.set_box_size(
+            None,
+            Some(elements::max(
+                &[MIN_HEIGHT, self.entity.ports.render_mut()?.height(state)],
+                MIN_HEIGHT,
+            )),
+        );
         Ok(())
     }
 

@@ -172,9 +172,16 @@ impl Render<Composition> {
     }
 
     pub fn get_filtered_ports(
-        &self,
+        &mut self,
         filter: Option<String>,
     ) -> Option<(Vec<usize>, Vec<usize>, Vec<usize>)> {
+        self.entity
+            .components
+            .retain(|c| c.render().map_or(true, |r| !r.is_composition()));
+        self.entity
+            .compositions
+            .iter_mut()
+            .for_each(|c| c.render_mut().unwrap().show());
         filter.as_ref().map(|filter| {
             let filtered = [
                 self.entity
@@ -357,12 +364,7 @@ impl Render<Composition> {
                     options,
                 )?;
                 composition.render_mut()?.show();
-            } else if !self
-                .entity
-                .components
-                .iter()
-                .any(|comp| comp.sig().id == composition.sig().id)
-            {
+            } else {
                 self.entity
                     .components
                     .push(Representation::Render(Render::<Component>::new(
@@ -389,8 +391,12 @@ impl Render<Composition> {
             if located.contains(host_id) {
                 continue;
             }
-            let linked =
-                Connection::get_ordered_linked_to(&self.entity.connections, *host_id, &located);
+            let linked = Connection::get_ordered_linked_to(
+                &self.entity.connections,
+                *host_id,
+                &located,
+                state,
+            );
             if let Some((id, _, _)) = linked.first() {
                 dependencies.push((*host_id, *id));
                 located = [located, vec![*host_id, *id]].concat();
@@ -427,15 +433,6 @@ impl Render<Composition> {
         self.view
             .container
             .set_box_size(Some(grid_size.0 as i32), Some(grid_height_px as i32));
-        // Calc ports
-        // let self_relative = self.relative(relative);
-        // self.entity.ports.render_mut()?.calc(
-        //     context,
-        //     self.view.container.get_box_size().0,
-        //     &self_relative,
-        //     options,
-        //     state,
-        // )?;
         // Add composition as itself into grid
         composition_grid.insert_self(self.entity.sig.id, ElementType::Composition);
         if let Some(container) = self.view.elements.first_mut() {
