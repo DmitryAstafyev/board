@@ -181,6 +181,7 @@ impl Connection {
         });
         let mut components: Vec<(usize, usize, usize)> =
             map.into_values().collect::<Vec<(usize, usize, usize)>>();
+        components.sort_by(|(a, _, _), (b, _, _)| a.cmp(b));
         components
             .sort_by(|(_, a_in, a_out), (_, b_in, b_out)| (b_in + b_out).cmp(&(a_in + a_out)));
         components
@@ -226,6 +227,7 @@ impl Connection {
         });
         let mut components: Vec<(usize, usize, usize)> =
             map.into_values().collect::<Vec<(usize, usize, usize)>>();
+        components.sort_by(|(a, _, _), (b, _, _)| a.cmp(b));
         components
             .sort_by(|(_, a_in, a_out), (_, b_in, b_out)| (b_in + b_out).cmp(&(a_in + a_out)));
         components

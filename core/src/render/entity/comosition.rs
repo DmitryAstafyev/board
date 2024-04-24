@@ -121,7 +121,7 @@ impl Render<Composition> {
         } else {
             entity.ports
         };
-
+        entity.order();
         let id = entity.sig.id;
         let parent = entity.parent;
         Self {
@@ -349,8 +349,6 @@ impl Render<Composition> {
         let relative = &state.get_view_relative();
         // Create composition grid
         let mut composition_grid = Grid::new(&options.grid);
-        // Order components by connections number
-        self.entity.order();
         for composition in self.entity.compositions.iter_mut() {
             if !state.is_port_owner_filtered(&composition.sig().id) {
                 continue;
