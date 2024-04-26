@@ -1,7 +1,19 @@
 use std::f64::consts::PI;
 
-use crate::render::Relative;
+use crate::render::{Ratio, Relative};
 
+#[derive(Debug)]
+pub struct Params {
+    pub radius: u32,
+}
+
+impl Params {
+    pub fn new(ratio: &Ratio) -> Self {
+        Self {
+            radius: ratio.get(3),
+        }
+    }
+}
 #[derive(Debug)]
 pub struct Point {
     pub x: i32,
@@ -12,11 +24,16 @@ pub struct Point {
 pub struct Path {
     pub points: Vec<Point>,
     pub id: String,
+    pub params: Params,
 }
 
 impl Path {
-    pub fn new(id: String, points: Vec<Point>) -> Self {
-        Self { id, points }
+    pub fn new(id: String, points: Vec<Point>, ratio: &Ratio) -> Self {
+        Self {
+            id,
+            points,
+            params: Params::new(ratio),
+        }
     }
     pub fn get_box_size(&self) -> (i32, i32) {
         (
@@ -57,8 +74,8 @@ impl Path {
         let _ = context.ellipse(
             relative.x(self.points[0].x) as f64,
             relative.y(self.points[0].y) as f64,
-            3.0,
-            3.0,
+            self.params.radius as f64,
+            self.params.radius as f64,
             0.0,
             0.0,
             360.0 * (PI / 180.0),
@@ -68,8 +85,8 @@ impl Path {
         let _ = context.ellipse(
             relative.x(self.points[self.points.len() - 1].x) as f64,
             relative.y(self.points[self.points.len() - 1].y) as f64,
-            3.0,
-            3.0,
+            self.params.radius as f64,
+            self.params.radius as f64,
             0.0,
             0.0,
             360.0 * (PI / 180.0),

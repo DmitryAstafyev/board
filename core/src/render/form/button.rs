@@ -1,12 +1,38 @@
-use crate::render::Relative;
+use wasm_bindgen::JsValue;
 
-const PADDING_IN_HORIZONT: u32 = 8;
+use crate::render::{Ratio, Relative};
+
+#[derive(Debug)]
+pub struct Params {
+    pub pad_hor: i32,
+    pub r_off: i32,
+    pub min_h: i32,
+    pub min_w: i32,
+    pub x_off: i32,
+    pub y_off: i32,
+    pub f_size: i32,
+}
+
+impl Params {
+    pub fn new(ratio: &Ratio) -> Self {
+        Self {
+            pad_hor: ratio.get(8),
+            r_off: ratio.get(2),
+            min_h: ratio.get(18),
+            min_w: ratio.get(64),
+            x_off: ratio.get(3),
+            y_off: ratio.get(12),
+            f_size: ratio.get(12),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub enum Align {
     _Left,
     Right,
 }
+
 #[derive(Debug)]
 pub struct Button {
     pub x: i32,
@@ -17,9 +43,35 @@ pub struct Button {
     pub padding: i32,
     pub id: String,
     pub align: Align,
+    pub params: Params,
 }
 
 impl Button {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        x: i32,
+        y: i32,
+        w: i32,
+        h: i32,
+        label: String,
+        padding: i32,
+        id: String,
+        align: Align,
+        ratio: &Ratio,
+    ) -> Self {
+        let params = Params::new(ratio);
+        Self {
+            x,
+            y,
+            w,
+            h,
+            label,
+            padding: ratio.get(padding),
+            id,
+            align,
+            params,
+        }
+    }
     pub fn get_box_size(&self) -> (i32, i32) {
         (self.w, self.h)
     }
@@ -35,8 +87,8 @@ impl Button {
         match self.align {
             Align::_Left => (self.x, self.y),
             Align::Right => (
-                self.x - (self.w + (PADDING_IN_HORIZONT / 2) as i32),
-                self.y + 2,
+                self.x - (self.w + (self.params.pad_hor / 2)),
+                self.y + self.params.r_off,
             ),
         }
     }
@@ -44,42 +96,52 @@ impl Button {
         match self.align {
             Align::_Left => (relative.zoom(self.x), relative.zoom(self.y)),
             Align::Right => (
-                relative.zoom(self.x) - (self.w + (PADDING_IN_HORIZONT / 2) as i32),
-                relative.zoom(self.y + 2),
+                relative.zoom(self.x) - (self.w + (self.params.pad_hor / 2)),
+                relative.zoom(self.y + self.params.r_off),
             ),
         }
     }
 
     pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, _relative: &Relative) {
         context.set_text_baseline("middle");
-        context.set_font("12px serif");
+        context.set_font(&format!("{}px serif", self.params.f_size));
         let w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width()
         } else {
-            64.0
+            self.params.min_w as f64
         };
-        self.w = w as i32 + PADDING_IN_HORIZONT as i32;
-        self.h = 18;
+        self.w = w as i32 + self.params.pad_hor;
+        self.h = self.params.min_h;
     }
 
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         context.set_text_baseline("middle");
-        context.set_font("12px serif");
+        context.set_font(&format!("{}px serif", self.params.f_size));
         let w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width()
         } else {
-            64.0
+            self.params.min_w as f64
         };
         let mut x = relative.x(self.x) as f64;
         let y = (relative.y(self.y) + self.padding) as f64;
         if matches!(self.align, Align::Right) {
-            x -= w + PADDING_IN_HORIZONT as f64 + self.padding as f64;
+            x -= w + self.params.pad_hor as f64 + self.padding as f64;
         } else {
             x += self.padding as f64;
         }
-        context.fill_rect(x, y, w + PADDING_IN_HORIZONT as f64, 18.0);
-        let _ = context.stroke_text(&self.label, x + 3.0, y + 12.0);
-        self.w = w as i32 + PADDING_IN_HORIZONT as i32;
-        self.h = 18;
+        context.fill_rect(
+            x,
+            y,
+            w + self.params.pad_hor as f64,
+            self.params.min_h as f64,
+        );
+        context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
+        let _ = context.fill_text(
+            &self.label,
+            x + self.params.x_off as f64,
+            y + self.params.y_off as f64,
+        );
+        self.w = w as i32 + self.params.pad_hor;
+        self.h = self.params.min_h;
     }
 }

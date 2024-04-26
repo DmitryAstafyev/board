@@ -108,6 +108,7 @@ export interface Options {
     connections: ConnectionsOptions;
     grid: GridOptions;
     labels: LabelsOptions;
+    ratio: number;
 }
 
 export function getDefaultsOptions(): Options {
@@ -134,5 +135,6 @@ export function getDefaultsOptions(): Options {
             port_label_max_len: 16,
             comp_label_max_len: 12,
         },
+        ratio: window !== undefined ? Math.ceil(window.devicePixelRatio) : 1,
     };
 }

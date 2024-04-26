@@ -1,7 +1,24 @@
-use crate::render::{grid::CELL, Relative};
+use crate::render::{grid, Ratio, Relative};
+use wasm_bindgen::JsValue;
 
-const TEXT_V_PADDING: u32 = 3;
-const TEXT_H_PADDING: u32 = 8;
+#[derive(Debug)]
+pub struct Params {
+    pub cell: u32,
+    pub min_w: i32,
+    pub pad_v: i32,
+    pub pad_h: i32,
+}
+
+impl Params {
+    pub fn new(ratio: &Ratio) -> Self {
+        Self {
+            cell: ratio.get(grid::CELL),
+            min_w: ratio.get(64),
+            pad_v: ratio.get(3),
+            pad_h: ratio.get(8),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub enum Align {
@@ -18,9 +35,35 @@ pub struct Label {
     pub padding: i32,
     pub id: String,
     pub align: Align,
+    pub params: Params,
 }
 
 impl Label {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        x: i32,
+        y: i32,
+        w: i32,
+        h: i32,
+        label: String,
+        padding: i32,
+        id: String,
+        align: Align,
+        ratio: &Ratio,
+    ) -> Self {
+        let params = Params::new(ratio);
+        Self {
+            x,
+            y,
+            w,
+            h,
+            label,
+            padding: ratio.get(padding),
+            id,
+            align,
+            params,
+        }
+    }
     pub fn get_box_size(&self) -> (i32, i32) {
         (self.w, self.h)
     }
@@ -50,22 +93,22 @@ impl Label {
     }
 
     pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
-        let text_hor_padding = relative.zoom(TEXT_H_PADDING as i32) as f64;
-        self.h = relative.zoom((CELL as f64 * 0.7).floor() as i32);
+        let text_hor_padding = relative.zoom(self.params.pad_h) as f64;
+        self.h = relative.zoom((self.params.cell as f64 * 0.7).floor() as i32);
         context.set_text_baseline("top");
         context.set_font(&format!("{}px serif", (self.h as f64 * 0.7).round()));
         self.w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width() as i32
         } else {
-            64
+            self.params.min_w
         } + (text_hor_padding as i32) * 2;
     }
     // Take into account self.w already condiser zooming, because it's calculated by
     // render and already reflects zoom-factor.
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         self.calc(context, relative);
-        let text_hor_padding = relative.zoom(TEXT_H_PADDING as i32) as f64;
-        let text_ver_padding = relative.zoom(TEXT_V_PADDING as i32) as f64;
+        let text_hor_padding = relative.zoom(self.params.pad_h) as f64;
+        let text_ver_padding = relative.zoom(self.params.pad_v) as f64;
         let x = match self.align {
             Align::Left => relative.x(self.x + self.padding),
             Align::Right => relative.x(self.x - self.padding) - self.w,
@@ -73,6 +116,7 @@ impl Label {
         let y = relative.y(self.y) as f64;
         context.fill_rect(x, y, self.w as f64, self.h as f64);
         context.stroke_rect(x, y, self.w as f64, self.h as f64);
-        let _ = context.stroke_text(&self.label, x + text_hor_padding, y + text_ver_padding);
+        context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
+        let _ = context.fill_text(&self.label, x + text_hor_padding, y + text_ver_padding);
     }
 }

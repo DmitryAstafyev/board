@@ -37,7 +37,14 @@ impl Render<Component> {
                         } else {
                             ElementType::Component
                         },
-                        GridRectangle::new(id.to_string(), 0, 0, MIN_WIDTH, MIN_HEIGHT),
+                        GridRectangle::new(
+                            id.to_string(),
+                            0,
+                            0,
+                            options.ratio().get(MIN_WIDTH),
+                            options.ratio().get(MIN_HEIGHT),
+                            &options.ratio(),
+                        ),
                     ),
                     style: Style {
                         stroke_style: String::from("rgb(0,0,0)"),
@@ -77,12 +84,16 @@ impl Render<Component> {
             options,
             state,
         )?;
+        let min_height = options.ratio().get(MIN_HEIGHT);
         // Set self size
         self.view.container.set_box_size(
             None,
             Some(elements::max(
-                &[MIN_HEIGHT, self.entity.ports.render_mut()?.height(state)],
-                MIN_HEIGHT,
+                &[
+                    min_height,
+                    self.entity.ports.render_mut()?.height(state, options),
+                ],
+                min_height,
             )),
         );
         Ok(())
@@ -122,17 +133,19 @@ impl Render<Component> {
 
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
+        let ratio = options.ratio();
         self.entity
             .ports
             .render_mut()?
             .draw(context, &self_relative, options, state)?;
         context.set_text_baseline("bottom");
         context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
-        context.set_font(&format!("{}px serif", relative.zoom(12)));
-        let _ = context.stroke_text(
+        context.set_font(&format!("{}px serif", ratio.get(relative.zoom(12))));
+        context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
+        let _ = context.fill_text(
             &self.origin().get_label(options),
             relative.x(self.view.container.get_coors().0) as f64,
-            relative.y(self.view.container.get_coors().1 - 3) as f64,
+            relative.y(self.view.container.get_coors().1 - ratio.get(3)) as f64,
         );
         Ok(())
     }

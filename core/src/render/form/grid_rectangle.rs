@@ -1,4 +1,17 @@
-use crate::render::{grid, Relative};
+use crate::render::{grid, Ratio, Relative};
+
+#[derive(Debug)]
+pub struct Params {
+    pub cell: u32,
+}
+
+impl Params {
+    pub fn new(ratio: &Ratio) -> Self {
+        Self {
+            cell: ratio.get(grid::CELL),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct GridRectangle {
@@ -8,28 +21,33 @@ pub struct GridRectangle {
     pub h: i32,
     pub cells: (u32, u32),
     pub id: String,
+    pub params: Params,
 }
 
 impl GridRectangle {
     fn sync(&mut self) {
-        let mut cells: (u32, u32) = (self.w as u32 / grid::CELL, self.h as u32 / grid::CELL);
+        let mut cells: (u32, u32) = (
+            self.w as u32 / self.params.cell,
+            self.h as u32 / self.params.cell,
+        );
         if cells.0 == 0 {
             cells.0 = 1
         }
         if cells.1 == 0 {
             cells.1 = 1
         }
-        if cells.0 * grid::CELL < self.w as u32 {
+        if cells.0 * self.params.cell < self.w as u32 {
             cells.0 += 1;
         }
-        if cells.1 * grid::CELL < self.h as u32 {
+        if cells.1 * self.params.cell < self.h as u32 {
             cells.1 += 1
         }
-        self.w = (cells.0 * grid::CELL) as i32;
-        self.h = (cells.1 * grid::CELL) as i32;
+        self.w = (cells.0 * self.params.cell) as i32;
+        self.h = (cells.1 * self.params.cell) as i32;
         self.cells = cells;
     }
-    pub fn new(id: String, x: i32, y: i32, w: i32, h: i32) -> Self {
+    pub fn new(id: String, x: i32, y: i32, w: i32, h: i32, ratio: &Ratio) -> Self {
+        let params = Params::new(ratio);
         let mut instance = Self {
             x,
             y,
@@ -37,6 +55,7 @@ impl GridRectangle {
             h,
             cells: (1, 1),
             id,
+            params,
         };
         instance.sync();
         instance

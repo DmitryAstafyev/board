@@ -1,6 +1,6 @@
 use crate::{
     error::E,
-    render::{elements, options::GridOptions, Form, Relative},
+    render::{elements, options::GridOptions, Form, Ratio, Relative},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -36,19 +36,28 @@ pub struct Grid {
     // Cells map <EntityID, Occupied area <(x, y, x1, y1)>>
     pub map: HashMap<String, ElementCoor>,
     pub id: Option<usize>,
+    pub cell: u32,
+    pub ratio: Ratio,
 }
 
 impl Grid {
-    pub fn new(options: &GridOptions) -> Self {
+    pub fn new(options: &GridOptions, ratio: Ratio) -> Self {
         Grid {
             options: options.clone(),
             size: (options.padding * 2, options.padding * 2),
             map: HashMap::new(),
             id: None,
+            cell: ratio.get(CELL),
+            ratio,
         }
     }
 
-    pub fn forms_as_pair(a: Vec<&Form>, b: Vec<&Form>, options: &GridOptions) -> Result<Self, E> {
+    pub fn forms_as_pair(
+        a: Vec<&Form>,
+        b: Vec<&Form>,
+        options: &GridOptions,
+        ratio: Ratio,
+    ) -> Result<Self, E> {
         let on_left = get_sizes(a)?;
         let on_right = get_sizes(b)?;
         let mut map: HashMap<String, ElementCoor> = HashMap::new();
@@ -103,14 +112,16 @@ impl Grid {
             size,
             map,
             id: None,
+            cell: ratio.get(CELL),
+            ratio,
         })
     }
 
     pub fn set_min_height(&mut self, height_px: u32) -> u32 {
-        if self.size.1 * CELL < height_px {
-            self.size.1 = (height_px as f64 / CELL as f64).ceil() as u32;
+        if self.size.1 * self.cell < height_px {
+            self.size.1 = (height_px as f64 / self.cell as f64).ceil() as u32;
         }
-        self.size.1 * CELL
+        self.size.1 * self.cell
     }
 
     pub fn insert_self(&mut self, id: usize, ty: ElementType) {
@@ -137,13 +148,18 @@ impl Grid {
                 None
             }
         }) {
-            Relative::new((x * CELL) as i32, (y * CELL) as i32, None)
+            Relative::new((x * self.cell) as i32, (y * self.cell) as i32, None)
         } else {
             Relative::new(0, 0, None)
         }
     }
 
-    pub fn get_coors_by_ids(&self, ids: &[usize], relative: &Relative) -> Vec<ElementCoors> {
+    pub fn get_coors_by_ids(
+        &self,
+        ids: &[usize],
+        relative: &Relative,
+        ratio: &Ratio,
+    ) -> Vec<ElementCoors> {
         let mut found: Vec<ElementCoors> = Vec::new();
         self.map.iter().for_each(|(id, (ty, area))| {
             if let Ok(id) = id.parse::<usize>() {
@@ -154,10 +170,10 @@ impl Grid {
                     id.to_string(),
                     ty.clone(),
                     (
-                        relative.x((area.0 * CELL) as i32),
-                        relative.y((area.1 * CELL) as i32),
-                        relative.x(((area.2 + 1) * CELL) as i32),
-                        relative.y(((area.3 + 1) * CELL) as i32),
+                        ratio.invert(relative.x((area.0 * self.cell) as i32)),
+                        ratio.invert(relative.y((area.1 * self.cell) as i32)),
+                        ratio.invert(relative.x(((area.2 + 1) * self.cell) as i32)),
+                        ratio.invert(relative.y(((area.3 + 1) * self.cell) as i32)),
                     ),
                 ));
             }
@@ -203,7 +219,7 @@ impl Grid {
         zoom: f64,
         prolongation: u32,
     ) -> Vec<ElementCoors> {
-        let cell = CELL as f64 * zoom;
+        let cell = self.cell as f64 * zoom;
         let (mut ax, mut ay, mut ax1, mut ay1) = (
             as_cells(area_px.0, cell),
             as_cells(area_px.1, cell),
@@ -359,7 +375,7 @@ impl Grid {
     }
 
     pub fn as_px(&self, cells: u32) -> i32 {
-        (CELL * cells) as i32
+        (self.cell * cells) as i32
     }
 
     pub fn draw(
@@ -372,22 +388,40 @@ impl Grid {
         }
         context.set_stroke_style(&JsValue::from_str("rgb(150, 150, 150)"));
         context.begin_path();
-        let w = (self.size.0 * CELL) as i32;
-        let h = (self.size.1 * CELL) as i32;
+        let w = (self.size.0 * self.cell) as i32;
+        let h = (self.size.1 * self.cell) as i32;
         for x in 0..=self.size.0 {
-            context.move_to(relative.x((x * CELL) as i32) as f64, relative.y(0) as f64);
-            context.line_to(relative.x((x * CELL) as i32) as f64, relative.y(h) as f64);
+            context.move_to(
+                relative.x((x * self.cell) as i32) as f64,
+                relative.y(0) as f64,
+            );
+            context.line_to(
+                relative.x((x * self.cell) as i32) as f64,
+                relative.y(h) as f64,
+            );
         }
         for y in 0..=self.size.1 {
-            context.move_to(relative.x(0) as f64, relative.y((y * CELL) as i32) as f64);
-            context.line_to(relative.x(w) as f64, relative.y((y * CELL) as i32) as f64);
+            context.move_to(
+                relative.x(0) as f64,
+                relative.y((y * self.cell) as i32) as f64,
+            );
+            context.line_to(
+                relative.x(w) as f64,
+                relative.y((y * self.cell) as i32) as f64,
+            );
         }
         context.stroke();
         Ok(())
     }
 
     pub fn get_size_px(&self) -> (u32, u32) {
-        (self.size.0 * CELL, self.size.1 * CELL)
+        (self.size.0 * self.cell, self.size.1 * self.cell)
+    }
+    pub fn get_size_invert_px(&self) -> (u32, u32) {
+        (
+            self.ratio.invert(self.size.0 * self.cell),
+            self.ratio.invert(self.size.1 * self.cell),
+        )
     }
 }
 

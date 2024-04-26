@@ -11,7 +11,7 @@ use entity::{
     Composition, IsInputPort, Signature,
 };
 use error::E;
-use render::{options::Options, Grid, Render, Style};
+use render::{options::Options, Grid, Ratio, Render, Style};
 use state::State;
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
@@ -23,11 +23,10 @@ pub struct Board {
     render: Render<Composition>,
     context: Option<CanvasRenderingContext2d>,
     canvas: Option<HtmlCanvasElement>,
-    width: u32,
-    height: u32,
     grid: Grid,
     options: Options,
     state: State,
+    ratio: Ratio,
 }
 
 #[wasm_bindgen]
@@ -46,16 +45,16 @@ impl Board {
         let render = Render::<Composition>::new(composition, &options);
         let mut grid_options = options.grid.clone();
         grid_options.padding = 0;
-        let grid = Grid::new(&grid_options);
+        let ratio = options.ratio();
+        let grid = Grid::new(&grid_options, ratio.clone());
         Self {
             options,
             render,
             context: None,
             canvas: None,
-            width: 0,
-            height: 0,
             grid,
             state: State::new(),
+            ratio,
         }
     }
 
@@ -71,16 +70,16 @@ impl Board {
         let render = Render::<Composition>::new(Composition::new(Signature::default()), &options);
         let mut grid_options = options.grid.clone();
         grid_options.padding = 0;
-        let grid = Grid::new(&grid_options);
+        let ratio = options.ratio();
+        let grid = Grid::new(&grid_options, ratio.clone());
         Self {
             options,
             render,
             context: None,
             canvas: None,
-            width: 0,
-            height: 0,
             grid,
             state: State::new(),
+            ratio,
         }
     }
 
@@ -101,8 +100,6 @@ impl Board {
                 e.to_string()
             ))
         })?;
-        self.width = canvas.width();
-        self.height = canvas.height();
         let cx = canvas
             .get_context("2d")
             .map_err(|_| E::Dom("Fail to get context from canvas".to_string()))?
@@ -114,22 +111,18 @@ impl Board {
                     e.to_string()
                 ))
             })?;
-        // cx.set_global_alpha(0.0);
-        // cx.set_global_composite_operation("saturation");
-        let _ = cx.translate(0.5, 0.5);
+        cx.set_transform(
+            self.options.ratio as f64,
+            0.0,
+            0.0,
+            self.options.ratio as f64,
+            0.0,
+            0.0,
+        )
+        .map_err(|e| E::Dom(format!("Fail to transform; error: {e:?}")))?;
+        // let _ = cx.translate(0.5, 0.5);
         let _ = self.context.insert(cx);
         let _ = self.canvas.insert(canvas);
-        Ok(())
-    }
-
-    #[wasm_bindgen]
-    pub fn update_size(&mut self) -> Result<(), String> {
-        let canvas = self
-            .canvas
-            .as_mut()
-            .ok_or(String::from("Canvas isn't attached"))?;
-        self.width = canvas.width();
-        self.height = canvas.height();
         Ok(())
     }
 
@@ -140,7 +133,7 @@ impl Board {
         self.render = Render::<Composition>::new(composition, &self.options);
         let mut grid_options = self.options.grid.clone();
         grid_options.padding = 0;
-        self.grid = Grid::new(&grid_options);
+        self.grid = Grid::new(&grid_options, self.ratio.clone());
         self.state.set_filtered(None);
         self.state.set_view_state(0, 0, 1.0);
         Ok(self.render.calc(
@@ -156,7 +149,7 @@ impl Board {
     pub fn recalc(&mut self) -> Result<(), String> {
         let mut grid_options = self.options.grid.clone();
         grid_options.padding = 0;
-        self.grid = Grid::new(&grid_options);
+        self.grid = Grid::new(&grid_options, self.ratio.clone());
         let zoom = self.state.zoom;
         // Calculation goes without considering zoom factor. During calculation zoom factor should be 1.0
         self.state.zoom = 1.0;
@@ -174,12 +167,20 @@ impl Board {
     #[wasm_bindgen]
     pub fn render(&mut self) -> Result<(), String> {
         let cx = self.context.as_mut().ok_or(E::NoCanvasContext)?;
-        cx.clear_rect(0.0, 0.0, self.width as f64, self.height as f64);
-        let targets = self.grid.viewport(
-            (self.state.x, self.state.y),
-            (self.width, self.height),
-            self.state.zoom,
-        );
+        let cw = self
+            .canvas
+            .as_ref()
+            .ok_or(String::from("Board isn't inited; no context"))?
+            .width();
+        let ch = self
+            .canvas
+            .as_ref()
+            .ok_or(String::from("Board isn't inited; no context"))?
+            .height();
+        cx.clear_rect(0.0, 0.0, cw as f64, ch as f64);
+        let targets = self
+            .grid
+            .viewport((self.state.x, self.state.y), (cw, ch), self.state.zoom);
         if let Err(e) = self.render.draw(
             cx,
             &self.state.get_view_relative(),
@@ -205,6 +206,9 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn who(&self, target_x: i32, target_y: i32, around: i32) -> Result<JsValue, String> {
+        let around = self.ratio.get(around);
+        let target_x = self.ratio.get(target_x);
+        let target_y = self.ratio.get(target_y);
         let relative = self.state.get_view_relative();
         let ids = self.grid.point((target_x, target_y), around, &relative);
         let inner = self.render.find(&(target_x, target_y), self.state.zoom)?;
@@ -224,8 +228,8 @@ impl Board {
     #[wasm_bindgen]
     pub fn get_coors_by_ids(&self, ids: Vec<usize>) -> Result<JsValue, String> {
         let relative = self.state.get_view_relative();
-        let ports = self.render.get_coors_by_ids(&ids, &relative)?;
-        let components = self.grid.get_coors_by_ids(&ids, &relative);
+        let ports = self.render.get_coors_by_ids(&ids, &relative, &self.ratio)?;
+        let components = self.grid.get_coors_by_ids(&ids, &relative, &self.ratio);
         let elements = [components, ports].concat();
         serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())
     }
@@ -291,12 +295,13 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn get_size(&mut self) -> Result<JsValue, String> {
-        serde_wasm_bindgen::to_value(&self.grid.get_size_px()).map_err(|e| e.to_string())
+        serde_wasm_bindgen::to_value(&self.grid.get_size_invert_px()).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn set_view_state(&mut self, x: i32, y: i32, zoom: f64) {
-        self.state.set_view_state(x, y, zoom);
+        self.state
+            .set_view_state(self.ratio.get(x), self.ratio.get(y), zoom);
     }
 
     #[wasm_bindgen]

@@ -9,7 +9,7 @@ use crate::{
         form::{button, Button, Path, Point, Rectangle},
         grid::{ElementCoors, ElementType},
         options::Options,
-        Container, Form, Grid, Relative, Render, Representation, Style, View,
+        Container, Form, Grid, Ratio, Relative, Render, Representation, Style, View,
     },
     state::State,
 };
@@ -110,7 +110,7 @@ impl Render<Composition> {
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(connection) = r {
-                    Representation::Render(Render::<Connection>::new(connection))
+                    Representation::Render(Render::<Connection>::new(connection, options))
                 } else {
                     r
                 }
@@ -147,16 +147,17 @@ impl Render<Composition> {
                     vec![Container {
                         form: Form::Button(
                             ElementType::Element,
-                            Button {
-                                id: format!("back::{id}"),
-                                x: 0,
-                                y: 0,
-                                w: 0,
-                                h: 0,
-                                label: id.to_string(),
-                                align: button::Align::Right,
-                                padding: 3,
-                            },
+                            Button::new(
+                                0,
+                                0,
+                                0,
+                                0,
+                                id.to_string(),
+                                3,
+                                format!("back::{id}"),
+                                button::Align::Right,
+                                &options.ratio(),
+                            ),
                         ),
                         style: Style {
                             stroke_style: String::from("rgb(0,0,0)"),
@@ -275,7 +276,7 @@ impl Render<Composition> {
     pub fn setup_connections(
         &mut self,
         _grid: &Grid,
-        _options: &Options,
+        options: &Options,
         state: &State,
     ) -> Result<(), E> {
         let components = &self.entity.components;
@@ -322,7 +323,7 @@ impl Render<Composition> {
                         },
                     ];
 
-                    let path = Path::new(conn.sig().id.to_string(), points);
+                    let path = Path::new(conn.sig().id.to_string(), points, &options.ratio());
                     conn.render_mut()?
                         .view
                         .container
@@ -348,7 +349,7 @@ impl Render<Composition> {
     ) -> Result<(), E> {
         let relative = &state.get_view_relative();
         // Create composition grid
-        let mut composition_grid = Grid::new(&options.grid);
+        let mut composition_grid = Grid::new(&options.grid, options.ratio());
         for composition in self.entity.compositions.iter_mut() {
             if !state.is_port_owner_filtered(&composition.sig().id) {
                 continue;
@@ -404,7 +405,7 @@ impl Render<Composition> {
         for (a_id, b_id) in dependencies {
             let a = get_forms_by_ids(&self.entity.components, &[a_id])?;
             let b = get_forms_by_ids(&self.entity.components, &[b_id])?;
-            let component_grid = Grid::forms_as_pair(a, b, &options.grid)?;
+            let component_grid = Grid::forms_as_pair(a, b, &options.grid, options.ratio())?;
             composition_grid.insert(&component_grid);
         }
         for component in self
@@ -418,6 +419,7 @@ impl Render<Composition> {
                     get_forms_by_ids(&self.entity.components, &[component.sig().id])?,
                     [].to_vec(),
                     &options.grid,
+                    options.ratio(),
                 )?;
                 composition_grid.insert(&component_grid);
             }
@@ -425,8 +427,6 @@ impl Render<Composition> {
         // Align to composition grid
         self.align_to_grid(&composition_grid)?;
         let grid_size = composition_grid.get_size_px();
-        // let grid_height_px =
-        //     composition_grid.set_min_height(self.entity.ports.render()?.height(state) as u32);
         let grid_height_px = composition_grid.set_min_height(50);
         self.view
             .container
@@ -481,18 +481,15 @@ impl Render<Composition> {
         }) {
             connection.render_mut()?.draw(context, relative)?;
         }
-        // let self_relative = self.relative(relative);
-        // self.entity
-        //     .ports
-        //     .render_mut()?
-        //     .draw(context, &self_relative, options, state)?;
+        let ratio = options.ratio();
         context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
         context.set_text_baseline("bottom");
-        context.set_font(&format!("{}px serif", relative.zoom(12)));
-        let _ = context.stroke_text(
+        context.set_font(&format!("{}px serif", ratio.get(relative.zoom(12))));
+        context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
+        let _ = context.fill_text(
             &self.origin().get_label(options),
             relative.x(self.view.container.get_coors().0) as f64,
-            relative.y(self.view.container.get_coors().1 - 3) as f64,
+            relative.y(self.view.container.get_coors().1 - ratio.get(3)) as f64,
         );
         // grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
@@ -578,6 +575,7 @@ impl Render<Composition> {
         &self,
         ids: &[usize],
         relative: &Relative,
+        ratio: &Ratio,
     ) -> Result<Vec<ElementCoors>, E> {
         if self.hidden {
             return Ok(Vec::new());
@@ -588,6 +586,7 @@ impl Render<Composition> {
             ids: &[usize],
             own_relative: Relative,
             relative: &Relative,
+            ratio: &Ratio,
         ) -> Result<(), E> {
             ports
                 .render()?
@@ -604,10 +603,10 @@ impl Render<Composition> {
                             p.sig().id.to_string(),
                             ElementType::Port,
                             (
-                                relative.x(own_relative.x(0)) + x,
-                                relative.y(own_relative.y(0)) + y,
-                                relative.x(own_relative.x(0)) + x + w,
-                                relative.y(own_relative.y(0)) + y + h,
+                                ratio.invert(relative.x(own_relative.x(0)) + x),
+                                ratio.invert(relative.y(own_relative.y(0)) + y),
+                                ratio.invert(relative.x(own_relative.x(0)) + x + w),
+                                ratio.invert(relative.y(own_relative.y(0)) + y + h),
                             ),
                         ));
                     }
@@ -622,6 +621,7 @@ impl Render<Composition> {
                 ids,
                 component.render()?.own_relative(),
                 relative,
+                ratio,
             )?;
         }
         for composition in self.entity.compositions.iter() {
@@ -631,6 +631,7 @@ impl Render<Composition> {
                 ids,
                 composition.render()?.own_relative(),
                 relative,
+                ratio,
             )?;
         }
         Ok(found)

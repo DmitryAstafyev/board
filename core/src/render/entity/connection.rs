@@ -1,7 +1,10 @@
 use crate::{
     entity::{Connection, Signature, SignatureGetter},
     error::E,
-    render::{form::Path, grid::ElementType, Container, Form, Relative, Render, Style, View},
+    render::{
+        form::Path, grid::ElementType, options::Options, Container, Form, Relative, Render, Style,
+        View,
+    },
 };
 
 impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Connection> {
@@ -11,7 +14,7 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Connection> {
 }
 
 impl Render<Connection> {
-    pub fn new(entity: Connection) -> Self {
+    pub fn new(entity: Connection, options: &Options) -> Self {
         let id = entity.sig.id;
         Self {
             entity,
@@ -19,10 +22,7 @@ impl Render<Connection> {
                 container: Container {
                     form: Form::Path(
                         ElementType::Connection,
-                        Path {
-                            points: Vec::new(),
-                            id: id.to_string(),
-                        },
+                        Path::new(id.to_string(), Vec::new(), &options.ratio()),
                     ),
                     style: Style {
                         stroke_style: String::from("rgb(30,30,30)"),

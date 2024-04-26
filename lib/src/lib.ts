@@ -72,9 +72,11 @@ export class Board extends Subscriber {
     protected readonly size: {
         height: number;
         width: number;
+        ratio: number;
     } = {
         height: 0,
         width: 0,
+        ratio: window !== undefined ? Math.ceil(window.devicePixelRatio) : 1,
     };
     protected position: Position = new Position();
     protected readonly history: Map<number, IPosition> = new Map();
@@ -201,13 +203,14 @@ export class Board extends Subscriber {
         const size = this.parent.getBoundingClientRect();
         this.size.width = size.width;
         this.size.height = size.height;
-        this.canvas.width = size.width - SCROLLBAR_SIZE;
-        this.canvas.height = size.height - SCROLLBAR_SIZE;
+        this.canvas.style.width = `${size.width - SCROLLBAR_SIZE}px`;
+        this.canvas.style.height = `${size.height - SCROLLBAR_SIZE}px`;
+        this.canvas.width = (size.width - SCROLLBAR_SIZE) * this.size.ratio;
+        this.canvas.height = (size.height - SCROLLBAR_SIZE) * this.size.ratio;
     }
 
     protected updateSize(): void {
         this.setSize();
-        this.board.update_size();
         const used = this.board.get_size() as [number, number];
         this.scroll.setZoom(this.position.zoom);
         this.scroll.setSize(used, this.size);

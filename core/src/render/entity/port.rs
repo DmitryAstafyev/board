@@ -107,13 +107,14 @@ impl Render<Ports> {
         Filter::new(self)
     }
 
-    pub fn height(&mut self, state: &State) -> i32 {
+    pub fn height(&mut self, state: &State, options: &Options) -> i32 {
         if self.entity.ports.is_empty() {
             return 0;
         }
         let max_in = self.filter().left(state).len();
         let max_out = self.filter().right(state).len();
-        elements::max(&[max_in, max_out], 0) as i32 * PORTS_VERTICAL_OFFSET + PORTS_VERTICAL_OFFSET
+        let padding = options.ratio().get(PORTS_VERTICAL_OFFSET);
+        elements::max(&[max_in, max_out], 0) as i32 * padding + padding
     }
 
     pub fn calc(
@@ -128,10 +129,14 @@ impl Render<Ports> {
         for port in self.filter().all(state) {
             port.render_mut()?.calc(context, relative, options)?;
         }
+        let ratio = options.ratio();
+        let padding = ratio.get(PORTS_VERTICAL_OFFSET);
+        let side = ratio.get(PORT_SIDE);
+        let cell = ratio.get(CELL);
         match options.ports.representation {
             options::PortsRepresentation::Blocks => {
                 // Order ports on a left side
-                let mut cursor: i32 = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
+                let mut cursor: i32 = padding / 2 - side / 2;
                 for port in self.filter().left(state) {
                     let render = port.render_mut()?;
                     let (w, _h) = render.view.container.get_box_size();
@@ -139,10 +144,10 @@ impl Render<Ports> {
                         .view
                         .container
                         .set_coors(Some(-(w / 2)), Some(cursor));
-                    cursor += PORTS_VERTICAL_OFFSET;
+                    cursor += padding;
                 }
                 // Order ports on a right side
-                cursor = PORTS_VERTICAL_OFFSET / 2 - PORT_SIDE / 2;
+                cursor = padding / 2 - side / 2;
                 for port in self.filter().right(state) {
                     let render = port.render_mut()?;
                     let (w, _h) = render.view.container.get_box_size();
@@ -150,12 +155,12 @@ impl Render<Ports> {
                         .view
                         .container
                         .set_coors(Some(container_width - (w / 2)), Some(cursor));
-                    cursor += PORTS_VERTICAL_OFFSET;
+                    cursor += padding;
                 }
             }
             options::PortsRepresentation::Labels => {
-                let label_height = (CELL as f64 * 0.7).ceil() as i32;
-                let step_between = CELL as i32 - label_height;
+                let label_height = (cell as f64 * 0.7).ceil() as i32;
+                let step_between = cell as i32 - label_height;
                 let start_from = (step_between as f64 / 2.0).ceil() as i32;
                 let over = (container_width as f64 * 0.8 / 2.0) as i32;
                 // Order ports on a left side
@@ -253,6 +258,7 @@ impl Render<Port> {
             PortType::Out => label::Align::Left,
             PortType::In | PortType::Unbound => label::Align::Right,
         };
+        let ratio = options.ratio();
         Self {
             entity,
             view: View {
@@ -263,8 +269,8 @@ impl Render<Port> {
                             Rectangle {
                                 x: 0,
                                 y: 0,
-                                w: PORT_SIDE,
-                                h: PORT_SIDE,
+                                w: ratio.get(PORT_SIDE),
+                                h: ratio.get(PORT_SIDE),
                                 id: id.to_string(),
                             },
                         ),
@@ -276,16 +282,17 @@ impl Render<Port> {
                     options::PortsRepresentation::Labels => Container {
                         form: Form::Label(
                             ElementType::Port,
-                            Label {
-                                x: 0,
-                                y: 0,
-                                w: 0,
-                                h: 0,
-                                id: id.to_string(),
-                                padding: 4,
+                            Label::new(
+                                0,
+                                0,
+                                0,
+                                0,
                                 label,
+                                4,
+                                id.to_string(),
                                 align,
-                            },
+                                &options.ratio(),
+                            ),
                         ),
                         style: Style {
                             stroke_style: String::from("rgb(0,0,0)"),

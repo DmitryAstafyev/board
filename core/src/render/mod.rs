@@ -3,12 +3,14 @@ pub mod entity;
 pub mod form;
 pub mod grid;
 pub mod options;
+pub mod ratio;
 pub mod representation;
 pub mod style;
 
 pub use elements::relative::Relative;
 pub use form::{Container, Form, View};
 pub use grid::Grid;
+pub use ratio::*;
 pub use representation::Representation;
 pub use style::Style;
 

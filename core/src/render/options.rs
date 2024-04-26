@@ -1,3 +1,4 @@
+use crate::render::Ratio;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -42,6 +43,13 @@ pub struct Options {
     pub connections: Connections,
     pub grid: GridOptions,
     pub labels: Labels,
+    pub ratio: u8,
+}
+
+impl Options {
+    pub fn ratio(&self) -> Ratio {
+        Ratio { ratio: self.ratio }
+    }
 }
 
 impl Default for Options {
@@ -67,6 +75,7 @@ impl Default for Options {
                 port_label_max_len: 16,
                 comp_label_max_len: 12,
             },
+            ratio: 1,
         }
     }
 }

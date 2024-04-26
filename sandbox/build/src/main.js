@@ -347,6 +347,7 @@ function getLabeledPortsOptions() {
             port_label_max_len: 16,
             comp_label_max_len: 12,
         },
+        ratio: Math.ceil(window.devicePixelRatio),
     };
 }
 function real() {
