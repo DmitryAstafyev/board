@@ -288,8 +288,8 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn get_groupped_ports(&self) -> Result<JsValue, String> {
-        let ports: Vec<(usize, Vec<usize>)> = self.render.get_groupped_ports()?;
+    pub fn get_grouped_ports(&self) -> Result<JsValue, String> {
+        let ports: Vec<(usize, Vec<usize>)> = self.render.get_grouped_ports()?;
         serde_wasm_bindgen::to_value(&ports).map_err(|e| e.to_string())
     }
 

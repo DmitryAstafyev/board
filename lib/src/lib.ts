@@ -100,12 +100,12 @@ export class Board extends Subscriber {
     };
     protected data: {
         composition: number | undefined;
-        groupped: [number, number[]][];
+        grouped: [number, number[]][];
         root: Types.Composition | undefined;
         history: number[];
     } = {
         composition: undefined,
-        groupped: [],
+        grouped: [],
         root: undefined,
         history: [],
     };
@@ -380,12 +380,12 @@ export class Board extends Subscriber {
             const id = parseInt(targets.ports[0][0], 10);
             if (!this.hover.port.isActive(id)) {
                 this.hover.port.show(id);
-                const groupped = this.data.groupped.find(
-                    (groupped) => groupped[0] === id
+                const grouped = this.data.grouped.find(
+                    (grouped) => grouped[0] === id
                 );
                 this.subjects.get().onPortHover.emit({
                     id,
-                    contains: groupped === undefined ? [] : groupped[1],
+                    contains: grouped === undefined ? [] : grouped[1],
                     x: event.offsetX,
                     y: event.offsetY,
                 });
@@ -465,7 +465,7 @@ export class Board extends Subscriber {
         this.data.composition !== undefined &&
             this.history.set(this.data.composition, this.position.clone());
         this.data.composition = id;
-        this.data.groupped = this.board.get_groupped_ports();
+        this.data.grouped = this.board.get_grouped_ports();
         const recent = this.history.get(id);
         if (recent !== undefined) {
             this.position = Position.from(recent);
@@ -510,7 +510,7 @@ export class Board extends Subscriber {
         this.updateSize();
         this.data.composition = composition.sig.id;
         this.data.root = composition;
-        this.data.groupped = this.getGrouppedPorts();
+        this.data.grouped = this.getGroupedPorts();
     }
 
     public refresh() {
@@ -531,8 +531,8 @@ export class Board extends Subscriber {
         this.board.set_filter(filter);
     }
 
-    public getGrouppedPorts(): [number, number[]][] {
-        return this.board.get_groupped_ports() as [number, number[]][];
+    public getGroupedPorts(): [number, number[]][] {
+        return this.board.get_grouped_ports() as [number, number[]][];
     }
 
     public getCoorsByIds(ids: number[]): Types.ElementCoors[] {

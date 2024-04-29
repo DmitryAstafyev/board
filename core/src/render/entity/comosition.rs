@@ -637,13 +637,13 @@ impl Render<Composition> {
         Ok(found)
     }
 
-    pub fn get_groupped_ports(&self) -> Result<Vec<(usize, Vec<usize>)>, E> {
+    pub fn get_grouped_ports(&self) -> Result<Vec<(usize, Vec<usize>)>, E> {
         let mut ports: Vec<(usize, Vec<usize>)> = Vec::new();
         for component in self.entity.components.iter() {
-            ports = [ports, component.origin().ports.origin().get_groupped()].concat();
+            ports = [ports, component.origin().ports.origin().get_grouped()].concat();
         }
         for composition in self.entity.compositions.iter() {
-            ports = [ports, composition.origin().ports.origin().get_groupped()].concat();
+            ports = [ports, composition.origin().ports.origin().get_grouped()].concat();
         }
         Ok(ports)
     }
@@ -792,7 +792,7 @@ fn get_forms_by_ids<'a>(
 pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProducer) {
     let mut added_connections: Vec<Representation<Connection>> = Vec::new();
     let mut added_ports: Vec<(usize, Representation<Port>)> = Vec::new();
-    let mut groupped: HashMap<(usize, usize), Vec<(usize, usize)>> = HashMap::new();
+    let mut grouped: HashMap<(usize, usize), Vec<(usize, usize)>> = HashMap::new();
     // Find ports connected to only 1 component
     let mut ports: HashMap<usize, usize> = HashMap::new();
     entity.connections.iter().for_each(|connection| {
@@ -816,14 +816,14 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
         })
         .for_each(|conn| {
             let uuid = (*conn.origin().in_comp(), *conn.origin().out_comp());
-            groupped
+            grouped
                 .entry(uuid)
                 .and_modify(|ports| {
                     ports.push((*conn.origin().in_port(), *conn.origin().out_port()))
                 })
                 .or_insert(vec![(*conn.origin().in_port(), *conn.origin().out_port())]);
         });
-    groupped
+    grouped
         .iter()
         .for_each(|((comp_joint_in, comp_joint_out), ports)| {
             let ports_in = ports.iter().map(|(l, _)| *l).collect::<Vec<usize>>();
@@ -940,7 +940,7 @@ pub fn group_unbound_ports(
             .hide(&unbound_ports);
         component.origin_mut().ports.origin_mut().add(
             Representation::Origin(Port {
-                sig: sig_producer.next_for("unbound groupped"),
+                sig: sig_producer.next_for("unbound grouped"),
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
                 visibility: true,
@@ -967,7 +967,7 @@ pub fn group_unbound_ports(
             .hide(&unbound_ports);
         composition.origin_mut().ports.origin_mut().add(
             Representation::Origin(Port {
-                sig: sig_producer.next_for("unbound groupped"),
+                sig: sig_producer.next_for("unbound grouped"),
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
                 visibility: true,

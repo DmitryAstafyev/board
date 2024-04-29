@@ -139,7 +139,7 @@ impl Ports {
         }
     }
 
-    pub fn get_groupped(&self) -> Vec<(usize, Vec<usize>)> {
+    pub fn get_grouped(&self) -> Vec<(usize, Vec<usize>)> {
         let mut ports: Vec<(usize, Vec<usize>)> = Vec::new();
         self.ports.iter().for_each(|p| {
             if p.origin().contains.is_empty() {
