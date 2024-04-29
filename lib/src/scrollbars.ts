@@ -3,6 +3,8 @@ import { Subject } from "./subscriber";
 import * as DOM from "./dom";
 
 export interface ScrollEvent {
+    vertical: boolean;
+    horizontal: boolean;
     x: number;
     y: number;
 }
@@ -97,6 +99,8 @@ export class ScrollBars {
         }
         if (x !== this.current.x || y !== this.current.y) {
             this.scroll.emit({
+                vertical: this.parent.scrollHeight > this.parent.clientHeight,
+                horizontal: this.parent.scrollWidth > this.parent.clientWidth,
                 x: this.current.x,
                 y: this.current.y,
             });

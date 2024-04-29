@@ -345,8 +345,8 @@ export class Board extends Subscriber {
     }
 
     protected onScroll(event: ScrollEvent) {
-        this.position.x = -event.x / this.position.zoom;
-        this.position.y = -event.y / this.position.zoom;
+        event.horizontal && (this.position.x = -event.x / this.position.zoom);
+        event.vertical && (this.position.y = -event.y / this.position.zoom);
         this.render();
     }
 
