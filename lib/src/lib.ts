@@ -155,6 +155,7 @@ export class Board extends Subscriber {
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onWheel = this.onWheel.bind(this);
         this.onClick = this.onClick.bind(this);
+        this.onDblClick = this.onDblClick.bind(this);
         this.onKeyDown = this.onKeyDown.bind(this);
         this.onKeyUp = this.onKeyUp.bind(this);
         this.onScroll = this.onScroll.bind(this);
@@ -164,6 +165,7 @@ export class Board extends Subscriber {
         this.parent.addEventListener("mousedown", this.onMouseDown);
         this.parent.addEventListener("wheel", this.onWheel);
         this.parent.addEventListener("click", this.onClick);
+        this.parent.addEventListener("dblclick", this.onDblClick);
         window.addEventListener("keydown", this.onKeyDown);
         window.addEventListener("keyup", this.onKeyUp);
         this.hover.port.onHide((id: number) => {
@@ -429,9 +431,31 @@ export class Board extends Subscriber {
                 this.subjects.get().onComponentClick.emit(targetId);
             } else if (targets.compositions.length === 1) {
                 const targetId = parseInt(targets.compositions[0][0], 10);
+                this.board.toggle_component(targetId);
+            }
+        }
+    }
+
+    protected onDblClick(event: MouseEvent): void {
+        this.hover.component.hide();
+        this.hover.port.hide();
+        clearTimeout(this.movement.clickTimer);
+        if (this.movement.processing || this.movement.dropClick) {
+            return;
+        }
+        if (event.button == 0) {
+            const targets = this.getTargetsOnMouse(event);
+            if (targets.compositions.length === 1) {
+                const targetId = parseInt(targets.compositions[0][0], 10);
                 this.data.composition !== undefined &&
                     this.data.history.push(this.data.composition);
                 this.goToComposition(targetId);
+            } else if (
+                targets.back === undefined &&
+                targets.ports.length === 0 &&
+                targets.components.length === 0
+            ) {
+                this.board.unselect_all();
             }
         }
     }

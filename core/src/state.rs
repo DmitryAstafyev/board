@@ -61,17 +61,6 @@ impl State {
     }
 
     pub fn is_port_filtered_or_linked(&self, port: &Port) -> bool {
-        // if let Some((filtered, linked, _owners)) = self.filtered.as_ref() {
-        //     if port.contains.is_empty() {
-        //         filtered.contains(&port.sig.id) || linked.contains(&port.sig.id)
-        //     } else {
-        //         port.contains
-        //             .iter()
-        //             .any(|id| filtered.contains(id) || linked.contains(id))
-        //     }
-        // } else {
-        //     true
-        // }
         if let Some((filtered, linked, _owners)) = self.filtered.as_ref() {
             filtered.contains(&port.sig.id) || linked.contains(&port.sig.id)
         } else {
@@ -119,11 +108,15 @@ impl State {
     pub fn remove_port(&mut self, id: &usize) -> bool {
         if let Some(i) = self.ports.iter().position(|v| v == id) {
             let _ = self.ports.remove(i);
-
             true
         } else {
             false
         }
+    }
+
+    pub fn unselect_all(&mut self) {
+        self.ports.clear();
+        self.components.clear();
     }
 
     pub fn hover(&mut self, id: &usize) -> bool {

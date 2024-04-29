@@ -305,6 +305,12 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn unselect_all(&mut self) -> Result<(), String> {
+        self.state.unselect_all();
+        self.render()?;
+        Ok(())
+    }
+    #[wasm_bindgen]
     pub fn toggle_component(&mut self, id: usize) -> Result<(), String> {
         if let Some(comp) = self.render.origin().get_component(&id) {
             let rel_connections = self.render.origin().find_connections_by_component(&id);
@@ -320,26 +326,16 @@ impl Board {
                     .collect::<Vec<&usize>>(),
             ]
             .concat();
-            let components = rel_connections
-                .iter()
-                .flat_map(|conn| [conn.in_comp(), conn.out_comp()])
-                .collect::<Vec<&usize>>();
             if self.state.is_component_selected(&id) {
                 rel_ports.iter().for_each(|id| {
                     self.state.remove_port(id);
                 });
                 self.state.remove_component(&id);
-                components.iter().for_each(|id| {
-                    self.state.remove_component(id);
-                });
             } else {
                 rel_ports.iter().for_each(|id| {
                     self.state.insert_port(id);
                 });
                 self.state.insert_component(&id);
-                components.iter().for_each(|id| {
-                    self.state.insert_component(id);
-                });
             }
             self.render()?;
         }
@@ -359,25 +355,25 @@ impl Board {
             if inserted {
                 // Added
                 self.state.insert_port(rel_port);
-                self.state.insert_component(connection.out_comp());
-                self.state.insert_component(connection.in_comp());
+                // self.state.insert_component(connection.out_comp());
+                // self.state.insert_component(connection.in_comp());
             } else {
                 // Removed
                 self.state.remove_port(rel_port);
-                if !self.state.is_any_port_selected(
-                    self.render
-                        .origin()
-                        .find_ports_by_component(connection.in_comp()),
-                ) {
-                    self.state.remove_component(connection.in_comp());
-                }
-                if !self.state.is_any_port_selected(
-                    self.render
-                        .origin()
-                        .find_ports_by_component(connection.out_comp()),
-                ) {
-                    self.state.remove_component(connection.out_comp());
-                }
+                // if !self.state.is_any_port_selected(
+                //     self.render
+                //         .origin()
+                //         .find_ports_by_component(connection.in_comp()),
+                // ) {
+                //     self.state.remove_component(connection.in_comp());
+                // }
+                // if !self.state.is_any_port_selected(
+                //     self.render
+                //         .origin()
+                //         .find_ports_by_component(connection.out_comp()),
+                // ) {
+                //     self.state.remove_component(connection.out_comp());
+                // }
             }
         }
         self.render()
