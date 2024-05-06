@@ -2,6 +2,7 @@ import { Hover } from "./hover";
 import { ScrollBars, ScrollEvent } from "./scrollbars";
 import { Subject, Subjects, Subscriber } from "./subscriber";
 import { Position, IPosition } from "./position";
+import { ZoomLabel } from "./zoomlabel";
 
 import * as Core from "core";
 import * as Types from "./types";
@@ -64,6 +65,7 @@ export class Board extends Subscriber {
     protected readonly canvas: HTMLCanvasElement;
     protected readonly parent: HTMLElement;
     protected readonly scroll: ScrollBars;
+    protected readonly zoomLabel: ZoomLabel;
     protected readonly id: string;
     protected readonly hover: {
         component: Hover;
@@ -93,10 +95,12 @@ export class Board extends Subscriber {
         clickTimer: -1,
         dropClick: false,
     };
-    protected keyboard: {
-        alt: boolean;
+    protected state: {
+        ctrl: boolean;
+        focused: boolean;
     } = {
-        alt: false,
+        ctrl: false,
+        focused: false,
     };
     protected data: {
         composition: number | undefined;
@@ -145,6 +149,8 @@ export class Board extends Subscriber {
         this.canvas.style.top = "0px";
         this.canvas.style.left = "0px";
         this.parent.appendChild(this.canvas);
+        this.parent.setAttribute("tabindex", "0");
+        this.zoomLabel = new ZoomLabel(node);
         this.setSize();
         this.board = new wasm.core.Board(options);
         this.board.attach(this.id);
@@ -160,10 +166,14 @@ export class Board extends Subscriber {
         this.onKeyUp = this.onKeyUp.bind(this);
         this.onScroll = this.onScroll.bind(this);
         this.onResize = this.onResize.bind(this);
+        this.onFocus = this.onFocus.bind(this);
+        this.onBlur = this.onBlur.bind(this);
+        this.parent.addEventListener("focus", this.onFocus);
+        this.parent.addEventListener("blur", this.onBlur);
         this.parent.addEventListener("mousemove", this.onHover);
         this.parent.addEventListener("mouseleave", this.onHoverOver);
         this.parent.addEventListener("mousedown", this.onMouseDown);
-        this.parent.addEventListener("wheel", this.onWheel);
+        document.addEventListener("wheel", this.onWheel, { passive: false });
         this.parent.addEventListener("click", this.onClick);
         this.parent.addEventListener("dblclick", this.onDblClick);
         window.addEventListener("keydown", this.onKeyDown);
@@ -224,15 +234,23 @@ export class Board extends Subscriber {
         this.render();
     }
 
+    protected onFocus() {
+        this.state.focused = true;
+    }
+
+    protected onBlur() {
+        this.state.focused = false;
+    }
+
     protected onKeyDown(event: KeyboardEvent) {
-        if (event.key === "Alt") {
-            this.keyboard.alt = true;
+        if (event.key === "Control") {
+            this.state.ctrl = true;
             this.scroll.locked(true);
         }
     }
 
     protected onKeyUp(_event: KeyboardEvent) {
-        this.keyboard.alt = false;
+        this.state.ctrl = false;
         this.scroll.locked(false);
     }
 
@@ -401,7 +419,7 @@ export class Board extends Subscriber {
     }
 
     protected onWheel(event: WheelEvent): void {
-        if (!this.keyboard.alt) {
+        if (!this.state.ctrl || !this.state.focused) {
             return;
         } else {
             DOM.stop(event);
@@ -474,6 +492,7 @@ export class Board extends Subscriber {
         this.hover.port.hide();
         this.render();
         this.scroll.calc();
+        this.zoomLabel.show(this.position.zoom);
     }
 
     protected goToComposition(id: number) {
@@ -518,7 +537,7 @@ export class Board extends Subscriber {
     public destroy(): void {
         this.resize.unobserve(this.parent);
         this.parent.removeEventListener("mousedown", this.onMouseDown);
-        this.parent.removeEventListener("wheel", this.onWheel);
+        document.removeEventListener("wheel", this.onWheel);
         this.parent.removeEventListener("mousemove", this.onHover);
         this.parent.removeEventListener("mouseleave", this.onHoverOver);
         window.removeEventListener("mousemove", this.onMouseMove);

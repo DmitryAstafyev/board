@@ -176,7 +176,7 @@ impl State {
         self.components.contains(id)
     }
 
-    pub fn is_any_port_selected(&self, ids: Vec<&usize>) -> bool {
-        ids.iter().any(|id| self.ports.contains(id))
-    }
+    // pub fn is_any_port_selected(&self, ids: Vec<&usize>) -> bool {
+    //     ids.iter().any(|id| self.ports.contains(id))
+    // }
 }

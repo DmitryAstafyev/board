@@ -355,25 +355,9 @@ impl Board {
             if inserted {
                 // Added
                 self.state.insert_port(rel_port);
-                // self.state.insert_component(connection.out_comp());
-                // self.state.insert_component(connection.in_comp());
             } else {
                 // Removed
                 self.state.remove_port(rel_port);
-                // if !self.state.is_any_port_selected(
-                //     self.render
-                //         .origin()
-                //         .find_ports_by_component(connection.in_comp()),
-                // ) {
-                //     self.state.remove_component(connection.in_comp());
-                // }
-                // if !self.state.is_any_port_selected(
-                //     self.render
-                //         .origin()
-                //         .find_ports_by_component(connection.out_comp()),
-                // ) {
-                //     self.state.remove_component(connection.out_comp());
-                // }
             }
         }
         self.render()

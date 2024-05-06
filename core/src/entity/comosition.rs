@@ -1,7 +1,7 @@
 use crate::{
     entity::{
-        Component, Connection, GetIncludedComponent, IsComponentIncluded, IsPortIncluded, Ports,
-        Signature, SignatureEqual, SignatureGetter,
+        Component, Connection, GetIncludedComponent, IsPortIncluded, Ports, Signature,
+        SignatureEqual, SignatureGetter,
     },
     render::{options::Options, Render, Representation},
 };
@@ -74,13 +74,13 @@ impl Composition {
         self.connections.iter().find_map(|c| id.included_as_port(c))
     }
 
-    pub fn find_ports_by_component(&self, id: &usize) -> Vec<&usize> {
-        self.connections
-            .iter()
-            .filter(|c| id.included_as_component(*c))
-            .flat_map(|conn| conn.origin().get_ports())
-            .collect::<Vec<&usize>>()
-    }
+    // pub fn find_ports_by_component(&self, id: &usize) -> Vec<&usize> {
+    //     self.connections
+    //         .iter()
+    //         .filter(|c| id.included_as_component(*c))
+    //         .flat_map(|conn| conn.origin().get_ports())
+    //         .collect::<Vec<&usize>>()
+    // }
 
     pub fn find_connections_by_component(&self, id: &usize) -> Vec<&Connection> {
         self.connections
