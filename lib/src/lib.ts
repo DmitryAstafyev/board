@@ -259,8 +259,8 @@ export class Board extends Subscriber {
             // Click on scroll bars
             return;
         }
-        this.movement.x = event.offsetX;
-        this.movement.y = event.offsetY;
+        this.movement.x = event.screenX;
+        this.movement.y = event.screenY;
         this.movement.dropClick = false;
         this.movement.clickTimer = setTimeout(() => {
             this.hover.component.hide();
@@ -280,7 +280,7 @@ export class Board extends Subscriber {
         const canvas = this.board.get_size();
         if (!this.position.xLocked) {
             this.position.x -=
-                (this.movement.x - event.offsetX) / this.position.zoom;
+                (this.movement.x - event.screenX) / this.position.zoom;
             this.position.x = this.position.x > 0 ? 0 : this.position.x;
             this.position.x =
                 -this.position.x >
@@ -291,7 +291,7 @@ export class Board extends Subscriber {
         }
         if (!this.position.yLocked) {
             this.position.y -=
-                (this.movement.y - event.offsetY) / this.position.zoom;
+                (this.movement.y - event.screenY) / this.position.zoom;
             this.position.y = this.position.y > 0 ? 0 : this.position.y;
             this.position.y =
                 -this.position.y >
@@ -300,8 +300,8 @@ export class Board extends Subscriber {
                     : this.position.y;
             this.position.y = this.position.y > 0 ? 0 : this.position.y;
         }
-        this.movement.x = event.offsetX;
-        this.movement.y = event.offsetY;
+        this.movement.x = event.screenX;
+        this.movement.y = event.screenY;
         this.scroll.moveTo(
             -this.position.x * this.position.zoom,
             -this.position.y * this.position.zoom
