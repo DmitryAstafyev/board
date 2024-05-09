@@ -311,40 +311,61 @@ impl Board {
         Ok(())
     }
     #[wasm_bindgen]
-    pub fn toggle_component(&mut self, id: usize) -> Result<(), String> {
-        if let Some(comp) = self.render.origin().get_component(&id) {
-            let rel_connections = self.render.origin().find_connections_by_component(&id);
-            let rel_ports = [
-                rel_connections
-                    .iter()
-                    .flat_map(|conn| conn.get_ports())
-                    .collect::<Vec<&usize>>(),
-                comp.ports
-                    .origin()
-                    .iter()
-                    .map(|port| &port.sig().id)
-                    .collect::<Vec<&usize>>(),
-            ]
-            .concat();
-            if self.state.is_component_selected(&id) {
-                rel_ports.iter().for_each(|id| {
-                    self.state.remove_port(id);
-                });
-                self.state.remove_component(&id);
+    pub fn toggle_component(&mut self, id: usize, selfishly: bool) -> Result<(), String> {
+        let related = |id: &usize| {
+            if let Some(comp) = self.render.origin().get_component(id) {
+                [
+                    self.render
+                        .origin()
+                        .find_connections_by_component(id)
+                        .iter()
+                        .flat_map(|conn| conn.get_ports())
+                        .collect::<Vec<&usize>>(),
+                    comp.ports
+                        .origin()
+                        .iter()
+                        .map(|port| &port.sig().id)
+                        .collect::<Vec<&usize>>(),
+                ]
+                .concat()
             } else {
-                rel_ports.iter().for_each(|id| {
-                    self.state.insert_port(id);
-                });
-                self.state.insert_component(&id);
+                Vec::new()
             }
-            self.render()?;
+        };
+        let insert = |state: &mut State, id: &usize, ports: Vec<&usize>| {
+            ports.iter().for_each(|id| {
+                state.insert_port(id);
+            });
+            state.insert_component(id);
+        };
+        let remove = |state: &mut State, id: &usize, ports: Vec<&usize>| {
+            ports.iter().for_each(|id| {
+                state.remove_port(id);
+            });
+            state.remove_component(id);
+        };
+        let ports = related(&id);
+        if self.state.is_component_selected(&id) {
+            remove(&mut self.state, &id, ports);
+        } else {
+            if selfishly {
+                let comps = self.state.components.to_vec();
+                comps.iter().for_each(|id| {
+                    remove(&mut self.state, id, related(id));
+                });
+            }
+            insert(&mut self.state, &id, ports);
         }
+        self.render()?;
         Ok(())
     }
 
     #[wasm_bindgen]
-    pub fn toggle_port(&mut self, id: usize) -> Result<(), String> {
+    pub fn toggle_port(&mut self, id: usize, selfishly: bool) -> Result<(), String> {
         let connections = self.render.origin().find_connections_by_port(&id);
+        if selfishly {
+            self.state.unselect_all();
+        }
         let inserted = self.state.toggle_port(&id);
         for connection in connections.iter() {
             let rel_port = if (&id).is_input_port(*connection) {

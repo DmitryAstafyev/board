@@ -2,7 +2,7 @@ use crate::{entity::Port, render::Relative};
 
 #[derive(Debug)]
 pub struct State {
-    components: Vec<usize>,
+    pub components: Vec<usize>,
     ports: Vec<usize>,
     ports_highlighted: Vec<usize>,
     hovered: Option<usize>,

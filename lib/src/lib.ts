@@ -441,15 +441,15 @@ export class Board extends Subscriber {
                 this.goToComposition(targets.back);
             } else if (targets.ports.length === 1) {
                 const targetId = parseInt(targets.ports[0][0], 10);
-                this.board.toggle_port(targetId);
+                this.board.toggle_port(targetId, !this.state.ctrl);
                 this.subjects.get().onPortClick.emit(targetId);
             } else if (targets.components.length === 1) {
                 const targetId = parseInt(targets.components[0][0], 10);
-                this.board.toggle_component(targetId);
+                this.board.toggle_component(targetId, !this.state.ctrl);
                 this.subjects.get().onComponentClick.emit(targetId);
             } else if (targets.compositions.length === 1) {
                 const targetId = parseInt(targets.compositions[0][0], 10);
-                this.board.toggle_component(targetId);
+                this.board.toggle_component(targetId, !this.state.ctrl);
             }
         }
     }
