@@ -375,13 +375,12 @@ export class Board extends Subscriber {
             return;
         }
         const targets = this.getTargetsOnMouse(event);
-        this.hover.port.hide();
-        this.hover.component.hide();
         if (
             (targets.components.length === 1 ||
                 targets.compositions.length === 1) &&
             targets.ports.length === 0
         ) {
+            this.hover.port.hide();
             const id = parseInt(
                 targets.components.length === 1
                     ? targets.components[0][0]
@@ -397,6 +396,7 @@ export class Board extends Subscriber {
                 });
             }
         } else if (targets.ports.length === 1) {
+            this.hover.component.hide();
             const id = parseInt(targets.ports[0][0], 10);
             if (!this.hover.port.isActive(id)) {
                 this.hover.port.show(id);
@@ -410,10 +410,13 @@ export class Board extends Subscriber {
                     y: event.offsetY,
                 });
             }
+        } else {
+            this.hover.port.hide();
+            this.hover.component.hide();
         }
     }
 
-    protected onHoverOver(_board_canvas_id_$event: MouseEvent): void {
+    protected onHoverOver(_event: MouseEvent): void {
         this.hover.component.hide();
         this.hover.port.hide();
     }
