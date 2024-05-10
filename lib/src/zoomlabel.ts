@@ -33,7 +33,7 @@ export class ZoomLabel {
         this.label.style.display = "block";
         clearTimeout(this.timer);
         this.timer = setTimeout(() => {
-            // this.label.style.display = "none";
+            this.label.style.display = "none";
         }, HIDE_IN_MS) as unknown as number;
     }
 }
