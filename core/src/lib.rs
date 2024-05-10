@@ -363,7 +363,7 @@ impl Board {
     #[wasm_bindgen]
     pub fn toggle_port(&mut self, id: usize, selfishly: bool) -> Result<(), String> {
         let connections = self.render.origin().find_connections_by_port(&id);
-        if selfishly {
+        if selfishly && !self.state.is_port_selected(&id) {
             self.state.unselect_all();
         }
         let inserted = self.state.toggle_port(&id);
