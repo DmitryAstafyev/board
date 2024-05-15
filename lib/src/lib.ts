@@ -243,7 +243,7 @@ export class Board extends Subscriber {
     }
 
     protected onKeyDown(event: KeyboardEvent) {
-        if (event.key === "Control") {
+        if (event.key === "Control" || event.key === "Shift") {
             this.state.ctrl = true;
             this.scroll.locked(true);
         }

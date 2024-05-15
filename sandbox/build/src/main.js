@@ -337,7 +337,7 @@ function getLabeledPortsOptions() {
             padding: 3,
             cell_size_px: 25,
             cells_space_vertical: 3,
-            cells_space_horizontal: 6,
+            cells_space_horizontal: 8,
             visible: false,
         },
         labels: {

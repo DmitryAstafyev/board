@@ -930,7 +930,7 @@ pub fn group_unbound_ports(
             .iter()
             .map(|p| p.sig().id)
             .collect::<Vec<usize>>();
-        if unbound_ports.is_empty() {
+        if unbound_ports.is_empty() || unbound_ports.len() == 1 {
             continue;
         }
         component
@@ -957,7 +957,7 @@ pub fn group_unbound_ports(
             .iter()
             .map(|p| p.sig().id)
             .collect::<Vec<usize>>();
-        if unbound_ports.is_empty() {
+        if unbound_ports.is_empty() || unbound_ports.len() == 1 {
             continue;
         }
         composition
