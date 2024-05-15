@@ -10,6 +10,8 @@ import * as DOM from "./dom";
 
 export * from "./types";
 
+export { DEVICE_PIXEL_RATIO } from "./dom";
+
 export const wasm: {
     core: typeof Core | undefined;
 } = {
@@ -78,7 +80,7 @@ export class Board extends Subscriber {
     } = {
         height: 0,
         width: 0,
-        ratio: window !== undefined ? Math.ceil(window.devicePixelRatio) : 1,
+        ratio: DOM.DEVICE_PIXEL_RATIO,
     };
     protected position: Position = new Position();
     protected readonly history: Map<number, IPosition> = new Map();
@@ -107,11 +109,13 @@ export class Board extends Subscriber {
         grouped: [number, number[]][];
         root: Types.Composition | undefined;
         history: number[];
+        previous: number | undefined;
     } = {
         composition: undefined,
         grouped: [],
         root: undefined,
         history: [],
+        previous: undefined,
     };
     protected readonly resize: ResizeObserver;
 
@@ -510,6 +514,7 @@ export class Board extends Subscriber {
         this.board.bind(composition, Uint32Array.from([]));
         this.data.composition !== undefined &&
             this.history.set(this.data.composition, this.position.clone());
+        this.data.previous = this.data.composition;
         this.data.composition = id;
         this.data.grouped = this.board.get_grouped_ports();
         const recent = this.history.get(id);
@@ -571,6 +576,13 @@ export class Board extends Subscriber {
             this.position.zoom
         );
         this.board.render();
+    }
+
+    public toPrevComposition() {
+        if (this.data.previous === undefined) {
+            return;
+        }
+        this.goToComposition(this.data.previous);
     }
 
     public setFilter(filter: string | undefined) {

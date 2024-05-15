@@ -1,3 +1,5 @@
+import { DEVICE_PIXEL_RATIO } from "./dom";
+
 //                         [ID    , Type, [x     , y     , x1    , y1    ]]
 export type ElementCoors = [string, string, [number, number, number, number]];
 
@@ -135,6 +137,6 @@ export function getDefaultsOptions(): Options {
             port_label_max_len: 16,
             comp_label_max_len: 12,
         },
-        ratio: window !== undefined ? Math.ceil(window.devicePixelRatio) : 1,
+        ratio: DEVICE_PIXEL_RATIO,
     };
 }

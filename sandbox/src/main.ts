@@ -9,6 +9,7 @@ import {
     Representation,
     Options,
     getDefaultsOptions,
+    DEVICE_PIXEL_RATIO,
     PortsRepresentation,
 } from "board";
 
@@ -437,7 +438,7 @@ function getLabeledPortsOptions(): Options {
             port_label_max_len: 16,
             comp_label_max_len: 12,
         },
-        ratio: Math.ceil(window.devicePixelRatio),
+        ratio: DEVICE_PIXEL_RATIO,
     };
 }
 
