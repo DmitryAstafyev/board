@@ -524,6 +524,7 @@ export class Board extends Subscriber {
             this.position.dropCoors();
         }
         this.updateSize();
+        this.subjects.get().bound.emit();
     }
 
     public readonly subjects: Subjects<{
@@ -533,6 +534,7 @@ export class Board extends Subscriber {
         onComponentHoverOver: Subject<void>;
         onPortHoverOver: Subject<void>;
         onPortClick: Subject<number>;
+        bound: Subject<void>;
     }> = new Subjects({
         onComponentHover: new Subject<HoverMouseEvent>(),
         onComponentClick: new Subject<number>(),
@@ -540,6 +542,7 @@ export class Board extends Subscriber {
         onPortHover: new Subject<PortHoverEvent>(),
         onPortHoverOver: new Subject<void>(),
         onPortClick: new Subject<number>(),
+        bound: new Subject<void>(),
     });
 
     public destroy(): void {
@@ -562,6 +565,7 @@ export class Board extends Subscriber {
         this.data.composition = composition.sig.id;
         this.data.root = composition;
         this.data.grouped = this.getGroupedPorts();
+        this.subjects.get().bound.emit();
     }
 
     public refresh() {
