@@ -259,6 +259,7 @@ impl Render<Port> {
             PortType::In | PortType::Unbound => label::Align::Right,
         };
         let ratio = options.ratio();
+        let connected = entity.connected;
         Self {
             entity,
             view: View {
@@ -288,6 +289,11 @@ impl Render<Port> {
                                 0,
                                 0,
                                 label,
+                                if connected == 0 {
+                                    None
+                                } else {
+                                    Some(connected)
+                                },
                                 4,
                                 id.to_string(),
                                 align,
@@ -341,7 +347,7 @@ impl Render<Port> {
         } else if state.is_port_highlighted(&self.entity.sig.id) {
             self.view.container.style = Style {
                 stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(200,250,200)"),
+                fill_style: String::from("rgb(220,250,220)"),
             };
         } else if state.is_port_linked(&self.entity) {
             self.view.container.style = Style {

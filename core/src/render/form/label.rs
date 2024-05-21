@@ -32,6 +32,7 @@ pub struct Label {
     pub w: i32,
     pub h: i32,
     pub label: String,
+    pub badge: Option<usize>,
     pub padding: i32,
     pub id: String,
     pub align: Align,
@@ -46,6 +47,7 @@ impl Label {
         w: i32,
         h: i32,
         label: String,
+        badge: Option<usize>,
         padding: i32,
         id: String,
         align: Align,
@@ -58,6 +60,7 @@ impl Label {
             w,
             h,
             label,
+            badge,
             padding: ratio.get(padding),
             id,
             align,
@@ -94,9 +97,12 @@ impl Label {
 
     pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         let text_hor_padding = relative.zoom(self.params.pad_h) as f64;
-        self.h = relative.zoom((self.params.cell as f64 * 0.7).floor() as i32);
+        self.h = relative.zoom((self.params.cell as f64 * 0.75).floor() as i32);
         context.set_text_baseline("top");
-        context.set_font(&format!("{}px serif", (self.h as f64 * 0.7).round()));
+        context.set_font(&format!(
+            "{}px serif",
+            (self.h as f64 * if self.badge.is_some() { 0.55 } else { 0.7 }).round()
+        ));
         self.w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width() as i32
         } else {
@@ -117,6 +123,21 @@ impl Label {
         context.fill_rect(x, y, self.w as f64, self.h as f64);
         context.stroke_rect(x, y, self.w as f64, self.h as f64);
         context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
-        let _ = context.fill_text(&self.label, x + text_hor_padding, y + text_ver_padding);
+        if let Some(badge) = self.badge {
+            let _ = context.fill_text(
+                &self.label,
+                x + text_hor_padding,
+                y + text_ver_padding * 0.6,
+            );
+            context.set_font(&format!("{}px serif", (self.h as f64 * 0.4).round()));
+            context.set_fill_style(&JsValue::from_str("rgb(40,40,40)"));
+            let _ = context.fill_text(
+                &format!("{badge} linked"),
+                x + text_hor_padding,
+                y + self.h as f64 * 0.6,
+            );
+        } else {
+            let _ = context.fill_text(&self.label, x + text_hor_padding, y + text_ver_padding);
+        }
     }
 }

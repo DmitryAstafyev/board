@@ -20,6 +20,7 @@ export interface Port {
     port_type: PortType;
     visibility: boolean;
     contains: number[];
+    connected: number;
 }
 
 export interface Representation<T> {

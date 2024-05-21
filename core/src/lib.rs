@@ -120,7 +120,6 @@ impl Board {
             0.0,
         )
         .map_err(|e| E::Dom(format!("Fail to transform; error: {e:?}")))?;
-        // let _ = cx.translate(0.5, 0.5);
         let _ = self.context.insert(cx);
         let _ = self.canvas.insert(canvas);
         Ok(())
@@ -312,7 +311,7 @@ impl Board {
     }
     #[wasm_bindgen]
     pub fn toggle_component(&mut self, id: usize, selfishly: bool) -> Result<(), String> {
-        let related = |id: &usize| {
+        let all = |id: &usize| {
             if let Some(comp) = self.render.origin().get_component(id) {
                 [
                     self.render
@@ -332,29 +331,56 @@ impl Board {
                 Vec::new()
             }
         };
-        let insert = |state: &mut State, id: &usize, ports: Vec<&usize>| {
-            ports.iter().for_each(|id| {
+        let own = |id: &usize| {
+            if let Some(comp) = self.render.origin().get_component(id) {
+                comp.ports
+                    .origin()
+                    .iter()
+                    .map(|port| &port.sig().id)
+                    .collect::<Vec<&usize>>()
+            } else {
+                Vec::new()
+            }
+        };
+        let linked = |id: &usize| {
+            let own = own(id);
+            self.render
+                .origin()
+                .find_connections_by_component(id)
+                .iter()
+                .flat_map(|conn: &&entity::Connection| conn.get_ports())
+                .filter(|p| !own.contains(p))
+                .collect::<Vec<&usize>>()
+        };
+        let insert = |state: &mut State, id: &usize, own: Vec<&usize>, linked: Vec<&usize>| {
+            own.iter().for_each(|id| {
                 state.insert_port(id);
+            });
+            linked.iter().for_each(|id| {
+                state.highlight_port(id);
             });
             state.insert_component(id);
         };
         let remove = |state: &mut State, id: &usize, ports: Vec<&usize>| {
             ports.iter().for_each(|id| {
                 state.remove_port(id);
+                state.unhighlight_port(id);
             });
             state.remove_component(id);
         };
-        let ports = related(&id);
+        let ports = all(&id);
         if self.state.is_component_selected(&id) {
             remove(&mut self.state, &id, ports);
+            self.state.components.to_vec().iter().for_each(|id| {
+                insert(&mut self.state, id, own(id), linked(id));
+            });
         } else {
             if selfishly {
-                let comps = self.state.components.to_vec();
-                comps.iter().for_each(|id| {
-                    remove(&mut self.state, id, related(id));
+                self.state.components.to_vec().iter().for_each(|id| {
+                    remove(&mut self.state, id, all(id));
                 });
             }
-            insert(&mut self.state, &id, ports);
+            insert(&mut self.state, &id, own(&id), linked(&id));
         }
         self.render()?;
         Ok(())
@@ -375,10 +401,10 @@ impl Board {
             };
             if inserted {
                 // Added
-                self.state.insert_port(rel_port);
+                self.state.highlight_port(rel_port);
             } else {
                 // Removed
-                self.state.remove_port(rel_port);
+                self.state.unhighlight_port(rel_port);
             }
         }
         self.render()
@@ -431,22 +457,24 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn highlight_connection_by_port(&mut self, id: usize) -> bool {
-        self.state.highlight_port(&id)
-            || if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
-                self.state.highlight_port(&rel_port)
-            } else {
-                false
-            }
+    pub fn highlight_connection_by_port(&mut self, _id: usize) -> bool {
+        // self.state.highlight_port(&id)
+        //     || if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
+        //         self.state.highlight_port(&rel_port)
+        //     } else {
+        //         false
+        //     }
+        false
     }
 
     #[wasm_bindgen]
-    pub fn unhighlight_connection_by_port(&mut self, id: usize) -> bool {
-        self.state.unhighlight_port(&id)
-            || if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
-                self.state.unhighlight_port(&rel_port)
-            } else {
-                false
-            }
+    pub fn unhighlight_connection_by_port(&mut self, _id: usize) -> bool {
+        false
+        // self.state.unhighlight_port(&id)
+        //     || if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
+        //         self.state.unhighlight_port(&rel_port)
+        //     } else {
+        //         false
+        //     }
     }
 }

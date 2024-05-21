@@ -17,6 +17,7 @@ impl Dummy<Port, ()> for Port {
                 PortType::Out
             },
             contains: Vec::new(),
+            connected: 0,
             visibility: true,
         }
     }

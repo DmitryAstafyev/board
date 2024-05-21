@@ -167,6 +167,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                     },
                                     port_type: PortType.Unbound,
                                     visibility: true,
+                                    connected: 0,
                                     contains: [],
                                 },
                             };
@@ -206,6 +207,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                                             short_name: portSignature.shortName,
                                         },
                                         port_type: PortType.Unbound,
+                                        connected: 0,
                                         visibility: true,
                                         contains: [],
                                     },
@@ -227,6 +229,7 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
         }
     });
     let notFoundConnectors = 0;
+    let counts: Map<number, number> = new Map();
     parent.connector.forEach((connectionId: number) => {
         const connection = (() => {
             try {
@@ -270,6 +273,10 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
             rPortRef.Origin.port_type = PortType.In;
             rPortRef.Origin.visibility = true;
         }
+        let count = counts.get(pPort.targetPPort);
+        counts.set(pPort.targetPPort, count === undefined ? 1 : count + 1);
+        count = counts.get(rPort.targetRPort);
+        counts.set(rPort.targetRPort, count === undefined ? 1 : count + 1);
         holder.connections.push({
             Origin: {
                 sig: {
@@ -290,6 +297,22 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                 },
                 visibility: true,
             },
+        });
+    });
+    holder.ports.Origin.ports.forEach((port) => {
+        const count = counts.get(port.Origin.sig.id);
+        port.Origin.connected = count === undefined ? 0 : count;
+    });
+    holder.components.forEach((comp) => {
+        comp.Origin.ports.Origin.ports.forEach((port) => {
+            const count = counts.get(port.Origin.sig.id);
+            port.Origin.connected = count === undefined ? 0 : count;
+        });
+    });
+    holder.compositions.forEach((comp) => {
+        comp.Origin.ports.Origin.ports.forEach((port) => {
+            const count = counts.get(port.Origin.sig.id);
+            port.Origin.connected = count === undefined ? 0 : count;
         });
     });
     if (notFoundConnectors > 0) {
@@ -330,6 +353,7 @@ function getDummyComposition(
                 visibility: true,
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
+                connected: 0,
                 contains: [],
             });
         }
@@ -385,6 +409,7 @@ function getDummyComposition(
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
                 visibility: true,
+                connected: 0,
                 contains: [],
             },
         });

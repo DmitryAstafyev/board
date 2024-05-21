@@ -116,6 +116,7 @@ impl State {
 
     pub fn unselect_all(&mut self) {
         self.ports.clear();
+        self.ports_highlighted.clear();
         self.components.clear();
     }
 
@@ -170,6 +171,18 @@ impl State {
             true
         };
         self.ports.contains(id) && visible
+    }
+
+    pub fn is_port_selected_or_highlighted(&self, id: &usize) -> bool {
+        let visible = if let Some((filtered, linked, _owners)) = self.filtered.as_ref() {
+            filtered.contains(id) || linked.contains(id)
+        } else {
+            true
+        };
+        if !visible {
+            return false;
+        }
+        self.ports.contains(id) || self.is_port_highlighted(id)
     }
 
     pub fn is_component_selected(&self, id: &usize) -> bool {

@@ -25,6 +25,8 @@ pub struct Path {
     pub points: Vec<Point>,
     pub id: String,
     pub params: Params,
+    pub sdot: bool,
+    pub edot: bool,
 }
 
 impl Path {
@@ -33,6 +35,8 @@ impl Path {
             id,
             points,
             params: Params::new(ratio),
+            sdot: false,
+            edot: false,
         }
     }
     pub fn get_box_size(&self) -> (i32, i32) {
@@ -70,27 +74,31 @@ impl Path {
             context.line_to(relative.x(p.x) as f64, relative.y(p.y) as f64);
         });
         context.stroke();
-        context.begin_path();
-        let _ = context.ellipse(
-            relative.x(self.points[0].x) as f64,
-            relative.y(self.points[0].y) as f64,
-            self.params.radius as f64,
-            self.params.radius as f64,
-            0.0,
-            0.0,
-            360.0 * (PI / 180.0),
-        );
-        context.fill();
-        context.begin_path();
-        let _ = context.ellipse(
-            relative.x(self.points[self.points.len() - 1].x) as f64,
-            relative.y(self.points[self.points.len() - 1].y) as f64,
-            self.params.radius as f64,
-            self.params.radius as f64,
-            0.0,
-            0.0,
-            360.0 * (PI / 180.0),
-        );
-        context.fill();
+        if self.sdot {
+            context.begin_path();
+            let _ = context.ellipse(
+                relative.x(self.points[0].x) as f64,
+                relative.y(self.points[0].y) as f64,
+                self.params.radius as f64,
+                self.params.radius as f64,
+                0.0,
+                0.0,
+                360.0 * (PI / 180.0),
+            );
+            context.fill();
+        }
+        if self.edot {
+            context.begin_path();
+            let _ = context.ellipse(
+                relative.x(self.points[self.points.len() - 1].x) as f64,
+                relative.y(self.points[self.points.len() - 1].y) as f64,
+                self.params.radius as f64,
+                self.params.radius as f64,
+                0.0,
+                0.0,
+                360.0 * (PI / 180.0),
+            );
+            context.fill();
+        }
     }
 }

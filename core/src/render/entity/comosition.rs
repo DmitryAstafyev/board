@@ -476,10 +476,10 @@ impl Render<Composition> {
         }
         for connection in self.entity.connections.iter_mut().filter(|conn| {
             conn.origin().visibility
-                && (state.is_port_selected(conn.origin().in_port())
-                    && state.is_port_selected(conn.origin().out_port()))
+                && (state.is_port_selected_or_highlighted(conn.origin().in_port())
+                    && state.is_port_selected_or_highlighted(conn.origin().out_port()))
         }) {
-            connection.render_mut()?.draw(context, relative)?;
+            connection.render_mut()?.draw(context, relative, state)?;
         }
         let ratio = options.ratio();
         context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
@@ -838,12 +838,14 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 sig: sig_producer.next_for("joined port IN"),
                 port_type: PortType::In,
                 contains: ports_in,
+                connected: 0,
                 visibility: true,
             };
             let joined_port_out = Port {
                 sig: sig_producer.next_for("joined port OUT"),
                 port_type: PortType::Out,
                 contains: ports_out,
+                connected: 0,
                 visibility: true,
             };
             added_connections.push(Representation::Origin(Connection {
@@ -943,6 +945,7 @@ pub fn group_unbound_ports(
                 sig: sig_producer.next_for("unbound grouped"),
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
+                connected: 0,
                 visibility: true,
             }),
             Some(0),
@@ -970,6 +973,7 @@ pub fn group_unbound_ports(
                 sig: sig_producer.next_for("unbound grouped"),
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
+                connected: 0,
                 visibility: true,
             }),
             Some(0),

@@ -70,9 +70,9 @@ impl Composition {
             .collect::<Vec<&Connection>>()
     }
 
-    pub fn find_connected_port(&self, id: &usize) -> Option<usize> {
-        self.connections.iter().find_map(|c| id.included_as_port(c))
-    }
+    // pub fn find_connected_port(&self, id: &usize) -> Option<usize> {
+    //     self.connections.iter().find_map(|c| id.included_as_port(c))
+    // }
 
     // pub fn find_ports_by_component(&self, id: &usize) -> Vec<&usize> {
     //     self.connections

@@ -16,6 +16,7 @@ pub struct Port {
     pub sig: Signature,
     pub port_type: PortType,
     pub contains: Vec<usize>,
+    pub connected: usize,
     pub visibility: bool,
 }
 

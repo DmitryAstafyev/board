@@ -101,6 +101,7 @@ function load(parent, elements, holder) {
                                     },
                                     port_type: board_1.PortType.Unbound,
                                     visibility: true,
+                                    connected: 0,
                                     contains: [],
                                 },
                             };
@@ -140,6 +141,7 @@ function load(parent, elements, holder) {
                                             short_name: portSignature.shortName,
                                         },
                                         port_type: board_1.PortType.Unbound,
+                                        connected: 0,
                                         visibility: true,
                                         contains: [],
                                     },
@@ -158,6 +160,7 @@ function load(parent, elements, holder) {
         }
     });
     let notFoundConnectors = 0;
+    let counts = new Map();
     parent.connector.forEach((connectionId) => {
         const connection = (() => {
             try {
@@ -192,6 +195,10 @@ function load(parent, elements, holder) {
             rPortRef.Origin.port_type = board_1.PortType.In;
             rPortRef.Origin.visibility = true;
         }
+        let count = counts.get(pPort.targetPPort);
+        counts.set(pPort.targetPPort, count === undefined ? 1 : count + 1);
+        count = counts.get(rPort.targetRPort);
+        counts.set(rPort.targetRPort, count === undefined ? 1 : count + 1);
         holder.connections.push({
             Origin: {
                 sig: {
@@ -211,6 +218,22 @@ function load(parent, elements, holder) {
                 },
                 visibility: true,
             },
+        });
+    });
+    holder.ports.Origin.ports.forEach((port) => {
+        const count = counts.get(port.Origin.sig.id);
+        port.Origin.connected = count === undefined ? 0 : count;
+    });
+    holder.components.forEach((comp) => {
+        comp.Origin.ports.Origin.ports.forEach((port) => {
+            const count = counts.get(port.Origin.sig.id);
+            port.Origin.connected = count === undefined ? 0 : count;
+        });
+    });
+    holder.compositions.forEach((comp) => {
+        comp.Origin.ports.Origin.ports.forEach((port) => {
+            const count = counts.get(port.Origin.sig.id);
+            port.Origin.connected = count === undefined ? 0 : count;
         });
     });
     if (notFoundConnectors > 0) {
@@ -242,6 +265,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
                 visibility: true,
                 port_type: Math.random() > 0.5 ? board_1.PortType.In : board_1.PortType.Out,
                 sig: getSignature(),
+                connected: 0,
                 contains: [],
             });
         }
@@ -297,6 +321,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
                 port_type: Math.random() > 0.5 ? board_1.PortType.In : board_1.PortType.Out,
                 sig: getSignature(),
                 visibility: true,
+                connected: 0,
                 contains: [],
             },
         });
