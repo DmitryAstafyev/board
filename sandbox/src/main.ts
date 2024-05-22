@@ -450,7 +450,8 @@ function getLabeledPortsOptions(): Options {
             hide: false,
         },
         grid: {
-            padding: 3,
+            hpadding: 5,
+            vpadding: 3,
             cell_size_px: 25,
             cells_space_vertical: 3,
             cells_space_horizontal: 8,

@@ -96,7 +96,8 @@ export interface GridOptions {
     cells_space_vertical: number;
     cells_space_horizontal: number;
     visible: boolean;
-    padding: number;
+    vpadding: number;
+    hpadding: number;
 }
 
 export interface LabelsOptions {
@@ -125,7 +126,8 @@ export function getDefaultsOptions(): Options {
             hide: false,
         },
         grid: {
-            padding: 3,
+            vpadding: 3,
+            hpadding: 5,
             cell_size_px: 25,
             cells_space_vertical: 3,
             cells_space_horizontal: 3,

@@ -44,7 +44,7 @@ impl Grid {
     pub fn new(options: &GridOptions, ratio: Ratio) -> Self {
         Grid {
             options: options.clone(),
-            size: (options.padding * 2, options.padding * 2),
+            size: (options.hpadding * 2, options.vpadding * 2),
             map: HashMap::new(),
             id: None,
             cell: ratio.get(CELL),
@@ -106,7 +106,8 @@ impl Grid {
             size.0 += max_w;
         }
         let mut options = options.clone();
-        options.padding = 0;
+        options.vpadding = 0;
+        options.hpadding = 0;
         Ok(Grid {
             options,
             size,
@@ -256,7 +257,7 @@ impl Grid {
     fn is_block_free(&self, target: (u32, u32, u32, u32)) -> bool {
         let (mut x, mut y, mut x1, mut y1) = target;
         // Check space
-        if self.size.0 - self.options.padding < x1 || self.size.1 - self.options.padding < y1 {
+        if self.size.0 - self.options.hpadding < x1 || self.size.1 - self.options.vpadding < y1 {
             return false;
         }
         // Extend box to consider necessary spaces
@@ -283,10 +284,10 @@ impl Grid {
     }
 
     fn is_point_free(&self, point: &(u32, u32)) -> bool {
-        if point.0 < self.options.padding
-            || point.0 > self.size.0 + self.options.padding * 2
-            || point.1 < self.options.padding
-            || point.1 > self.size.1 + self.options.padding * 2
+        if point.0 < self.options.hpadding
+            || point.0 > self.size.0 + self.options.hpadding * 2
+            || point.1 < self.options.vpadding
+            || point.1 > self.size.1 + self.options.vpadding * 2
         {
             return false;
         }
@@ -311,14 +312,14 @@ impl Grid {
             .map(|(_, (_, _, x1, _))| x1)
             .max()
             .unwrap_or(&0)
-            + self.options.padding;
+            + self.options.hpadding;
         let max_y = self
             .map
             .values()
             .map(|(_, (_, _, _, y1))| y1)
             .max()
             .unwrap_or(&0)
-            + self.options.padding;
+            + self.options.vpadding;
         self.size = (
             [max_x + 1, self.size.0].iter().min().copied().unwrap_or(0),
             [max_y + 1, self.size.1].iter().min().copied().unwrap_or(0),
@@ -330,8 +331,8 @@ impl Grid {
         // Looking for point to insert grid
         let mut point: Option<(u32, u32)> = None;
         self.size = (
-            elements::max(&[self.size.0, grid.size.0], self.options.padding * 2),
-            elements::max(&[self.size.1, grid.size.1], self.options.padding * 2),
+            elements::max(&[self.size.0, grid.size.0], self.options.hpadding * 2),
+            elements::max(&[self.size.1, grid.size.1], self.options.vpadding * 2),
         );
         while point.is_none() {
             for y in 0..self.size.1 {

@@ -25,7 +25,8 @@ pub struct GridOptions {
     pub cells_space_vertical: u32,
     pub cells_space_horizontal: u32,
     pub visible: bool,
-    pub padding: u32,
+    pub vpadding: u32,
+    pub hpadding: u32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -62,7 +63,8 @@ impl Default for Options {
             },
             connections: Connections { hide: false },
             grid: GridOptions {
-                padding: 3,
+                vpadding: 3,
+                hpadding: 5,
                 cell_size_px: 25,
                 cells_space_vertical: 3,
                 cells_space_horizontal: 3,

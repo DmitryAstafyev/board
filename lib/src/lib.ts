@@ -329,7 +329,7 @@ export class Board extends Subscriber {
     } {
         let x = event.offsetX - this.position.x * this.position.zoom;
         let y = event.offsetY - this.position.y * this.position.zoom;
-        if (x < 0 || y < 0) {
+        if (y < 0) {
             return {
                 ports: [],
                 components: [],

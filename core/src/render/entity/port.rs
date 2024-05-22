@@ -162,7 +162,7 @@ impl Render<Ports> {
                 let label_height = (cell as f64 * 0.7).ceil() as i32;
                 let step_between = cell as i32 - label_height;
                 let start_from = (step_between as f64 / 2.0).ceil() as i32;
-                let over = (container_width as f64 * 0.8 / 2.0) as i32;
+                let over = (container_width as f64 * 0.5).min(ratio.get(20.0)) as i32;
                 // Order ports on a left side
                 let mut cursor: i32 = start_from;
                 for port in self.filter().left(state) {

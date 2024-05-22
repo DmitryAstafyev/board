@@ -44,7 +44,8 @@ impl Board {
         let options = Options::default();
         let render = Render::<Composition>::new(composition, &options);
         let mut grid_options = options.grid.clone();
-        grid_options.padding = 0;
+        grid_options.vpadding = 0;
+        grid_options.hpadding = 0;
         let ratio = options.ratio();
         let grid = Grid::new(&grid_options, ratio.clone());
         Self {
@@ -69,7 +70,8 @@ impl Board {
         };
         let render = Render::<Composition>::new(Composition::new(Signature::default()), &options);
         let mut grid_options = options.grid.clone();
-        grid_options.padding = 0;
+        grid_options.vpadding = 0;
+        grid_options.hpadding = 0;
         let ratio = options.ratio();
         let grid = Grid::new(&grid_options, ratio.clone());
         Self {
@@ -131,7 +133,8 @@ impl Board {
             .map_err(|e| E::Serde(e.to_string()))?;
         self.render = Render::<Composition>::new(composition, &self.options);
         let mut grid_options = self.options.grid.clone();
-        grid_options.padding = 0;
+        grid_options.vpadding = 0;
+        grid_options.hpadding = 0;
         self.grid = Grid::new(&grid_options, self.ratio.clone());
         self.state.set_filtered(None);
         self.state.set_view_state(0, 0, 1.0);
@@ -147,7 +150,8 @@ impl Board {
     #[wasm_bindgen]
     pub fn recalc(&mut self) -> Result<(), String> {
         let mut grid_options = self.options.grid.clone();
-        grid_options.padding = 0;
+        grid_options.vpadding = 0;
+        grid_options.hpadding = 0;
         self.grid = Grid::new(&grid_options, self.ratio.clone());
         let zoom = self.state.zoom;
         // Calculation goes without considering zoom factor. During calculation zoom factor should be 1.0

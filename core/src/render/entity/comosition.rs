@@ -195,6 +195,7 @@ impl Render<Composition> {
                     .iter()
                     .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
                     .collect::<Vec<usize>>(),
+                self.entity.ports.origin().get_filtered_ports(filter),
             ]
             .concat();
             let linked = self
@@ -424,9 +425,19 @@ impl Render<Composition> {
                 composition_grid.insert(&component_grid);
             }
         }
+        let grid_size = composition_grid.get_size_px();
+        // Caclulcate self ports
+        self.entity.ports.render_mut()?.calc(
+            context,
+            grid_size.0 as i32,
+            relative,
+            options,
+            state,
+        )?;
+        composition_grid
+            .set_min_height(self.entity.ports.render_mut()?.height(state, options) as u32);
         // Align to composition grid
         self.align_to_grid(&composition_grid)?;
-        let grid_size = composition_grid.get_size_px();
         let grid_height_px = composition_grid.set_min_height(50);
         self.view
             .container
@@ -491,6 +502,10 @@ impl Render<Composition> {
             relative.x(self.view.container.get_coors().0) as f64,
             relative.y(self.view.container.get_coors().1 - ratio.get(3)) as f64,
         );
+        self.entity
+            .ports
+            .render_mut()?
+            .draw(context, relative, options, state)?;
         // grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
     }
@@ -568,6 +583,18 @@ impl Render<Composition> {
                 }
             }
         }
+        // Add also matches with self ports
+        let mut relative = self.own_relative();
+        relative.set_zoom(state.zoom);
+        found = [
+            found,
+            self.entity.ports.render()?.find(
+                &(position.0 - relative.x(0), position.1 - relative.y(0)),
+                &relative,
+                state,
+            )?,
+        ]
+        .concat();
         Ok(found)
     }
 
