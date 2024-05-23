@@ -109,13 +109,11 @@ export class Board extends Subscriber {
         grouped: [number, number[]][];
         root: Types.Composition | undefined;
         history: number[];
-        previous: number | undefined;
     } = {
         composition: undefined,
         grouped: [],
         root: undefined,
         history: [],
-        previous: undefined,
     };
     protected readonly resize: ResizeObserver;
 
@@ -444,7 +442,6 @@ export class Board extends Subscriber {
         if (event.button == 0) {
             const targets = this.getTargetsOnMouse(event);
             if (targets.back !== undefined) {
-                this.data.history.pop();
                 this.goToComposition(targets.back);
             } else if (targets.ports.length === 1) {
                 const targetId = parseInt(targets.ports[0][0], 10);
@@ -472,8 +469,6 @@ export class Board extends Subscriber {
             const targets = this.getTargetsOnMouse(event);
             if (targets.compositions.length === 1) {
                 const targetId = parseInt(targets.compositions[0][0], 10);
-                this.data.composition !== undefined &&
-                    this.data.history.push(this.data.composition);
                 this.goToComposition(targetId);
             } else if (
                 targets.back === undefined &&
@@ -519,7 +514,15 @@ export class Board extends Subscriber {
         this.board.bind(composition, previous, Uint32Array.from([]));
         this.data.composition !== undefined &&
             this.history.set(this.data.composition, this.position.clone());
-        this.data.previous = this.data.composition;
+        if (
+            this.data.history.length > 0 &&
+            this.data.history[this.data.history.length - 1] == id
+        ) {
+            this.data.history.pop();
+        } else {
+            this.data.composition !== undefined &&
+                this.data.history.push(this.data.composition);
+        }
         this.data.composition = id;
         this.data.grouped = this.board.get_grouped_ports();
         const recent = this.history.get(id);
@@ -592,10 +595,10 @@ export class Board extends Subscriber {
     }
 
     public toPrevComposition() {
-        if (this.data.previous === undefined) {
+        if (this.data.history.length === 0) {
             return;
         }
-        this.goToComposition(this.data.previous);
+        this.goToComposition(this.data.history[this.data.history.length - 1]);
     }
 
     public setFilter(filter: string | undefined) {
