@@ -507,11 +507,16 @@ export class Board extends Subscriber {
             return;
         }
         const composition = Types.getComposition(this.data.root, id);
+        const previous =
+            this.data.composition === undefined
+                ? undefined
+                : Types.getComposition(this.data.root, this.data.composition);
         if (composition === undefined) {
             console.log(`Fail to find composition ID: ${id}`);
             return;
         }
-        this.board.bind(composition, Uint32Array.from([]));
+        this.board.unselect_all();
+        this.board.bind(composition, previous, Uint32Array.from([]));
         this.data.composition !== undefined &&
             this.history.set(this.data.composition, this.position.clone());
         this.data.previous = this.data.composition;
@@ -559,8 +564,12 @@ export class Board extends Subscriber {
         this.unsubscribe();
     }
 
-    public bind(composition: Types.Composition, expanded: number[]) {
-        this.board.bind(composition, Uint32Array.from(expanded));
+    public bind(
+        composition: Types.Composition,
+        parent: Types.Composition | undefined,
+        expanded: number[]
+    ) {
+        this.board.bind(composition, parent, Uint32Array.from(expanded));
         this.updateSize();
         this.data.composition = composition.sig.id;
         this.data.root = composition;

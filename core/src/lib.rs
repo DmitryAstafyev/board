@@ -42,7 +42,7 @@ impl Board {
             ),
         );
         let options = Options::default();
-        let render = Render::<Composition>::new(composition, &options);
+        let render = Render::<Composition>::new(composition, None, &options);
         let mut grid_options = options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;
@@ -68,7 +68,8 @@ impl Board {
                 Options::default()
             }
         };
-        let render = Render::<Composition>::new(Composition::new(Signature::default()), &options);
+        let render =
+            Render::<Composition>::new(Composition::new(Signature::default()), None, &options);
         let mut grid_options = options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;
@@ -128,10 +129,17 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn bind(&mut self, composition: JsValue, expanded: Vec<usize>) -> Result<(), String> {
+    pub fn bind(
+        &mut self,
+        composition: JsValue,
+        parent: JsValue,
+        expanded: Vec<usize>,
+    ) -> Result<(), String> {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
-        self.render = Render::<Composition>::new(composition, &self.options);
+        let parent = serde_wasm_bindgen::from_value::<Option<Composition>>(parent)
+            .map_err(|e| E::Serde(e.to_string()))?;
+        self.render = Render::<Composition>::new(composition, parent.as_ref(), &self.options);
         let mut grid_options = self.options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;

@@ -501,7 +501,7 @@ function real() {
             });
             load(rootElement as IComposition, elements, root);
             const board = new Board(`div#container`, getLabeledPortsOptions());
-            board.bind(root, []);
+            board.bind(root, undefined, []);
             board.render();
             board.subjects.get().onPortHover.subscribe((event) => {});
             board.subjects.get().onComponentHover.subscribe((event) => {});
@@ -525,7 +525,7 @@ function dummy() {
     setTimeout(() => {
         const composition = getDummyComposition(10, 5, 2, undefined);
         const board = new Board(`div#container`, getLabeledPortsOptions());
-        board.bind(composition, []);
+        board.bind(composition, undefined, []);
         board.render();
         board.subjects.get().onPortHover.subscribe((event) => {});
         board.subjects.get().onComponentHover.subscribe((event) => {});
