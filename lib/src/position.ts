@@ -44,9 +44,6 @@ export class Position {
         if (zoommed[1] < container.height) {
             this.y = (container.height - zoommed[1]) / 2 / this.zoom;
         }
-        console.log(
-            `(w,h): (${container.width}, ${container.height}); (uw,uh): (${zoommed[0]},${zoommed[1]}) (x,y): (${this.x}, ${this.y})`
-        );
     }
 
     public clone(): IPosition {
