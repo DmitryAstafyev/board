@@ -98,6 +98,8 @@ export interface GridOptions {
     visible: boolean;
     vpadding: number;
     hpadding: number;
+    vmargin: number;
+    hmargin: number;
 }
 
 export interface LabelsOptions {
@@ -128,6 +130,8 @@ export function getDefaultsOptions(): Options {
         grid: {
             vpadding: 3,
             hpadding: 5,
+            vmargin: 0,
+            hmargin: 5,
             cell_size_px: 25,
             cells_space_vertical: 3,
             cells_space_horizontal: 3,

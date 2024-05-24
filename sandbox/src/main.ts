@@ -452,6 +452,8 @@ function getLabeledPortsOptions(): Options {
         grid: {
             hpadding: 5,
             vpadding: 3,
+            hmargin: 5,
+            vmargin: 0,
             cell_size_px: 25,
             cells_space_vertical: 3,
             cells_space_horizontal: 8,

@@ -6,6 +6,8 @@ pub struct State {
     ports: Vec<usize>,
     ports_highlighted: Vec<usize>,
     hovered: Option<usize>,
+    hmargin: i32,
+    vmargin: i32,
     // (ports, linked, owners)
     // ports - filtered ports
     // linked - ports linked to filtered ports
@@ -17,13 +19,15 @@ pub struct State {
 }
 
 impl State {
-    pub fn new() -> Self {
+    pub fn new(hmargin: i32, vmargin: i32) -> Self {
         Self {
             components: Vec::new(),
             ports: Vec::new(),
             ports_highlighted: Vec::new(),
             hovered: None,
             filtered: None,
+            hmargin,
+            vmargin,
             x: 0,
             y: 0,
             zoom: 1.0,
@@ -32,6 +36,30 @@ impl State {
 
     pub fn get_view_relative(&self) -> Relative {
         Relative::new(self.x, self.y, Some(self.zoom))
+    }
+
+    pub fn get_grid_relative(&self) -> Relative {
+        Relative::new(
+            self.x + self.hmargin,
+            self.y + self.vmargin,
+            Some(self.zoom),
+        )
+    }
+
+    pub fn x_margin(&self) -> i32 {
+        self.x + self.hmargin
+    }
+
+    pub fn y_margin(&self) -> i32 {
+        self.y + self.vmargin
+    }
+
+    pub fn with_hmargin(&self, v: i32) -> i32 {
+        v - (self.hmargin as f64 * self.zoom) as i32
+    }
+
+    pub fn with_vmargin(&self, v: i32) -> i32 {
+        v - (self.vmargin as f64 * self.zoom) as i32
     }
 
     pub fn set_view_state(&mut self, x: i32, y: i32, zoom: f64) {

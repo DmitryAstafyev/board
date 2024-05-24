@@ -118,6 +118,10 @@ impl Grid {
         })
     }
 
+    pub fn apply_margin(&mut self) {
+        self.size.0 += self.options.hmargin * 2;
+        self.size.1 += self.options.vmargin * 2;
+    }
     pub fn set_min_height(&mut self, height_px: u32) -> u32 {
         if self.size.1 * self.cell < height_px {
             self.size.1 = (height_px as f64 / self.cell as f64).ceil() as u32;

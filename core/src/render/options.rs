@@ -27,6 +27,8 @@ pub struct GridOptions {
     pub visible: bool,
     pub vpadding: u32,
     pub hpadding: u32,
+    pub vmargin: u32,
+    pub hmargin: u32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -65,6 +67,8 @@ impl Default for Options {
             grid: GridOptions {
                 vpadding: 3,
                 hpadding: 5,
+                vmargin: 0,
+                hmargin: 5,
                 cell_size_px: 25,
                 cells_space_vertical: 3,
                 cells_space_horizontal: 3,

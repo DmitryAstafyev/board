@@ -48,13 +48,17 @@ impl Board {
         grid_options.hpadding = 0;
         let ratio = options.ratio();
         let grid = Grid::new(&grid_options, ratio.clone());
+        let state = State::new(
+            grid.as_px(grid_options.hmargin),
+            grid.as_px(grid_options.vmargin),
+        );
         Self {
             options,
             render,
             context: None,
             canvas: None,
             grid,
-            state: State::new(),
+            state,
             ratio,
         }
     }
@@ -75,13 +79,17 @@ impl Board {
         grid_options.hpadding = 0;
         let ratio = options.ratio();
         let grid = Grid::new(&grid_options, ratio.clone());
+        let state = State::new(
+            grid.as_px(grid_options.hmargin),
+            grid.as_px(grid_options.vmargin),
+        );
         Self {
             options,
             render,
             context: None,
             canvas: None,
             grid,
-            state: State::new(),
+            state,
             ratio,
         }
     }
@@ -146,13 +154,15 @@ impl Board {
         self.grid = Grid::new(&grid_options, self.ratio.clone());
         self.state.set_filtered(None);
         self.state.set_view_state(0, 0, 1.0);
-        Ok(self.render.calc(
+        self.render.calc(
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
             &mut self.grid,
             &expanded,
             &self.state,
             &self.options,
-        )?)
+        )?;
+        self.grid.apply_margin();
+        Ok(())
     }
 
     #[wasm_bindgen]
@@ -172,6 +182,7 @@ impl Board {
             &self.options,
         )?;
         self.state.zoom = zoom;
+        self.grid.apply_margin();
         self.render()
     }
 
@@ -189,12 +200,15 @@ impl Board {
             .ok_or(String::from("Board isn't inited; no context"))?
             .height();
         cx.clear_rect(0.0, 0.0, cw as f64, ch as f64);
-        let targets = self
-            .grid
-            .viewport((self.state.x, self.state.y), (cw, ch), self.state.zoom);
+        let targets = self.grid.viewport(
+            (self.state.x_margin(), self.state.y_margin()),
+            (cw, ch),
+            self.state.zoom,
+        );
+        let relative = self.state.get_grid_relative();
         if let Err(e) = self.render.draw(
             cx,
-            &self.state.get_view_relative(),
+            &relative,
             &targets
                 .iter()
                 .map(|(id, _, _)| id.parse::<usize>().unwrap())
@@ -204,7 +218,7 @@ impl Board {
         ) {
             Err(e)?
         } else {
-            let _ = self.grid.draw(cx, &self.state.get_view_relative());
+            let _ = self.grid.draw(cx, &relative);
             Ok(())
         }
     }
@@ -217,10 +231,10 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn who(&self, target_x: i32, target_y: i32, around: i32) -> Result<JsValue, String> {
+        let relative = self.state.get_grid_relative();
         let around = self.ratio.get(around);
-        let target_x = self.ratio.get(target_x);
-        let target_y = self.ratio.get(target_y);
-        let relative = self.state.get_view_relative();
+        let target_x = self.state.with_hmargin(self.ratio.get(target_x));
+        let target_y = self.state.with_vmargin(self.ratio.get(target_y));
         let ids = self.grid.point((target_x, target_y), around, &relative);
         let inner = self.render.find(&(target_x, target_y), self.state.zoom)?;
         let ports = self.render.find_ports(
@@ -238,7 +252,7 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn get_coors_by_ids(&self, ids: Vec<usize>) -> Result<JsValue, String> {
-        let relative = self.state.get_view_relative();
+        let relative = self.state.get_grid_relative();
         let ports = self.render.get_coors_by_ids(&ids, &relative, &self.ratio)?;
         let components = self.grid.get_coors_by_ids(&ids, &relative, &self.ratio);
         let elements = [components, ports].concat();
@@ -274,7 +288,7 @@ impl Board {
             if let Err(e) = self.render.draw_by_id(
                 &self.grid,
                 &mut context,
-                &self.state.get_view_relative(),
+                &self.state.get_grid_relative(),
                 if let (Some(stroke_style), Some(fill_style)) = (stroke_style, fill_style) {
                     Some(Style {
                         stroke_style,

@@ -226,6 +226,7 @@ export class Board extends Subscriber {
     protected updateSize(): void {
         this.setSize();
         const used = this.board.get_size() as [number, number];
+        console.log(used);
         this.scroll.setZoom(this.position.zoom);
         this.scroll.setSize(used, this.size);
         this.position.update(used, this.size);
@@ -492,9 +493,9 @@ export class Board extends Subscriber {
         );
         this.hover.component.hide();
         this.hover.port.hide();
-        this.render();
         this.scroll.calc();
         this.zoomLabel.show(this.position.zoom);
+        this.updateSize();
     }
 
     protected goToComposition(id: number) {

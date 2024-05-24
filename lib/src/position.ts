@@ -35,14 +35,18 @@ export class Position {
         used: [number, number],
         container: { height: number; width: number }
     ): void {
-        this.xLocked = used[0] < container.width;
-        this.yLocked = used[1] < container.height;
-        if (used[0] < container.width) {
-            this.x = (container.width - used[0]) / 2;
+        const zoommed = [used[0] * this.zoom, used[1] * this.zoom];
+        this.xLocked = zoommed[0] < container.width;
+        this.yLocked = zoommed[1] < container.height;
+        if (zoommed[0] < container.width) {
+            this.x = (container.width - zoommed[0]) / 2 / this.zoom;
         }
-        if (used[1] < container.height) {
-            this.y = (container.height - used[1]) / 2;
+        if (zoommed[1] < container.height) {
+            this.y = (container.height - zoommed[1]) / 2 / this.zoom;
         }
+        console.log(
+            `(w,h): (${container.width}, ${container.height}); (uw,uh): (${zoommed[0]},${zoommed[1]}) (x,y): (${this.x}, ${this.y})`
+        );
     }
 
     public clone(): IPosition {
