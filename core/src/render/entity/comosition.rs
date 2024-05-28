@@ -885,6 +885,9 @@ pub fn group_ports(
                 return;
             }
             let joined_port_in = Port {
+                provided_interface: None,
+                provided_required_interface: None,
+                required_interface: None,
                 sig: sig_producer.next_for("joined port IN"),
                 port_type: PortType::In,
                 contains: ports_in,
@@ -892,6 +895,9 @@ pub fn group_ports(
                 visibility: true,
             };
             let joined_port_out = Port {
+                provided_interface: None,
+                provided_required_interface: None,
+                required_interface: None,
                 sig: sig_producer.next_for("joined port OUT"),
                 port_type: PortType::Out,
                 contains: ports_out,
@@ -992,6 +998,9 @@ pub fn group_unbound_ports(
             composition.ports.origin_mut().hide(&unbound_ports);
             composition.ports.origin_mut().add(
                 Representation::Origin(Port {
+                    provided_interface: None,
+                    provided_required_interface: None,
+                    required_interface: None,
                     sig: sig_producer.next_for("unbound grouped"),
                     port_type: PortType::Unbound,
                     contains: unbound_ports,
@@ -1022,6 +1031,9 @@ pub fn group_unbound_ports(
         component.origin_mut().ports.origin_mut().add(
             Representation::Origin(Port {
                 sig: sig_producer.next_for("unbound grouped"),
+                provided_interface: None,
+                provided_required_interface: None,
+                required_interface: None,
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
                 connected: 0,
@@ -1049,6 +1061,9 @@ pub fn group_unbound_ports(
             .hide(&unbound_ports);
         composition.origin_mut().ports.origin_mut().add(
             Representation::Origin(Port {
+                provided_interface: None,
+                provided_required_interface: None,
+                required_interface: None,
                 sig: sig_producer.next_for("unbound grouped"),
                 port_type: PortType::Unbound,
                 contains: unbound_ports,

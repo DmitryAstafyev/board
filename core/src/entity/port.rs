@@ -15,6 +15,9 @@ pub enum PortType {
 pub struct Port {
     pub sig: Signature,
     pub port_type: PortType,
+    pub provided_interface: Option<Signature>,
+    pub provided_required_interface: Option<Signature>,
+    pub required_interface: Option<Signature>,
     pub contains: Vec<usize>,
     pub connected: usize,
     pub visibility: bool,

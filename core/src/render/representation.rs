@@ -6,6 +6,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
+#[allow(clippy::large_enum_variant)]
 pub enum Representation<T> {
     Origin(T),
     #[serde(skip_serializing, skip_deserializing)]

@@ -10,6 +10,9 @@ use rand::Rng;
 impl Dummy<Port, ()> for Port {
     fn dummy(producer: &mut SignatureProducer, _: ()) -> Port {
         Port {
+            provided_interface: None,
+            provided_required_interface: None,
+            required_interface: None,
             sig: producer.next(),
             port_type: if rand::random() {
                 PortType::In

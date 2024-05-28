@@ -32,7 +32,8 @@ pub struct Label {
     pub w: i32,
     pub h: i32,
     pub label: String,
-    pub badge: Option<usize>,
+    pub subtitle: Option<usize>,
+    pub badge: Option<(String, String, String)>,
     pub padding: i32,
     pub id: String,
     pub align: Align,
@@ -47,7 +48,9 @@ impl Label {
         w: i32,
         h: i32,
         label: String,
-        badge: Option<usize>,
+        subtitle: Option<usize>,
+        // value, bk_color, fg_color
+        badge: Option<(String, String, String)>,
         padding: i32,
         id: String,
         align: Align,
@@ -60,6 +63,7 @@ impl Label {
             w,
             h,
             label,
+            subtitle,
             badge,
             padding: ratio.get(padding),
             id,
@@ -101,7 +105,7 @@ impl Label {
         context.set_text_baseline("top");
         context.set_font(&format!(
             "{}px serif",
-            (self.h as f64 * if self.badge.is_some() { 0.55 } else { 0.7 }).round()
+            (self.h as f64 * if self.subtitle.is_some() { 0.55 } else { 0.7 }).round()
         ));
         self.w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width() as i32
@@ -123,7 +127,7 @@ impl Label {
         context.fill_rect(x, y, self.w as f64, self.h as f64);
         context.stroke_rect(x, y, self.w as f64, self.h as f64);
         context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
-        if let Some(badge) = self.badge {
+        if let Some(subtitle) = self.subtitle {
             let _ = context.fill_text(
                 &self.label,
                 x + text_hor_padding,
@@ -132,12 +136,30 @@ impl Label {
             context.set_font(&format!("{}px serif", (self.h as f64 * 0.4).round()));
             context.set_fill_style(&JsValue::from_str("rgb(40,40,40)"));
             let _ = context.fill_text(
-                &format!("{badge} linked"),
+                &format!("{subtitle} linked"),
                 x + text_hor_padding,
                 y + self.h as f64 * 0.6,
             );
         } else {
             let _ = context.fill_text(&self.label, x + text_hor_padding, y + text_ver_padding);
+        }
+        if let Some((badge, bk_c, fg_c)) = &self.badge {
+            context.set_font(&format!("{}px serif", (self.h as f64 * 0.4).round()));
+            let bw = if let Ok(metric) = context.measure_text(badge) {
+                metric.width()
+            } else {
+                36f64
+            };
+            let h = self.h as f64 * 0.7;
+            let p = self.h as f64 * 0.15;
+            let x = match self.align {
+                Align::Left => x - bw - p * 2.0,
+                Align::Right => x + self.w as f64,
+            };
+            context.set_fill_style(&JsValue::from_str(bk_c));
+            context.fill_rect(x, y + p, bw + p * 2.0, h);
+            context.set_fill_style(&JsValue::from_str(fg_c));
+            let _ = context.fill_text(badge, x + p, y + p * 2.0);
         }
     }
 }

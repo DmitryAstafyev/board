@@ -18,6 +18,9 @@ export enum PortType {
 export interface Port {
     sig: Signature;
     port_type: PortType;
+    provided_interface: Signature | null;
+    provided_required_interface: Signature | null;
+    required_interface: Signature | null;
     visibility: boolean;
     contains: number[];
     connected: number;

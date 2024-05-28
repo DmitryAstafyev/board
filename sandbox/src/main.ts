@@ -31,6 +31,9 @@ interface IElement {
     id: number;
     className: string;
     shortName: string;
+    providedInterface: number | null;
+    providedRequiredInterface: number | null;
+    requiredInterface: number | null;
 }
 
 interface IConnection extends IElement {
@@ -121,14 +124,18 @@ const comps: number[] = [];
 const all_ports: number[] = [];
 
 function load(parent: IComposition, elements: IElement[], holder: Composition) {
-    function getPortShortClass(id: number): {
-        shortName: string;
-        className: string;
-    } {
-        const element = elements.find((el) => el.id === id);
-        return element === undefined
-            ? { shortName: UNKNOWN, className: UNKNOWN }
-            : element;
+    function getDef(id: number | undefined | null): IElement | undefined {
+        if (typeof id !== "number") {
+            return undefined;
+        }
+        return elements.find((el) => el.id === id);
+    }
+    function getSignatureFromEl(el: IElement): Signature {
+        return {
+            id: el.id,
+            class_name: el.className === undefined ? UNKNOWN : el.className,
+            short_name: el.shortName === undefined ? UNKNOWN : el.shortName,
+        };
     }
     parent.component.forEach((id: number) => {
         const compPrototype: IComponentPrototype | undefined =
@@ -156,22 +163,54 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                 compositions: [],
                 ports: {
                     Origin: {
-                        ports: composition.port.map((port: number) => {
-                            const portSignature = getPortShortClass(port);
-                            return {
-                                Origin: {
-                                    sig: {
-                                        id: port,
-                                        class_name: portSignature.className,
-                                        short_name: portSignature.shortName,
-                                    },
-                                    port_type: PortType.Unbound,
-                                    visibility: true,
-                                    connected: 0,
-                                    contains: [],
-                                },
-                            };
-                        }),
+                        ports: composition.port
+                            .map((port: number) => {
+                                const def = getDef(port);
+                                if (def === undefined) {
+                                    console.error(`Port ${port} isn't found`);
+                                    return undefined;
+                                }
+                                const provided_interface = getDef(
+                                    def.providedInterface
+                                );
+                                const provided_required_interface = getDef(
+                                    def.providedRequiredInterface
+                                );
+                                const required_interface = getDef(
+                                    def.requiredInterface
+                                );
+                                return {
+                                    Origin: {
+                                        sig: getSignatureFromEl(def),
+                                        provided_interface:
+                                            provided_interface !== undefined
+                                                ? getSignatureFromEl(
+                                                      provided_interface
+                                                  )
+                                                : null,
+                                        provided_required_interface:
+                                            provided_required_interface !==
+                                            undefined
+                                                ? getSignatureFromEl(
+                                                      provided_required_interface
+                                                  )
+                                                : null,
+                                        required_interface:
+                                            required_interface !== undefined
+                                                ? getSignatureFromEl(
+                                                      required_interface
+                                                  )
+                                                : null,
+                                        port_type: PortType.Unbound,
+                                        visibility: true,
+                                        connected: 0,
+                                        contains: [],
+                                    } as Port,
+                                };
+                            })
+                            .filter(
+                                (p) => p !== undefined
+                            ) as unknown as Representation<Port>[],
                         hide_invisible: true,
                         sig: getSignature(),
                     },
@@ -197,22 +236,56 @@ function load(parent: IComposition, elements: IElement[], holder: Composition) {
                     },
                     ports: {
                         Origin: {
-                            ports: componentType.port.map((port: number) => {
-                                const portSignature = getPortShortClass(port);
-                                return {
-                                    Origin: {
-                                        sig: {
-                                            id: port,
-                                            class_name: portSignature.className,
-                                            short_name: portSignature.shortName,
-                                        },
-                                        port_type: PortType.Unbound,
-                                        connected: 0,
-                                        visibility: true,
-                                        contains: [],
-                                    },
-                                };
-                            }),
+                            ports: componentType.port
+                                .map((port: number) => {
+                                    const def = getDef(port);
+                                    if (def === undefined) {
+                                        console.error(
+                                            `Port ${port} isn't found`
+                                        );
+                                        return undefined;
+                                    }
+                                    const provided_interface = getDef(
+                                        def.providedInterface
+                                    );
+                                    const provided_required_interface = getDef(
+                                        def.providedRequiredInterface
+                                    );
+                                    const required_interface = getDef(
+                                        def.requiredInterface
+                                    );
+                                    return {
+                                        Origin: {
+                                            sig: getSignatureFromEl(def),
+                                            provided_interface:
+                                                provided_interface !== undefined
+                                                    ? getSignatureFromEl(
+                                                          provided_interface
+                                                      )
+                                                    : null,
+                                            provided_required_interface:
+                                                provided_required_interface !==
+                                                undefined
+                                                    ? getSignatureFromEl(
+                                                          provided_required_interface
+                                                      )
+                                                    : null,
+                                            required_interface:
+                                                required_interface !== undefined
+                                                    ? getSignatureFromEl(
+                                                          required_interface
+                                                      )
+                                                    : null,
+                                            port_type: PortType.Unbound,
+                                            connected: 0,
+                                            visibility: true,
+                                            contains: [],
+                                        } as Port,
+                                    };
+                                })
+                                .filter(
+                                    (p) => p !== undefined
+                                ) as unknown as Representation<Port>[],
                             hide_invisible: true,
                             sig: getSignature(),
                         },
@@ -350,6 +423,9 @@ function getDummyComposition(
         const ports: Port[] = [];
         for (let p = 0; p <= portsPerComp; p += 1) {
             ports.push({
+                provided_interface: null,
+                required_interface: null,
+                provided_required_interface: null,
                 visibility: true,
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
@@ -406,6 +482,9 @@ function getDummyComposition(
     for (let p = 0; p <= portsPerComp; p += 1) {
         ports.push({
             Origin: {
+                provided_interface: null,
+                required_interface: null,
+                provided_required_interface: null,
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
                 visibility: true,

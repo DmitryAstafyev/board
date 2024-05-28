@@ -14,6 +14,42 @@ use crate::{
 pub const PORT_SIDE: i32 = 8;
 const PORTS_VERTICAL_OFFSET: i32 = CELL as i32;
 
+pub fn abbreviation<S: AsRef<str>>(input: S) -> String {
+    let words: Vec<String> = input
+        .as_ref()
+        .chars()
+        .map(|c: char| {
+            if c.is_uppercase() {
+                format!(" {c}")
+            } else {
+                c.to_string()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("")
+        .split(' ')
+        .filter_map(|s| {
+            if s.is_empty() {
+                None
+            } else {
+                Some(s.to_string())
+            }
+        })
+        .collect();
+    if words.len() <= 2 {
+        input
+            .as_ref()
+            .chars()
+            .filter(|c| c.is_uppercase())
+            .collect()
+    } else {
+        words
+            .iter()
+            .filter_map(|w| if w == "Interface" { None } else { w.get(0..1) })
+            .collect()
+    }
+}
+
 impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Ports> {
     fn sig(&'b self) -> &'a Signature {
         &self.origin().sig
@@ -260,6 +296,34 @@ impl Render<Port> {
         };
         let ratio = options.ratio();
         let connected = entity.connected;
+        let badge = entity
+            .provided_interface
+            .as_ref()
+            .map(|v| {
+                (
+                    abbreviation(&v.class_name),
+                    "rgb(200,200,200)".to_owned(),
+                    "rgb(0,0,0)".to_owned(),
+                )
+            })
+            .or_else(|| {
+                entity.provided_required_interface.as_ref().map(|v| {
+                    (
+                        abbreviation(&v.class_name),
+                        "rgb(40,40,40)".to_owned(),
+                        "rgb(255,255,255)".to_owned(),
+                    )
+                })
+            })
+            .or_else(|| {
+                entity.required_interface.as_ref().map(|v| {
+                    (
+                        abbreviation(&v.class_name),
+                        "rgb(100,100,100)".to_owned(),
+                        "rgb(255,255,255)".to_owned(),
+                    )
+                })
+            });
         Self {
             entity,
             view: View {
@@ -294,6 +358,7 @@ impl Render<Port> {
                                 } else {
                                     Some(connected)
                                 },
+                                badge,
                                 4,
                                 id.to_string(),
                                 align,
