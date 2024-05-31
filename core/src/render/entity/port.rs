@@ -353,7 +353,7 @@ impl Render<Port> {
                                 0,
                                 0,
                                 label,
-                                if connected == 0 {
+                                if connected <= 1 {
                                     None
                                 } else {
                                     Some(connected)

@@ -1,4 +1,4 @@
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Relative {
     pub x_: i32,
     pub y_: i32,

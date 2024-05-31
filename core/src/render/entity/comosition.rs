@@ -285,59 +285,137 @@ impl Render<Composition> {
         let components = &self.entity.components;
         let compositions = &self.entity.compositions;
         let mut failed: Vec<&Connection> = Vec::new();
+        let self_ports = &self.entity.ports;
+        // let debug_conn = self
+        //     .entity
+        //     .connections
+        //     .iter()
+        //     .find(|conn| conn.origin().sig().id == 1161);
+        // if let Some(conn) = debug_conn {
+        //     console_log!("Connection 1161: {:?}", debug_conn);
+        //     console_log!(
+        //         "state in: {}",
+        //         state.is_port_owner_filtered(conn.origin().in_comp())
+        //     );
+        //     console_log!(
+        //         "state out: {}",
+        //         state.is_port_owner_filtered(conn.origin().out_comp())
+        //     );
+        //     let ins = find(components, compositions, conn.origin().in_comp());
+        //     let outs = find(components, compositions, conn.origin().out_comp());
+        //     console_log!("port ins: {}", ins.is_some());
+        //     console_log!("port outs: {}", outs.is_some());
+        //     if ins.is_none() {
+        //         console_log!(
+        //             "in port belongs to self comp: {:?}",
+        //             self.origin().ports.origin().find(conn.origin().in_port())
+        //         );
+        //     }
+        //     if outs.is_none() {
+        //         console_log!(
+        //             "out port belongs to self comp: {:?}",
+        //             self.origin().ports.origin().find(conn.origin().out_port())
+        //         );
+        //     }
+        //     let port_in = find(components, compositions, conn.origin().in_comp())
+        //         .and_then(|parent| parent.ports().origin().find(conn.origin().in_port()))
+        //         .or_else(|| self_ports.origin().find(conn.origin().in_port()));
+        //     let port_out = find(components, compositions, conn.origin().out_comp())
+        //         .and_then(|parent| parent.ports().origin().find(conn.origin().out_port()))
+        //         .or_else(|| self_ports.origin().find(conn.origin().out_port()));
+        //     console_log!("SEARCH IN: {port_in:?}");
+        //     console_log!("SEARCH OUT: {port_out:?}");
+        // }
+        let own_relative = self.own_relative();
         for conn in self.entity.connections.iter_mut().filter(|conn| {
             let origin = conn.origin();
             origin.visibility
                 && state.is_port_owner_filtered(origin.in_comp())
                 && state.is_port_owner_filtered(origin.out_comp())
         }) {
-            if let (Some(ins), Some(outs)) = (
-                find(components, compositions, conn.origin().in_comp()),
-                find(components, compositions, conn.origin().out_comp()),
-            ) {
-                if let (Some(port_in), Some(port_out)) = (
-                    ins.ports().origin().find(conn.origin().in_port()),
-                    outs.ports().origin().find(conn.origin().out_port()),
-                ) {
-                    let coors_port_in = port_in.render()?.view.container.get_coors();
-                    let coors_port_out = port_out.render()?.view.container.get_coors();
-                    let relative_inns = ins.own_relative()?;
-                    let relative_outs = outs.own_relative()?;
-                    let size_port_in = port_in.render()?.view.container.get_box_size();
-                    let size_port_out = port_out.render()?.view.container.get_box_size();
-                    let points: Vec<Point> = vec![
-                        Point {
-                            x: relative_inns.x(coors_port_in.0)
-                                + if matches!(port_in.origin().port_type, PortType::Out) {
-                                    size_port_in.0
-                                } else {
-                                    0
-                                },
-                            y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
+            // let (Some(port_in), Some(port_out)) = (
+            //     find(components, compositions, conn.origin().in_comp())
+            //         .and_then(|parent| parent.ports().origin().find(conn.origin().in_port()))
+            //         .or_else(|| self_ports.origin().find(conn.origin().in_port())),
+            //     find(components, compositions, conn.origin().out_comp())
+            //         .and_then(|parent| parent.ports().origin().find(conn.origin().out_port()))
+            //         .or_else(|| self_ports.origin().find(conn.origin().out_port())),
+            // ) else {
+            //     failed.push(conn.origin());
+            //     continue;
+            // };
+            let (Some((port_in, in_rel)), Some((port_out, out_rel))) = (
+                find(components, compositions, conn.origin().in_comp())
+                    .and_then(|parent| {
+                        parent
+                            .ports()
+                            .origin()
+                            .find(conn.origin().in_port())
+                            .map(|p| (p, parent.own_relative()))
+                    })
+                    .or_else(|| {
+                        self_ports
+                            .origin()
+                            .find(conn.origin().in_port())
+                            .map(|p| (p, Ok(own_relative.clone())))
+                    }),
+                find(components, compositions, conn.origin().out_comp())
+                    .and_then(|parent| {
+                        parent
+                            .ports()
+                            .origin()
+                            .find(conn.origin().out_port())
+                            .map(|p| (p, parent.own_relative()))
+                    })
+                    .or_else(|| {
+                        self_ports
+                            .origin()
+                            .find(conn.origin().out_port())
+                            .map(|p| (p, Ok(own_relative.clone())))
+                    }),
+            ) else {
+                failed.push(conn.origin());
+                continue;
+            };
+            let coors_port_in = port_in.render()?.view.container.get_coors();
+            let coors_port_out = port_out.render()?.view.container.get_coors();
+            let relative_inns = in_rel?;
+            let relative_outs = out_rel?;
+            let size_port_in = port_in.render()?.view.container.get_box_size();
+            let size_port_out = port_out.render()?.view.container.get_box_size();
+            let points: Vec<Point> = vec![
+                Point {
+                    x: relative_inns.x(coors_port_in.0)
+                        + if matches!(port_in.origin().port_type, PortType::Out) {
+                            size_port_in.0
+                        } else {
+                            0
                         },
-                        Point {
-                            x: relative_outs.x(coors_port_out.0)
-                                + if matches!(port_out.origin().port_type, PortType::Out) {
-                                    size_port_out.0
-                                } else {
-                                    0
-                                },
-                            y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
+                    y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
+                },
+                Point {
+                    x: relative_outs.x(coors_port_out.0)
+                        + if matches!(port_out.origin().port_type, PortType::Out) {
+                            size_port_out.0
+                        } else {
+                            0
                         },
-                    ];
+                    y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
+                },
+            ];
 
-                    let path = Path::new(conn.sig().id.to_string(), points, &options.ratio());
-                    conn.render_mut()?
-                        .view
-                        .container
-                        .set_form(Form::Path(ElementType::Connection, path));
-                } else {
-                    failed.push(conn.origin());
-                }
-            }
+            let path = Path::new(conn.sig().id.to_string(), points, &options.ratio());
+            conn.render_mut()?
+                .view
+                .container
+                .set_form(Form::Path(ElementType::Connection, path));
         }
         if !failed.is_empty() {
             console_log!("Fail to find ports for {} connections", failed.len());
+            console_log!(
+                "Invalid connections ids: {:?}",
+                failed.iter().map(|c| c.sig().id)
+            );
         }
         Ok(())
     }
@@ -487,13 +565,6 @@ impl Render<Composition> {
                 .render_mut()?
                 .draw(context, relative, targets, options, state)?;
         }
-        for connection in self.entity.connections.iter_mut().filter(|conn| {
-            conn.origin().visibility
-                && (state.is_port_selected_or_highlighted(conn.origin().in_port())
-                    && state.is_port_selected_or_highlighted(conn.origin().out_port()))
-        }) {
-            connection.render_mut()?.draw(context, relative, state)?;
-        }
         let ratio = options.ratio();
         context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
         context.set_text_baseline("bottom");
@@ -508,6 +579,13 @@ impl Render<Composition> {
             .ports
             .render_mut()?
             .draw(context, relative, options, state)?;
+        for connection in self.entity.connections.iter_mut().filter(|conn| {
+            conn.origin().visibility
+                && (state.is_port_selected_or_highlighted(conn.origin().in_port())
+                    && state.is_port_selected_or_highlighted(conn.origin().out_port()))
+        }) {
+            connection.render_mut()?.draw(context, relative, state)?;
+        }
         // grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
     }
