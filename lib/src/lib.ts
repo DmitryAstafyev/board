@@ -511,7 +511,7 @@ export class Board extends Subscriber {
             return;
         }
         this.board.unselect_all();
-        this.board.bind(composition, previous, Uint32Array.from([]));
+        this.board.bind(composition);
         this.data.composition !== undefined &&
             this.history.set(this.data.composition, this.position.clone());
         if (
@@ -567,12 +567,8 @@ export class Board extends Subscriber {
         this.unsubscribe();
     }
 
-    public bind(
-        composition: Types.Composition,
-        parent: Types.Composition | undefined,
-        expanded: number[]
-    ) {
-        this.board.bind(composition, parent, Uint32Array.from(expanded));
+    public bind(composition: Types.Composition) {
+        this.board.bind(composition);
         this.updateSize();
         this.data.composition = composition.sig.id;
         this.data.root = composition;

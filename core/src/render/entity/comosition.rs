@@ -71,10 +71,10 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Composition> {
 }
 
 impl Render<Composition> {
-    pub fn new(mut entity: Composition, parent: Option<&Composition>, options: &Options) -> Self {
+    pub fn new(mut entity: Composition, root: bool, options: &Options) -> Self {
         let mut sig_producer = SignatureProducer::new(100000000);
-        if options.ports.grouping {
-            group_ports(&mut entity, parent, &mut sig_producer);
+        if options.ports.grouping && root {
+            group_ports(&mut entity, &mut sig_producer);
         }
         if options.ports.group_unbound {
             group_unbound_ports(Some(&mut entity), &mut [], &mut [], &mut sig_producer);
@@ -101,7 +101,7 @@ impl Render<Composition> {
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(composition) = r {
-                    Representation::Render(Render::<Composition>::new(composition, None, options))
+                    Representation::Render(Render::<Composition>::new(composition, false, options))
                 } else {
                     r
                 }
@@ -412,10 +412,10 @@ impl Render<Composition> {
         }
         if !failed.is_empty() {
             console_log!("Fail to find ports for {} connections", failed.len());
-            console_log!(
-                "Invalid connections ids: {:?}",
-                failed.iter().map(|c| c.sig().id)
-            );
+            // console_log!(
+            //     "Invalid connections ids: {:?}",
+            //     failed.iter().map(|c| c.sig().id)
+            // );
         }
         Ok(())
     }
@@ -424,7 +424,6 @@ impl Render<Composition> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         grid: &mut Grid,
-        expanded: &[usize],
         state: &State,
         options: &Options,
     ) -> Result<(), E> {
@@ -435,25 +434,14 @@ impl Render<Composition> {
             if !state.is_port_owner_filtered(&composition.sig().id) {
                 continue;
             }
-            if expanded.contains(&composition.sig().id) {
-                composition.render_mut()?.calc(
-                    context,
-                    &mut composition_grid,
-                    expanded,
-                    state,
+            self.entity
+                .components
+                .push(Representation::Render(Render::<Component>::new(
+                    composition.origin().to_component(options),
                     options,
-                )?;
-                composition.render_mut()?.show();
-            } else {
-                self.entity
-                    .components
-                    .push(Representation::Render(Render::<Component>::new(
-                        composition.origin().to_component(options),
-                        options,
-                        Some(ElementType::Composition),
-                    )));
-                composition.render_mut()?.hide();
-            }
+                    Some(ElementType::Composition),
+                )));
+            composition.render_mut()?.hide();
         }
         for component in self.entity.components.iter_mut() {
             if !state.is_port_owner_filtered(&component.sig().id) {
@@ -896,34 +884,16 @@ fn get_forms_by_ids<'a>(
     Ok(found)
 }
 
-pub fn group_ports(
-    entity: &mut Composition,
-    parent: Option<&Composition>,
-    sig_producer: &mut SignatureProducer,
-) {
+pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProducer) {
     let mut added_connections: Vec<Representation<Connection>> = Vec::new();
     let mut added_ports: Vec<(usize, Representation<Port>)> = Vec::new();
     let mut grouped: HashMap<(usize, usize), Vec<(usize, usize)>> = HashMap::new();
     // Find ports connected to only 1 component
     let mut ports: HashMap<usize, usize> = HashMap::new();
-    let connections = if let Some(parent) = parent {
-        [
-            entity
-                .connections
-                .iter()
-                .collect::<Vec<&Representation<Connection>>>(),
-            parent
-                .connections
-                .iter()
-                .collect::<Vec<&Representation<Connection>>>(),
-        ]
-        .concat()
-    } else {
-        entity
-            .connections
-            .iter()
-            .collect::<Vec<&Representation<Connection>>>()
-    };
+    let connections = entity
+        .connections
+        .iter()
+        .collect::<Vec<&Representation<Connection>>>();
     connections.iter().for_each(|connection| {
         ports
             .entry(*connection.origin().in_port())

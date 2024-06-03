@@ -42,7 +42,7 @@ impl Board {
             ),
         );
         let options = Options::default();
-        let render = Render::<Composition>::new(composition, None, &options);
+        let render = Render::<Composition>::new(composition, true, &options);
         let mut grid_options = options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;
@@ -73,7 +73,7 @@ impl Board {
             }
         };
         let render =
-            Render::<Composition>::new(Composition::new(Signature::default()), None, &options);
+            Render::<Composition>::new(Composition::new(Signature::default()), true, &options);
         let mut grid_options = options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;
@@ -137,17 +137,10 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn bind(
-        &mut self,
-        composition: JsValue,
-        parent: JsValue,
-        expanded: Vec<usize>,
-    ) -> Result<(), String> {
+    pub fn bind(&mut self, composition: JsValue) -> Result<(), String> {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
-        let parent = serde_wasm_bindgen::from_value::<Option<Composition>>(parent)
-            .map_err(|e| E::Serde(e.to_string()))?;
-        self.render = Render::<Composition>::new(composition, parent.as_ref(), &self.options);
+        self.render = Render::<Composition>::new(composition, true, &self.options);
         let mut grid_options = self.options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;
@@ -157,7 +150,6 @@ impl Board {
         self.render.calc(
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
             &mut self.grid,
-            &expanded,
             &self.state,
             &self.options,
         )?;
@@ -177,7 +169,6 @@ impl Board {
         self.render.calc(
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
             &mut self.grid,
-            &[],
             &self.state,
             &self.options,
         )?;

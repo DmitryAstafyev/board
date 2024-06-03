@@ -66,7 +66,7 @@ function real() {
             });
             (0, loader_1.load)(rootElement, elements, root);
             const board = new board_1.Board(`div#container`, getLabeledPortsOptions());
-            board.bind(root, undefined, []);
+            board.bind(root);
             board.render();
             board.subjects.get().onPortHover.subscribe((event) => { });
             board.subjects.get().onComponentHover.subscribe((event) => { });
@@ -85,7 +85,7 @@ function dummy() {
     setTimeout(() => {
         const composition = (0, dummy_1.getDummyComposition)(10, 5, 2, undefined);
         const board = new board_1.Board(`div#container`, getLabeledPortsOptions());
-        board.bind(composition, undefined, []);
+        board.bind(composition);
         board.render();
         board.subjects.get().onPortHover.subscribe((event) => { });
         board.subjects.get().onComponentHover.subscribe((event) => { });
