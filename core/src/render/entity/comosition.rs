@@ -812,9 +812,6 @@ impl Render<Composition> {
     }
 
     /// Returns information about all connections related to component
-    ///
-    /// (port,  contains,   comp )
-    /// (usize, Vec<usize>, usize)
     pub fn get_connections_info_by_component(
         &self,
         component: usize,

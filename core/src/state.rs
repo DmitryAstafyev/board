@@ -1,7 +1,66 @@
 use crate::{entity::Port, render::Relative};
+use wasm_bindgen::prelude::*;
+
+#[derive(Debug)]
+pub struct Selection {
+    components: Vec<usize>,
+    ports: Vec<usize>,
+    // Callback to notify about current selection
+    pub selcb: Option<js_sys::Function>,
+}
+
+impl Selection {
+    pub fn new(selcb: js_sys::Function) -> Self {
+        Self {
+            components: Vec::new(),
+            ports: Vec::new(),
+            selcb: Some(selcb),
+        }
+    }
+    pub fn insert_component(&mut self, id: &usize) -> &mut Self {
+        if !self.components.contains(id) {
+            self.components.push(*id);
+        }
+        self
+    }
+
+    pub fn remove_component(&mut self, id: &usize) -> &mut Self {
+        if let Some(pos) = self.components.iter().position(|v| v == id) {
+            self.components.remove(pos);
+        }
+        self
+    }
+
+    pub fn insert_port(&mut self, id: &usize) -> &mut Self {
+        if !self.ports.contains(id) {
+            self.ports.push(*id);
+        }
+        self
+    }
+
+    pub fn remove_port(&mut self, id: &usize) -> &mut Self {
+        if let Some(pos) = self.ports.iter().position(|v| v == id) {
+            self.ports.remove(pos);
+        }
+        self
+    }
+
+    pub fn clear(&mut self) -> &mut Self {
+        self.ports.clear();
+        self.components.clear();
+        self
+    }
+
+    pub fn notify(&self) {
+        if let Some(selcb) = self.selcb.as_ref() {
+            let _ = selcb.call0(&JsValue::NULL);
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct State {
+    pub selection: Selection,
     pub components: Vec<usize>,
     ports: Vec<usize>,
     ports_highlighted: Vec<usize>,
@@ -19,8 +78,9 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(hmargin: i32, vmargin: i32) -> Self {
+    pub fn new(hmargin: i32, vmargin: i32, selcb: js_sys::Function) -> Self {
         Self {
+            selection: Selection::new(selcb),
             components: Vec::new(),
             ports: Vec::new(),
             ports_highlighted: Vec::new(),
@@ -97,10 +157,12 @@ impl State {
     }
 
     pub fn toggle_port(&mut self, id: &usize) -> bool {
-        if let Some((i, _)) = self.ports.iter().enumerate().find(|(_, port)| *port == id) {
-            let _ = self.ports.remove(i);
+        if let Some(pos) = self.ports.iter().position(|port| port == id) {
+            let _ = self.ports.remove(pos);
+            self.selection.remove_port(id).notify();
             false
         } else {
+            self.selection.insert_port(id).notify();
             self.ports.push(*id);
             true
         }
@@ -143,6 +205,7 @@ impl State {
     }
 
     pub fn unselect_all(&mut self) {
+        self.selection.clear().notify();
         self.ports.clear();
         self.ports_highlighted.clear();
         self.components.clear();

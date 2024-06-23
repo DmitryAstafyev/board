@@ -32,7 +32,7 @@ pub struct Board {
 #[wasm_bindgen]
 impl Board {
     #[wasm_bindgen]
-    pub fn dummy(components: usize, ports: usize) -> Self {
+    pub fn dummy(components: usize, ports: usize, selcb: js_sys::Function) -> Self {
         let mut producer = SignatureProducer::new(0);
         let composition = Composition::dummy(
             &mut producer,
@@ -51,6 +51,7 @@ impl Board {
         let state = State::new(
             grid.as_px(grid_options.hmargin),
             grid.as_px(grid_options.vmargin),
+            selcb,
         );
         Self {
             options,
@@ -64,7 +65,7 @@ impl Board {
     }
 
     #[wasm_bindgen(constructor)]
-    pub fn new(options: JsValue) -> Self {
+    pub fn new(options: JsValue, selcb: js_sys::Function) -> Self {
         let options = match serde_wasm_bindgen::from_value::<Options>(options) {
             Ok(options) => options,
             Err(err) => {
@@ -82,6 +83,7 @@ impl Board {
         let state = State::new(
             grid.as_px(grid_options.hmargin),
             grid.as_px(grid_options.vmargin),
+            selcb,
         );
         Self {
             options,
@@ -263,8 +265,8 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn get_connections_info_by_component(&self, port: usize) -> Result<JsValue, String> {
-        let result = self.render.get_connections_info_by_component(port);
+    pub fn get_connections_info_by_component(&self, component: usize) -> Result<JsValue, String> {
+        let result = self.render.get_connections_info_by_component(component);
         serde_wasm_bindgen::to_value(&result).map_err(|e| e.to_string())
     }
 
@@ -391,13 +393,16 @@ impl Board {
             self.state.components.to_vec().iter().for_each(|id| {
                 insert(&mut self.state, id, own(id), linked(id));
             });
+            self.state.selection.remove_component(&id).notify();
         } else {
             if selfishly {
                 self.state.components.to_vec().iter().for_each(|id| {
+                    self.state.selection.remove_component(id);
                     remove(&mut self.state, id, all(id));
                 });
             }
             insert(&mut self.state, &id, own(&id), linked(&id));
+            self.state.selection.insert_component(&id).notify();
         }
         self.render()?;
         Ok(())

@@ -154,7 +154,9 @@ export class Board extends Subscriber {
         this.parent.setAttribute("tabindex", "0");
         this.zoomLabel = new ZoomLabel(node);
         this.setSize();
-        this.board = new wasm.core.Board(options);
+        this.board = new wasm.core.Board(options, () => {
+            this.subjects.get().onSelectionChange.emit();
+        });
         this.board.attach(this.id);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
@@ -502,10 +504,6 @@ export class Board extends Subscriber {
             return;
         }
         const composition = Types.getComposition(this.data.root, id);
-        const previous =
-            this.data.composition === undefined
-                ? undefined
-                : Types.getComposition(this.data.root, this.data.composition);
         if (composition === undefined) {
             console.log(`Fail to find composition ID: ${id}`);
             return;
@@ -542,6 +540,7 @@ export class Board extends Subscriber {
         onComponentHoverOver: Subject<void>;
         onPortHoverOver: Subject<void>;
         onPortClick: Subject<number>;
+        onSelectionChange: Subject<void>;
         bound: Subject<void>;
     }> = new Subjects({
         onComponentHover: new Subject<HoverMouseEvent>(),
@@ -550,6 +549,7 @@ export class Board extends Subscriber {
         onPortHover: new Subject<PortHoverEvent>(),
         onPortHoverOver: new Subject<void>(),
         onPortClick: new Subject<number>(),
+        onSelectionChange: new Subject<void>(),
         bound: new Subject<void>(),
     });
 
