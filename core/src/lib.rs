@@ -396,10 +396,7 @@ impl Board {
             self.state.selection.remove_component(&id).notify();
         } else {
             if selfishly {
-                self.state.components.to_vec().iter().for_each(|id| {
-                    self.state.selection.remove_component(id);
-                    remove(&mut self.state, id, all(id));
-                });
+                self.state.unselect_all(true);
             }
             insert(&mut self.state, &id, own(&id), linked(&id));
             self.state.selection.insert_component(&id).notify();
