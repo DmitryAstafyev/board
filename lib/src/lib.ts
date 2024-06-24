@@ -154,9 +154,12 @@ export class Board extends Subscriber {
         this.parent.setAttribute("tabindex", "0");
         this.zoomLabel = new ZoomLabel(node);
         this.setSize();
-        this.board = new wasm.core.Board(options, () => {
-            this.subjects.get().onSelectionChange.emit();
-        });
+        this.board = new wasm.core.Board(
+            options,
+            (event: [number[], number[]]) => {
+                this.subjects.get().onSelectionChange.emit(event);
+            }
+        );
         this.board.attach(this.id);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
@@ -540,7 +543,8 @@ export class Board extends Subscriber {
         onComponentHoverOver: Subject<void>;
         onPortHoverOver: Subject<void>;
         onPortClick: Subject<number>;
-        onSelectionChange: Subject<void>;
+        // [components_id[], ports_id[]]
+        onSelectionChange: Subject<[number[], number[]]>;
         bound: Subject<void>;
     }> = new Subjects({
         onComponentHover: new Subject<HoverMouseEvent>(),
@@ -549,7 +553,7 @@ export class Board extends Subscriber {
         onPortHover: new Subject<PortHoverEvent>(),
         onPortHoverOver: new Subject<void>(),
         onPortClick: new Subject<number>(),
-        onSelectionChange: new Subject<void>(),
+        onSelectionChange: new Subject<[number[], number[]]>(),
         bound: new Subject<void>(),
     });
 

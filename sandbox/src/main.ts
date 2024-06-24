@@ -78,6 +78,9 @@ function real() {
             board.render();
             board.subjects.get().onPortHover.subscribe((event) => {});
             board.subjects.get().onComponentHover.subscribe((event) => {});
+            board.subjects.get().onSelectionChange.subscribe((event) => {
+                console.log(`Selection: ${JSON.stringify(event)}`);
+            });
             const filter = document.querySelector(
                 'input[id="filter"]'
             ) as HTMLInputElement;

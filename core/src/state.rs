@@ -1,5 +1,6 @@
 use crate::{entity::Port, render::Relative};
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsValue;
+use wasm_bindgen_test::console_log;
 
 #[derive(Debug)]
 pub struct Selection {
@@ -53,7 +54,12 @@ impl Selection {
 
     pub fn notify(&self) {
         if let Some(selcb) = self.selcb.as_ref() {
-            let _ = selcb.call0(&JsValue::NULL);
+            let selections = (&self.components, &self.ports);
+            let Ok(value) = serde_wasm_bindgen::to_value(&selections) else {
+                console_log!("Fail to send current selection data");
+                return;
+            };
+            let _ = selcb.call1(&JsValue::NULL, &value);
         }
     }
 }
@@ -204,11 +210,14 @@ impl State {
         }
     }
 
-    pub fn unselect_all(&mut self) {
-        self.selection.clear().notify();
+    pub fn unselect_all(&mut self, silence: bool) {
         self.ports.clear();
         self.ports_highlighted.clear();
         self.components.clear();
+        self.selection.clear();
+        if !silence {
+            self.selection.notify();
+        }
     }
 
     pub fn hover(&mut self, id: &usize) -> bool {
