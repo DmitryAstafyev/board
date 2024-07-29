@@ -79,8 +79,8 @@ impl Path {
             let _ = context.ellipse(
                 relative.x(self.points[0].x) as f64,
                 relative.y(self.points[0].y) as f64,
-                self.params.radius as f64,
-                self.params.radius as f64,
+                self.params.radius as f64 * relative.get_zoom(),
+                self.params.radius as f64 * relative.get_zoom(),
                 0.0,
                 0.0,
                 360.0 * (PI / 180.0),
@@ -92,8 +92,8 @@ impl Path {
             let _ = context.ellipse(
                 relative.x(self.points[self.points.len() - 1].x) as f64,
                 relative.y(self.points[self.points.len() - 1].y) as f64,
-                self.params.radius as f64,
-                self.params.radius as f64,
+                self.params.radius as f64 * relative.get_zoom(),
+                self.params.radius as f64 * relative.get_zoom(),
                 0.0,
                 0.0,
                 360.0 * (PI / 180.0),
