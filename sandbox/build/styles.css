@@ -33,23 +33,44 @@ body div#info {
 
 body div.filter {
     position: absolute;
-    background: black;
+    display: flex;
+    flex-direction: row;
     right: 8px;
     top: 8px;
     height: 24px;
-    width: 120px;
-    border-radius: 3px;
 }
 body div.filter input {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    right: 2px;
-    bottom: 2px;
+    position: relative;
     display: block;
+    min-width: 120px;
     background: black;
     color: white;
     outline: none;
     border: none;
+    margin: 0 4px;
+    border-radius: 3px;
+}
+
+body div.filter span#back{
+    position: relative;
+    display: block;
+    border-radius: 3px;
+    border: thin black solid;
+    padding: 3px 6px;
+    margin: 0 4px;
+    cursor: default;
+    background: wheat;
+}
+
+body span#location {
+    position: absolute;
+    right: 8px;
+    top:36px;
+    border-radius: 3px;
+    border: thin black solid;
+    padding: 3px 6px;
+    margin: 0 4px;
+    cursor: default;
+    background:whitesmoke;
 }
 

@@ -62,6 +62,10 @@ export interface HoverMouseEvent {
     y: number;
 }
 
+export interface ILocation {
+    id: number;
+    sig: Types.Signature;
+}
 export class Board extends Subscriber {
     protected readonly board: Core.Board;
     protected readonly canvas: HTMLCanvasElement;
@@ -108,7 +112,7 @@ export class Board extends Subscriber {
         composition: number | undefined;
         grouped: [number, number[]][];
         root: Types.Composition | undefined;
-        history: number[];
+        history: ILocation[];
     } = {
         composition: undefined,
         grouped: [],
@@ -517,12 +521,15 @@ export class Board extends Subscriber {
             this.history.set(this.data.composition, this.position.clone());
         if (
             this.data.history.length > 0 &&
-            this.data.history[this.data.history.length - 1] == id
+            this.data.history[this.data.history.length - 1].id == id
         ) {
             this.data.history.pop();
         } else {
             this.data.composition !== undefined &&
-                this.data.history.push(this.data.composition);
+                this.data.history.push({
+                    id: this.data.composition,
+                    sig: composition.sig,
+                });
         }
         this.data.composition = id;
         this.data.grouped = this.board.get_grouped_ports();
@@ -534,6 +541,13 @@ export class Board extends Subscriber {
         }
         this.updateSize();
         this.subjects.get().bound.emit();
+        this.subjects
+            .get()
+            .onLocationChange.emit(
+                [{ id: this.data.root.sig.id, sig: this.data.root.sig }].concat(
+                    this.data.history
+                )
+            );
     }
 
     public readonly subjects: Subjects<{
@@ -545,6 +559,7 @@ export class Board extends Subscriber {
         onPortClick: Subject<number>;
         // [components_id[], ports_id[]]
         onSelectionChange: Subject<[number[], number[]]>;
+        onLocationChange: Subject<ILocation[]>;
         bound: Subject<void>;
     }> = new Subjects({
         onComponentHover: new Subject<HoverMouseEvent>(),
@@ -554,6 +569,7 @@ export class Board extends Subscriber {
         onPortHoverOver: new Subject<void>(),
         onPortClick: new Subject<number>(),
         onSelectionChange: new Subject<[number[], number[]]>(),
+        onLocationChange: new Subject<ILocation[]>(),
         bound: new Subject<void>(),
     });
 
@@ -578,6 +594,11 @@ export class Board extends Subscriber {
         this.data.root = composition;
         this.data.grouped = this.getGroupedPorts();
         this.subjects.get().bound.emit();
+        this.subjects
+            .get()
+            .onLocationChange.emit([
+                { id: this.data.root.sig.id, sig: this.data.root.sig },
+            ]);
     }
 
     public refresh() {
@@ -598,7 +619,9 @@ export class Board extends Subscriber {
         if (this.data.history.length === 0) {
             return;
         }
-        this.goToComposition(this.data.history[this.data.history.length - 1]);
+        this.goToComposition(
+            this.data.history[this.data.history.length - 1].id
+        );
     }
 
     public setFilter(filter: string | undefined) {
@@ -607,6 +630,11 @@ export class Board extends Subscriber {
 
     public getGroupedPorts(): [number, number[]][] {
         return this.board.get_grouped_ports() as [number, number[]][];
+    }
+
+    public getPort(id: number): Types.Port | undefined {
+        const port = this.board.get_port(id);
+        return port === null ? undefined : port;
     }
 
     public getCoorsByIds(ids: number[]): Types.ElementCoors[] {

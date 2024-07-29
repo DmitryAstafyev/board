@@ -1,6 +1,6 @@
 use crate::{
     entity::{
-        Component, Connection, GetIncludedComponent, IsPortIncluded, Ports, Signature,
+        Component, Connection, GetIncludedComponent, IsPortIncluded, Port, Ports, Signature,
         SignatureEqual, SignatureGetter,
     },
     render::{options::Options, Render, Representation},
@@ -93,6 +93,10 @@ impl Composition {
         self.components
             .iter()
             .find_map(|c| id.get_if_equal(c.origin()))
+    }
+
+    pub fn get_port(&self, port_id: &usize) -> Option<&Port> {
+        self.ports.origin().find(port_id).map(|r| r.origin())
     }
 
     pub fn get_label(&self, options: &Options) -> String {

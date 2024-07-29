@@ -74,9 +74,11 @@ function real() {
             });
             load(rootElement as IComposition, elements, root);
             const board = new Board(`div#container`, getLabeledPortsOptions());
-            board.bind(root);
-            board.render();
             board.subjects.get().onPortHover.subscribe((event) => {});
+            board.subjects.get().onPortClick.subscribe((event) => {
+                console.log(`Click on: ${event}`);
+                console.log(board.getPort(event));
+            });
             board.subjects.get().onComponentHover.subscribe((event) => {});
             board.subjects.get().onSelectionChange.subscribe((event) => {
                 console.log(`Selection: ${JSON.stringify(event)}`);
@@ -93,6 +95,22 @@ function real() {
             filter.addEventListener("change", () => {
                 // board.refresh();
             });
+            const back = document.querySelector(
+                'span[id="back"]'
+            ) as HTMLSpanElement;
+            back.addEventListener("click", () => {
+                board.toPrevComposition();
+            });
+            const location = document.querySelector(
+                'span[id="location"]'
+            ) as HTMLSpanElement;
+            board.subjects.get().onLocationChange.subscribe((locations) => {
+                location.innerHTML = locations
+                    .map((l) => l.sig.short_name)
+                    .join("/");
+            });
+            board.bind(root);
+            board.render();
         });
     }, 200);
 }

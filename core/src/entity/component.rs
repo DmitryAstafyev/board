@@ -1,5 +1,5 @@
 use crate::{
-    entity::{Ports, Signature, SignatureGetter},
+    entity::{Port, Ports, Signature, SignatureGetter},
     render::{options::Options, Representation},
 };
 use serde::{Deserialize, Serialize};
@@ -23,5 +23,8 @@ impl Component {
             options.labels.components_short_name,
             options.labels.comp_label_max_len,
         )
+    }
+    pub fn get_port(&self, port_id: &usize) -> Option<&Port> {
+        self.ports.origin().find(port_id).map(|r| r.origin())
     }
 }

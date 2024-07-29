@@ -312,6 +312,12 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn get_port(&self, id: usize) -> Result<JsValue, String> {
+        let port: Option<&entity::Port> = self.render.get_port(id);
+        serde_wasm_bindgen::to_value(&port).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
     pub fn get_size(&mut self) -> Result<JsValue, String> {
         serde_wasm_bindgen::to_value(&self.grid.get_size_invert_px()).map_err(|e| e.to_string())
     }
