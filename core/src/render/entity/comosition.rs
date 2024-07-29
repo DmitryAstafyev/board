@@ -6,7 +6,7 @@ use crate::{
     error::E,
     render::{
         elements,
-        form::{button, Button, Path, Point, Rectangle},
+        form::{Path, Point, Rectangle},
         grid::{ElementCoors, ElementType},
         options::Options,
         Container, Form, Grid, Ratio, Relative, Render, Representation, Style, View,
@@ -125,7 +125,6 @@ impl Render<Composition> {
         };
         entity.order();
         let id = entity.sig.id;
-        let parent = entity.parent;
         Self {
             entity,
             view: View {
@@ -145,30 +144,7 @@ impl Render<Composition> {
                         fill_style: String::from("rgb(200,200,230)"),
                     },
                 },
-                elements: if let Some(id) = parent {
-                    vec![Container {
-                        form: Form::Button(
-                            ElementType::Element,
-                            Button::new(
-                                0,
-                                0,
-                                0,
-                                0,
-                                id.to_string(),
-                                3,
-                                format!("back::{id}"),
-                                button::Align::Right,
-                                &options.ratio(),
-                            ),
-                        ),
-                        style: Style {
-                            stroke_style: String::from("rgb(0,0,0)"),
-                            fill_style: String::from("rgb(100,150,255)"),
-                        },
-                    }]
-                } else {
-                    Vec::new()
-                },
+                elements: Vec::new(),
             },
             hidden: false,
         }
@@ -286,46 +262,6 @@ impl Render<Composition> {
         let compositions = &self.entity.compositions;
         let mut failed: Vec<&Connection> = Vec::new();
         let self_ports = &self.entity.ports;
-        // let debug_conn = self
-        //     .entity
-        //     .connections
-        //     .iter()
-        //     .find(|conn| conn.origin().sig().id == 1161);
-        // if let Some(conn) = debug_conn {
-        //     console_log!("Connection 1161: {:?}", debug_conn);
-        //     console_log!(
-        //         "state in: {}",
-        //         state.is_port_owner_filtered(conn.origin().in_comp())
-        //     );
-        //     console_log!(
-        //         "state out: {}",
-        //         state.is_port_owner_filtered(conn.origin().out_comp())
-        //     );
-        //     let ins = find(components, compositions, conn.origin().in_comp());
-        //     let outs = find(components, compositions, conn.origin().out_comp());
-        //     console_log!("port ins: {}", ins.is_some());
-        //     console_log!("port outs: {}", outs.is_some());
-        //     if ins.is_none() {
-        //         console_log!(
-        //             "in port belongs to self comp: {:?}",
-        //             self.origin().ports.origin().find(conn.origin().in_port())
-        //         );
-        //     }
-        //     if outs.is_none() {
-        //         console_log!(
-        //             "out port belongs to self comp: {:?}",
-        //             self.origin().ports.origin().find(conn.origin().out_port())
-        //         );
-        //     }
-        //     let port_in = find(components, compositions, conn.origin().in_comp())
-        //         .and_then(|parent| parent.ports().origin().find(conn.origin().in_port()))
-        //         .or_else(|| self_ports.origin().find(conn.origin().in_port()));
-        //     let port_out = find(components, compositions, conn.origin().out_comp())
-        //         .and_then(|parent| parent.ports().origin().find(conn.origin().out_port()))
-        //         .or_else(|| self_ports.origin().find(conn.origin().out_port()));
-        //     console_log!("SEARCH IN: {port_in:?}");
-        //     console_log!("SEARCH OUT: {port_out:?}");
-        // }
         let own_relative = self.own_relative();
         for conn in self.entity.connections.iter_mut().filter(|conn| {
             let origin = conn.origin();
@@ -333,17 +269,6 @@ impl Render<Composition> {
                 && state.is_port_owner_filtered(origin.in_comp())
                 && state.is_port_owner_filtered(origin.out_comp())
         }) {
-            // let (Some(port_in), Some(port_out)) = (
-            //     find(components, compositions, conn.origin().in_comp())
-            //         .and_then(|parent| parent.ports().origin().find(conn.origin().in_port()))
-            //         .or_else(|| self_ports.origin().find(conn.origin().in_port())),
-            //     find(components, compositions, conn.origin().out_comp())
-            //         .and_then(|parent| parent.ports().origin().find(conn.origin().out_port()))
-            //         .or_else(|| self_ports.origin().find(conn.origin().out_port())),
-            // ) else {
-            //     failed.push(conn.origin());
-            //     continue;
-            // };
             let (Some((port_in, in_rel)), Some((port_out, out_rel))) = (
                 find(components, compositions, conn.origin().in_comp())
                     .and_then(|parent| {
@@ -412,10 +337,6 @@ impl Render<Composition> {
         }
         if !failed.is_empty() {
             console_log!("Fail to find ports for {} connections", failed.len());
-            // console_log!(
-            //     "Invalid connections ids: {:?}",
-            //     failed.iter().map(|c| c.sig().id)
-            // );
         }
         Ok(())
     }
@@ -741,6 +662,23 @@ impl Render<Composition> {
             ports = [ports, composition.origin().ports.origin().get_grouped()].concat();
         }
         Ok(ports)
+    }
+
+    pub fn get_port(&self, id: usize) -> Option<&Port> {
+        if let Some(port) = self.origin().get_port(&id) {
+            return Some(port);
+        }
+        for composition in self.entity.compositions.iter() {
+            if let Some(port) = composition.origin().get_port(&id) {
+                return Some(port);
+            }
+        }
+        for component in self.entity.components.iter() {
+            if let Some(port) = component.origin().get_port(&id) {
+                return Some(port);
+            }
+        }
+        None
     }
 
     /// Returns information about single connection
