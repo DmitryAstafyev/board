@@ -32,7 +32,7 @@ pub struct Label {
     pub w: i32,
     pub h: i32,
     pub label: String,
-    pub subtitle: Option<usize>,
+    pub subtitle: Option<String>,
     pub badge: Option<(String, String, String)>,
     pub padding: i32,
     pub id: String,
@@ -48,7 +48,7 @@ impl Label {
         w: i32,
         h: i32,
         label: String,
-        subtitle: Option<usize>,
+        subtitle: Option<String>,
         // value, bk_color, fg_color
         badge: Option<(String, String, String)>,
         padding: i32,
@@ -127,7 +127,7 @@ impl Label {
         context.fill_rect(x, y, self.w as f64, self.h as f64);
         context.stroke_rect(x, y, self.w as f64, self.h as f64);
         context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
-        if let Some(subtitle) = self.subtitle {
+        if let Some(subtitle) = self.subtitle.as_ref() {
             let _ = context.fill_text(
                 &self.label,
                 x + text_hor_padding,
@@ -135,11 +135,7 @@ impl Label {
             );
             context.set_font(&format!("{}px serif", (self.h as f64 * 0.4).round()));
             context.set_fill_style(&JsValue::from_str("rgb(40,40,40)"));
-            let _ = context.fill_text(
-                &format!("{subtitle} linked"),
-                x + text_hor_padding,
-                y + self.h as f64 * 0.6,
-            );
+            let _ = context.fill_text(subtitle, x + text_hor_padding, y + self.h as f64 * 0.6);
         } else {
             let _ = context.fill_text(&self.label, x + text_hor_padding, y + text_ver_padding);
         }

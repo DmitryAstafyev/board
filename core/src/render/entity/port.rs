@@ -324,6 +324,7 @@ impl Render<Port> {
                     )
                 })
             });
+        let unbound_port = matches!(entity.port_type, PortType::Unbound);
         Self {
             entity,
             view: View {
@@ -353,10 +354,12 @@ impl Render<Port> {
                                 0,
                                 0,
                                 label,
-                                if connected <= 1 {
+                                if unbound_port {
+                                    Some("unlinked".to_string())
+                                } else if connected <= 1 {
                                     None
                                 } else {
-                                    Some(connected)
+                                    Some(format!("{connected} linked"))
                                 },
                                 badge,
                                 4,
