@@ -150,6 +150,12 @@ impl Render<Composition> {
         }
     }
 
+    /// # Returns
+    /// (
+    ///     Vec<usize> - ids of filtered entities
+    ///     Vec<usize> - ids of linked entities (for example if port A selected and has connection to port B, port B will be linked)
+    ///     Vec<usize> - owner of filtered entities (for example if port selected, it's parent will be here)
+    /// )
     pub fn get_filtered_ports(
         &mut self,
         filter: Option<String>,

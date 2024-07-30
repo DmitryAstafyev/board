@@ -130,7 +130,9 @@ impl Render<Component> {
                 fill_style: String::from("rgb(250,250,250)"),
             };
         }
-
+        if state.is_match(&self.entity.sig.id) {
+            self.view.container.style.stroke_style = String::from("rgb(255,50,50)");
+        }
         self.view.render(context, relative);
         let self_relative = self.relative(relative);
         let ratio = options.ratio();

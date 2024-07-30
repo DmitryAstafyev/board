@@ -62,6 +62,11 @@ export interface HoverMouseEvent {
     y: number;
 }
 
+export interface MatchesEvent {
+    total: number;
+    current: number;
+    id: number;
+}
 export interface ILocation {
     id: number;
     sig: Types.Signature;
@@ -118,6 +123,15 @@ export class Board extends Subscriber {
         grouped: [],
         root: undefined,
         history: [],
+    };
+    protected _matches: {
+        ids: number[];
+        filter: string | undefined;
+        current: number;
+    } = {
+        ids: [],
+        filter: undefined,
+        current: -1,
     };
     protected readonly resize: ResizeObserver;
 
@@ -284,6 +298,41 @@ export class Board extends Subscriber {
         }, CLICK_DURATION);
     }
 
+    protected validate(): {
+        x: () => void;
+        y: () => void;
+    } {
+        const canvas = this.board.get_size();
+        return {
+            x: () => {
+                this.position.x = this.position.x > 0 ? 0 : this.position.x;
+                this.position.x =
+                    -this.position.x >
+                    canvas[0] - this.size.width / this.position.zoom
+                        ? -(canvas[0] - this.size.width / this.position.zoom)
+                        : this.position.x;
+                this.position.x = this.position.x > 0 ? 0 : this.position.x;
+            },
+            y: () => {
+                this.position.y = this.position.y > 0 ? 0 : this.position.y;
+                this.position.y =
+                    -this.position.y >
+                    canvas[1] - this.size.height / this.position.zoom
+                        ? -(canvas[1] - this.size.height / this.position.zoom)
+                        : this.position.y;
+                this.position.y = this.position.y > 0 ? 0 : this.position.y;
+            },
+        };
+    }
+    protected validatePositionX() {
+        const canvas = this.board.get_size();
+        this.position.x = this.position.x > 0 ? 0 : this.position.x;
+        this.position.x =
+            -this.position.x > canvas[0] - this.size.width / this.position.zoom
+                ? -(canvas[0] - this.size.width / this.position.zoom)
+                : this.position.x;
+        this.position.x = this.position.x > 0 ? 0 : this.position.x;
+    }
     protected onMouseMove(event: MouseEvent): void {
         if (!this.movement.processing) {
             return;
@@ -292,24 +341,12 @@ export class Board extends Subscriber {
         if (!this.position.xLocked) {
             this.position.x -=
                 (this.movement.x - event.screenX) / this.position.zoom;
-            this.position.x = this.position.x > 0 ? 0 : this.position.x;
-            this.position.x =
-                -this.position.x >
-                canvas[0] - this.size.width / this.position.zoom
-                    ? -(canvas[0] - this.size.width / this.position.zoom)
-                    : this.position.x;
-            this.position.x = this.position.x > 0 ? 0 : this.position.x;
+            this.validate().x();
         }
         if (!this.position.yLocked) {
             this.position.y -=
                 (this.movement.y - event.screenY) / this.position.zoom;
-            this.position.y = this.position.y > 0 ? 0 : this.position.y;
-            this.position.y =
-                -this.position.y >
-                canvas[1] - this.size.height / this.position.zoom
-                    ? -(canvas[1] - this.size.height / this.position.zoom)
-                    : this.position.y;
-            this.position.y = this.position.y > 0 ? 0 : this.position.y;
+            this.validate().y();
         }
         this.movement.x = event.screenX;
         this.movement.y = event.screenY;
@@ -561,6 +598,7 @@ export class Board extends Subscriber {
         onSelectionChange: Subject<[number[], number[]]>;
         onLocationChange: Subject<ILocation[]>;
         bound: Subject<void>;
+        onMatches: Subject<MatchesEvent | undefined>;
     }> = new Subjects({
         onComponentHover: new Subject<HoverMouseEvent>(),
         onComponentClick: new Subject<number>(),
@@ -571,6 +609,7 @@ export class Board extends Subscriber {
         onSelectionChange: new Subject<[number[], number[]]>(),
         onLocationChange: new Subject<ILocation[]>(),
         bound: new Subject<void>(),
+        onMatches: new Subject<MatchesEvent | undefined>(),
     });
 
     public destroy(): void {
@@ -628,6 +667,86 @@ export class Board extends Subscriber {
         this.board.set_filter(filter);
     }
 
+    public getFiltered(): number[] {
+        return this.board.get_filtered();
+    }
+
+    public matches(): {
+        set(filter: string | undefined): void;
+        get(): number[];
+        next(): number | undefined;
+        prev(): number | undefined;
+    } {
+        return {
+            set: (filter: string | undefined): void => {
+                this._matches.filter =
+                    filter === undefined
+                        ? undefined
+                        : filter.trim() === ""
+                        ? undefined
+                        : filter.trim();
+                this.board.set_matches(this._matches.filter);
+                if (this._matches.filter === undefined) {
+                    this._matches.ids = [];
+                    this._matches.current = -1;
+                } else {
+                    this._matches.ids = this.matches().get();
+                    this._matches.current =
+                        this._matches.ids.length === 0 ? -1 : 0;
+                }
+                this.matches().next();
+            },
+            get: (): number[] => {
+                return this.board.get_matches();
+            },
+            next: (): number | undefined => {
+                if (this._matches.ids.length === 0) {
+                    this.subjects.get().onMatches.emit(undefined);
+                    return undefined;
+                }
+                this._matches.current += 1;
+                this._matches.current =
+                    this._matches.current < 0
+                        ? 0
+                        : this._matches.current > this._matches.ids.length - 1
+                        ? 0
+                        : this._matches.current;
+                const target = this._matches.ids[this._matches.current];
+                this.goTo(target);
+                this.subjects.get().onMatches.emit({
+                    total: this._matches.ids.length,
+                    current: this._matches.current,
+                    id: target,
+                });
+                return target;
+            },
+            prev: (): number | undefined => {
+                if (this._matches.ids.length === 0) {
+                    this.subjects.get().onMatches.emit(undefined);
+                    return undefined;
+                }
+                this._matches.current -= 1;
+                this._matches.current =
+                    this._matches.current < 0
+                        ? this._matches.ids.length - 1
+                        : this._matches.current > this._matches.ids.length - 1
+                        ? this._matches.ids.length - 1
+                        : this._matches.current;
+                const target = this._matches.ids[this._matches.current];
+                this.goTo(target);
+                this.subjects.get().onMatches.emit({
+                    total: this._matches.ids.length,
+                    current: this._matches.current,
+                    id: target,
+                });
+                return target;
+            },
+        };
+    }
+    public getMatches(): number[] {
+        return this.board.get_matches();
+    }
+
     public getGroupedPorts(): [number, number[]][] {
         return this.board.get_grouped_ports() as [number, number[]][];
     }
@@ -644,6 +763,39 @@ export class Board extends Subscriber {
             this.position.zoom
         );
         return this.board.get_coors_by_ids(Uint32Array.from(ids));
+    }
+
+    public goTo(id: number) {
+        const coors = this.getCoorsByIds([id]);
+        if (coors.length === 0) {
+            return;
+        }
+        const used = this.board.get_size() as [number, number];
+        if (used[0] < this.size.width) {
+            return;
+        }
+        const coor = coors[0][2] as unknown as [number, number, number, number];
+        const left = coor[0] + (coor[2] - coor[0]) / 2;
+        const x_middle = this.size.width / 2;
+        if (left > x_middle) {
+            this.position.x -= left - x_middle;
+        } else {
+            this.position.x += x_middle - left;
+        }
+        this.validate().x();
+        const top = coor[1]; // do not consider height, because if it's component or composition, it might be too high
+        const y_middle = this.size.height / 2;
+        if (top > y_middle) {
+            this.position.y -= top - y_middle;
+        } else {
+            this.position.y += y_middle - top;
+        }
+        this.validate().y();
+        this.scroll.moveTo(
+            -this.position.x * this.position.zoom,
+            -this.position.y * this.position.zoom
+        );
+        this.render();
     }
 
     public getConnectionInfo(port: number):

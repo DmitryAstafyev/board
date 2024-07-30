@@ -39,6 +39,10 @@ body div.filter {
     top: 8px;
     height: 24px;
 }
+
+body div.matches {
+    top: 36px;
+}
 body div.filter input {
     position: relative;
     display: block;
@@ -51,7 +55,7 @@ body div.filter input {
     border-radius: 3px;
 }
 
-body div.filter span#back{
+span.button{
     position: relative;
     display: block;
     border-radius: 3px;
@@ -65,7 +69,7 @@ body div.filter span#back{
 body span#location {
     position: absolute;
     right: 8px;
-    top:36px;
+    top: 66px;
     border-radius: 3px;
     border: thin black solid;
     padding: 3px 6px;

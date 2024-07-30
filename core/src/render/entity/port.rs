@@ -428,6 +428,9 @@ impl Render<Port> {
                 fill_style: String::from("rgb(240,240,240)"),
             };
         }
+        if state.is_match(&self.entity.sig.id) {
+            self.view.container.style.stroke_style = String::from("rgb(255,50,50)");
+        }
         self.view.render(context, relative);
         Ok(())
     }

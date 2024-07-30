@@ -223,6 +223,27 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn get_filtered(&self) -> Result<JsValue, String> {
+        let empty = Vec::new();
+        let filtered = self.state.get_filtered().unwrap_or(&empty);
+        serde_wasm_bindgen::to_value(&filtered).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn set_matches(&mut self, filter: Option<String>) {
+        self.state.set_matches(
+            self.render
+                .get_filtered_ports(filter)
+                .map(|(ids, _, _)| ids),
+        );
+    }
+
+    #[wasm_bindgen]
+    pub fn get_matches(&self) -> Result<JsValue, String> {
+        serde_wasm_bindgen::to_value(&self.state.get_matches()).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
     pub fn who(&self, target_x: i32, target_y: i32, around: i32) -> Result<JsValue, String> {
         let relative = self.state.get_grid_relative();
         let around = self.ratio.get(around);

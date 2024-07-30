@@ -109,6 +109,28 @@ function real() {
                     .map((l) => l.sig.short_name)
                     .join("/");
             });
+            const matches = document.querySelector(
+                'input[id="matches"]'
+            ) as HTMLInputElement;
+            matches.addEventListener("keyup", () => {
+                board
+                    .matches()
+                    .set(
+                        matches.value.trim() === ""
+                            ? undefined
+                            : matches.value.trim()
+                    );
+            });
+            (
+                document.querySelector('span[id="prev"]') as HTMLSpanElement
+            ).addEventListener("click", () => {
+                board.matches().prev();
+            });
+            (
+                document.querySelector('span[id="next"]') as HTMLSpanElement
+            ).addEventListener("click", () => {
+                board.matches().next();
+            });
             board.bind(root);
             board.render();
         });

@@ -93,6 +93,20 @@ function real() {
                     .map((l) => l.sig.short_name)
                     .join("/");
             });
+            const matches = document.querySelector('input[id="matches"]');
+            matches.addEventListener("keyup", () => {
+                board
+                    .matches()
+                    .set(matches.value.trim() === ""
+                    ? undefined
+                    : matches.value.trim());
+            });
+            document.querySelector('span[id="prev"]').addEventListener("click", () => {
+                board.matches().prev();
+            });
+            document.querySelector('span[id="next"]').addEventListener("click", () => {
+                board.matches().next();
+            });
             board.bind(root);
             board.render();
         });
