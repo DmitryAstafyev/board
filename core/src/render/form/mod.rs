@@ -68,6 +68,7 @@ pub enum Form {
     GridRectangle(ElementType, GridRectangle),
     Rectangle(ElementType, Rectangle),
     Path(ElementType, Path),
+    #[allow(dead_code)]
     Button(ElementType, Button),
     Label(ElementType, Label),
 }

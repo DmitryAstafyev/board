@@ -231,16 +231,22 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn set_matches(&mut self, filter: Option<String>) {
-        self.state.set_matches(
-            self.render
-                .get_filtered_ports(filter)
-                .map(|(ids, _, _)| ids),
-        );
+        self.state.set_matches(self.render.get_matches(filter));
     }
 
     #[wasm_bindgen]
     pub fn get_matches(&self) -> Result<JsValue, String> {
         serde_wasm_bindgen::to_value(&self.state.get_matches()).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn set_highlighted(&mut self, highlighted: Option<Vec<usize>>) {
+        self.state.set_highlighted(highlighted);
+    }
+
+    #[wasm_bindgen]
+    pub fn get_highlighted(&self) -> Vec<usize> {
+        self.state.get_highlighted().cloned().unwrap_or_default()
     }
 
     #[wasm_bindgen]

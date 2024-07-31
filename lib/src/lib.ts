@@ -127,11 +127,13 @@ export class Board extends Subscriber {
     protected _matches: {
         ids: number[];
         filter: string | undefined;
-        current: number;
+        currentIndex: number;
+        currentId: number | undefined;
     } = {
         ids: [],
         filter: undefined,
-        current: -1,
+        currentIndex: -1,
+        currentId: undefined,
     };
     protected readonly resize: ResizeObserver;
 
@@ -671,6 +673,20 @@ export class Board extends Subscriber {
         return this.board.get_filtered();
     }
 
+    public highlight(): {
+        set(ids: number[]): void;
+        get(): number[];
+    } {
+        return {
+            set: (ids: number[]): void => {
+                this.board.set_highlighted(Uint32Array.from(ids));
+            },
+            get: (): number[] => {
+                return Array.from(this.board.get_highlighted());
+            },
+        };
+    }
+
     public matches(): {
         set(filter: string | undefined): void;
         get(): number[];
@@ -686,13 +702,12 @@ export class Board extends Subscriber {
                         ? undefined
                         : filter.trim();
                 this.board.set_matches(this._matches.filter);
+                this._matches.currentIndex = -1;
+                this._matches.currentId = undefined;
                 if (this._matches.filter === undefined) {
                     this._matches.ids = [];
-                    this._matches.current = -1;
                 } else {
                     this._matches.ids = this.matches().get();
-                    this._matches.current =
-                        this._matches.ids.length === 0 ? -1 : 0;
                 }
                 this.matches().next();
             },
@@ -704,42 +719,46 @@ export class Board extends Subscriber {
                     this.subjects.get().onMatches.emit(undefined);
                     return undefined;
                 }
-                this._matches.current += 1;
-                this._matches.current =
-                    this._matches.current < 0
+                this._matches.currentIndex += 1;
+                this._matches.currentIndex =
+                    this._matches.currentIndex < 0
                         ? 0
-                        : this._matches.current > this._matches.ids.length - 1
+                        : this._matches.currentIndex >
+                          this._matches.ids.length - 1
                         ? 0
-                        : this._matches.current;
-                const target = this._matches.ids[this._matches.current];
-                this.goTo(target);
+                        : this._matches.currentIndex;
+                this._matches.currentId =
+                    this._matches.ids[this._matches.currentIndex];
+                this.goTo(this._matches.currentId);
                 this.subjects.get().onMatches.emit({
                     total: this._matches.ids.length,
-                    current: this._matches.current,
-                    id: target,
+                    current: this._matches.currentIndex,
+                    id: this._matches.currentId,
                 });
-                return target;
+                return this._matches.currentId;
             },
             prev: (): number | undefined => {
                 if (this._matches.ids.length === 0) {
                     this.subjects.get().onMatches.emit(undefined);
                     return undefined;
                 }
-                this._matches.current -= 1;
-                this._matches.current =
-                    this._matches.current < 0
+                this._matches.currentIndex -= 1;
+                this._matches.currentIndex =
+                    this._matches.currentIndex < 0
                         ? this._matches.ids.length - 1
-                        : this._matches.current > this._matches.ids.length - 1
+                        : this._matches.currentIndex >
+                          this._matches.ids.length - 1
                         ? this._matches.ids.length - 1
-                        : this._matches.current;
-                const target = this._matches.ids[this._matches.current];
-                this.goTo(target);
+                        : this._matches.currentIndex;
+                this._matches.currentId =
+                    this._matches.ids[this._matches.currentIndex];
+                this.goTo(this._matches.currentId);
                 this.subjects.get().onMatches.emit({
                     total: this._matches.ids.length,
-                    current: this._matches.current,
-                    id: target,
+                    current: this._matches.currentIndex,
+                    id: this._matches.currentId,
                 });
-                return target;
+                return this._matches.currentId;
             },
         };
     }
@@ -766,6 +785,7 @@ export class Board extends Subscriber {
     }
 
     public goTo(id: number) {
+        this.highlight().set([]);
         const coors = this.getCoorsByIds([id]);
         if (coors.length === 0) {
             return;
@@ -795,6 +815,7 @@ export class Board extends Subscriber {
             -this.position.x * this.position.zoom,
             -this.position.y * this.position.zoom
         );
+        this.highlight().set([id]);
         this.render();
     }
 

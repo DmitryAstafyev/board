@@ -79,6 +79,7 @@ pub struct State {
     // owners - components and compositions onwers of filtered and linked ports
     pub filtered: Option<(Vec<usize>, Vec<usize>, Vec<usize>)>,
     pub matches: Option<Vec<usize>>,
+    pub highlighted: Option<Vec<usize>>,
     pub x: i32,
     pub y: i32,
     pub zoom: f64,
@@ -94,6 +95,7 @@ impl State {
             hovered: None,
             filtered: None,
             matches: None,
+            highlighted: None,
             hmargin,
             vmargin,
             x: 0,
@@ -154,6 +156,21 @@ impl State {
 
     pub fn is_match(&self, id: &usize) -> bool {
         self.matches
+            .as_ref()
+            .map(|ids| ids.contains(id))
+            .unwrap_or(false)
+    }
+
+    pub fn set_highlighted(&mut self, highlighted: Option<Vec<usize>>) {
+        self.highlighted = highlighted;
+    }
+
+    pub fn get_highlighted(&self) -> Option<&Vec<usize>> {
+        self.highlighted.as_ref()
+    }
+
+    pub fn is_highlighted(&self, id: &usize) -> bool {
+        self.highlighted
             .as_ref()
             .map(|ids| ids.contains(id))
             .unwrap_or(false)

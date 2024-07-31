@@ -4,9 +4,17 @@ import {
     Options,
     DEVICE_PIXEL_RATIO,
     PortsRepresentation,
+    MatchesEvent,
 } from "board";
 
-import { IComposition, IElement, UNKNOWN, getSignature, find } from "./types";
+import {
+    IComposition,
+    IElement,
+    UNKNOWN,
+    getSignature,
+    find,
+    Types,
+} from "./types";
 import { getDummyComposition } from "./dummy";
 import { load } from "./loader";
 
@@ -131,6 +139,18 @@ function real() {
             ).addEventListener("click", () => {
                 board.matches().next();
             });
+            const matches_state = document.querySelector(
+                'span[id="matches_state"]'
+            ) as HTMLSpanElement;
+            board.subjects
+                .get()
+                .onMatches.subscribe((event: MatchesEvent | undefined) => {
+                    if (event === undefined) {
+                        matches_state.innerHTML = "";
+                    } else {
+                        matches_state.innerHTML = `${event.current}/${event.total} (${event.id})`;
+                    }
+                });
             board.bind(root);
             board.render();
         });

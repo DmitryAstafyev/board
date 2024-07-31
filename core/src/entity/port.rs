@@ -167,7 +167,9 @@ impl Ports {
             .iter()
             .filter(|port| {
                 let origin = port.origin();
-                if origin.contains.is_empty() {
+                if !origin.visibility {
+                    false
+                } else if origin.contains.is_empty() {
                     is_filtered(filter, origin)
                 } else {
                     let mut found = false;

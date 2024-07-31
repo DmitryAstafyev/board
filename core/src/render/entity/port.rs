@@ -431,6 +431,9 @@ impl Render<Port> {
         if state.is_match(&self.entity.sig.id) {
             self.view.container.style.stroke_style = String::from("rgb(255,50,50)");
         }
+        if state.is_highlighted(&self.entity.sig.id) {
+            self.view.container.style.fill_style = String::from("rgb(255,50,50)");
+        }
         self.view.render(context, relative);
         Ok(())
     }

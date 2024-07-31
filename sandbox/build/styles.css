@@ -66,6 +66,10 @@ span.button{
     background: wheat;
 }
 
+body span#matches_state {
+    background: white;
+}
+
 body span#location {
     position: absolute;
     right: 8px;

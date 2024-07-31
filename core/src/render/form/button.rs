@@ -30,6 +30,7 @@ impl Params {
 #[derive(Debug)]
 pub enum Align {
     _Left,
+    #[allow(dead_code)]
     Right,
 }
 

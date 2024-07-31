@@ -160,13 +160,13 @@ impl Render<Composition> {
         &mut self,
         filter: Option<String>,
     ) -> Option<(Vec<usize>, Vec<usize>, Vec<usize>)> {
-        self.entity
-            .components
-            .retain(|c| c.render().map_or(true, |r| !r.is_composition()));
-        self.entity
-            .compositions
-            .iter_mut()
-            .for_each(|c| c.render_mut().unwrap().show());
+        // self.entity
+        //     .components
+        //     .retain(|c| c.render().map_or(true, |r| !r.is_composition()));
+        // self.entity
+        //     .compositions
+        //     .iter_mut()
+        //     .for_each(|c| c.render_mut().unwrap().show());
         filter.as_ref().map(|filter| {
             let filtered = [
                 self.entity
@@ -233,6 +233,37 @@ impl Render<Composition> {
             ]
             .concat();
             (filtered, linked, owners)
+        })
+    }
+
+    pub fn get_matches(&mut self, filter: Option<String>) -> Option<Vec<usize>> {
+        filter.as_ref().map(|filter| {
+            [
+                self.entity
+                    .components
+                    .iter()
+                    .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
+                    .collect::<Vec<usize>>(),
+                self.entity
+                    .compositions
+                    .iter()
+                    .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
+                    .collect::<Vec<usize>>(),
+                self.entity.ports.origin().get_filtered_ports(filter),
+                self.entity
+                    .components
+                    .iter()
+                    .filter(|c| {
+                        c.origin()
+                            .sig
+                            .short_name
+                            .to_lowercase()
+                            .contains(&filter.to_lowercase())
+                    })
+                    .map(|c| c.origin().sig().id)
+                    .collect::<Vec<usize>>(),
+            ]
+            .concat()
         })
     }
 

@@ -107,6 +107,17 @@ function real() {
             document.querySelector('span[id="next"]').addEventListener("click", () => {
                 board.matches().next();
             });
+            const matches_state = document.querySelector('span[id="matches_state"]');
+            board.subjects
+                .get()
+                .onMatches.subscribe((event) => {
+                if (event === undefined) {
+                    matches_state.innerHTML = "";
+                }
+                else {
+                    matches_state.innerHTML = `${event.current}/${event.total} (${event.id})`;
+                }
+            });
             board.bind(root);
             board.render();
         });
