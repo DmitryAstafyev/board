@@ -549,6 +549,7 @@ export class Board extends Subscriber {
         if (this.data.root === undefined) {
             return;
         }
+        this.matches().drop();
         const composition = Types.getComposition(this.data.root, id);
         if (composition === undefined) {
             console.log(`Fail to find composition ID: ${id}`);
@@ -692,6 +693,7 @@ export class Board extends Subscriber {
         get(): number[];
         next(): number | undefined;
         prev(): number | undefined;
+        drop(): void;
     } {
         return {
             set: (filter: string | undefined): void => {
@@ -760,6 +762,15 @@ export class Board extends Subscriber {
                 });
                 return this._matches.currentId;
             },
+            drop: (): void => {
+                this.board.set_matches(undefined);
+                this._matches.currentIndex = -1;
+                this._matches.currentId = undefined;
+                this._matches.filter = undefined;
+                this._matches.ids = [];
+                this.subjects.get().onMatches.emit(undefined);
+                this.highlight().set([]);
+            },
         };
     }
     public getMatches(): number[] {
@@ -798,17 +809,17 @@ export class Board extends Subscriber {
         const left = coor[0] + (coor[2] - coor[0]) / 2;
         const x_middle = this.size.width / 2;
         if (left > x_middle) {
-            this.position.x -= left - x_middle;
+            this.position.x -= (left - x_middle) / this.position.zoom;
         } else {
-            this.position.x += x_middle - left;
+            this.position.x += (x_middle - left) / this.position.zoom;
         }
         this.validate().x();
         const top = coor[1]; // do not consider height, because if it's component or composition, it might be too high
         const y_middle = this.size.height / 2;
         if (top > y_middle) {
-            this.position.y -= top - y_middle;
+            this.position.y -= (top - y_middle) / this.position.zoom;
         } else {
-            this.position.y += y_middle - top;
+            this.position.y += (y_middle - top) / this.position.zoom;
         }
         this.validate().y();
         this.scroll.moveTo(

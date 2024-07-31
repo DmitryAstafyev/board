@@ -429,10 +429,16 @@ impl Render<Port> {
             };
         }
         if state.is_match(&self.entity.sig.id) {
-            self.view.container.style.stroke_style = String::from("rgb(255,50,50)");
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(50,50,50)"),
+                fill_style: String::from("rgb(195,190,190)"),
+            };
         }
         if state.is_highlighted(&self.entity.sig.id) {
-            self.view.container.style.fill_style = String::from("rgb(255,50,50)");
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(50,50,50)"),
+                fill_style: String::from("rgb(185,230,255)"),
+            };
         }
         self.view.render(context, relative);
         Ok(())
