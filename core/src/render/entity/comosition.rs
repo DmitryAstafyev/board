@@ -687,6 +687,14 @@ impl Render<Composition> {
                 ratio,
             )?;
         }
+        scan(
+            &mut found,
+            &self.origin().ports,
+            ids,
+            self.own_relative(),
+            relative,
+            ratio,
+        )?;
         Ok(found)
     }
 
