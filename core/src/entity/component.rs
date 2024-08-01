@@ -4,6 +4,8 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
+use super::EntityProps;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Component {
     pub sig: Signature,
@@ -26,5 +28,8 @@ impl Component {
     }
     pub fn get_port(&self, port_id: &usize) -> Option<&Port> {
         self.ports.origin().find(port_id).map(|r| r.origin())
+    }
+    pub fn get_ports_props(&self) -> EntityProps {
+        self.ports.origin().get_props()
     }
 }

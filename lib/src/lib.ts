@@ -786,6 +786,14 @@ export class Board extends Subscriber {
         return port === null ? undefined : port;
     }
 
+    public getPortsProps(): Types.EntityProps {
+        return this.board.get_ports_props();
+    }
+
+    public getCompsProps(): Types.EntityProps {
+        return this.board.get_comps_props();
+    }
+
     public getCoorsByIds(ids: number[]): Types.ElementCoors[] {
         this.board.set_view_state(
             this.position.x,

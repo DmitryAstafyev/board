@@ -79,6 +79,11 @@ export function getComposition(
     return undefined;
 }
 
+export interface EntityProps {
+    class_name: string[];
+    short_name: string[];
+}
+
 export enum PortsRepresentation {
     Blocks = "Blocks",
     Labels = "Labels",

@@ -81,3 +81,23 @@ impl Signature {
         }
     }
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct EntityProps {
+    class_name: Vec<String>,
+    short_name: Vec<String>,
+}
+
+impl EntityProps {
+    pub fn merge(&mut self, other: Self) {
+        self.class_name.extend(other.class_name);
+        self.short_name.extend(other.short_name);
+    }
+    pub fn dedup(mut self) -> Self {
+        self.class_name.sort();
+        self.class_name.dedup();
+        self.short_name.sort();
+        self.short_name.dedup();
+        self
+    }
+}

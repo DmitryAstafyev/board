@@ -240,6 +240,18 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn get_ports_props(&self) -> Result<JsValue, String> {
+        serde_wasm_bindgen::to_value(&self.render.origin().get_ports_props())
+            .map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_comps_props(&self) -> Result<JsValue, String> {
+        serde_wasm_bindgen::to_value(&self.render.origin().get_comps_props())
+            .map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
     pub fn set_highlighted(&mut self, highlighted: Option<Vec<usize>>) {
         self.state.set_highlighted(highlighted);
     }

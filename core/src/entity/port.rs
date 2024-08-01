@@ -1,5 +1,5 @@
 use crate::{
-    entity::{Signature, SignatureGetter},
+    entity::{EntityProps, Signature, SignatureGetter},
     render::{options::Options, Representation},
 };
 use serde::{Deserialize, Serialize};
@@ -110,6 +110,19 @@ impl Ports {
 
     pub fn find(&self, port_id: &usize) -> Option<&Representation<Port>> {
         self.ports.iter().find(|p| &p.sig().id == port_id)
+    }
+
+    pub fn get_props(&self) -> EntityProps {
+        let mut props = EntityProps::default();
+        self.ports.iter().for_each(|p| {
+            if !props.class_name.contains(&p.sig().class_name) {
+                props.class_name.push(p.sig().class_name.clone());
+            }
+            if !props.short_name.contains(&p.sig().short_name) {
+                props.short_name.push(p.sig().short_name.clone());
+            }
+        });
+        props
     }
 
     pub fn cloned_ports(&self) -> Vec<Representation<Port>> {

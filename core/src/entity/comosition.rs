@@ -7,6 +7,8 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
+use super::EntityProps;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Composition {
     pub sig: Signature,
@@ -97,6 +99,27 @@ impl Composition {
 
     pub fn get_port(&self, port_id: &usize) -> Option<&Port> {
         self.ports.origin().find(port_id).map(|r| r.origin())
+    }
+
+    pub fn get_ports_props(&self) -> EntityProps {
+        let mut props = self.ports.origin().get_props();
+        self.components.iter().for_each(|c| {
+            props.merge(c.origin().get_ports_props());
+        });
+        props.dedup()
+    }
+
+    pub fn get_comps_props(&self) -> EntityProps {
+        let mut props = EntityProps::default();
+        self.components.iter().for_each(|c| {
+            if !props.class_name.contains(&c.sig().class_name) {
+                props.class_name.push(c.sig().class_name.clone());
+            }
+            if !props.short_name.contains(&c.sig().short_name) {
+                props.short_name.push(c.sig().short_name.clone());
+            }
+        });
+        props.dedup()
     }
 
     pub fn get_label(&self, options: &Options) -> String {
