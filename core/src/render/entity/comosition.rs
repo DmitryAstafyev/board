@@ -237,34 +237,41 @@ impl Render<Composition> {
     }
 
     pub fn get_matches(&mut self, filter: Option<String>) -> Option<Vec<usize>> {
-        filter.as_ref().map(|filter| {
-            [
-                self.entity
-                    .components
-                    .iter()
-                    .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
-                    .collect::<Vec<usize>>(),
-                self.entity
-                    .compositions
-                    .iter()
-                    .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
-                    .collect::<Vec<usize>>(),
-                self.entity.ports.origin().get_filtered_ports(filter),
-                self.entity
-                    .components
-                    .iter()
-                    .filter(|c| {
-                        c.origin()
-                            .sig
-                            .short_name
-                            .to_lowercase()
-                            .contains(&filter.to_lowercase())
-                    })
-                    .map(|c| c.origin().sig().id)
-                    .collect::<Vec<usize>>(),
-            ]
-            .concat()
-        })
+        filter
+            .as_ref()
+            .map(|filter| {
+                [
+                    self.entity
+                        .components
+                        .iter()
+                        .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
+                        .collect::<Vec<usize>>(),
+                    self.entity
+                        .compositions
+                        .iter()
+                        .flat_map(|c| c.origin().ports.origin().get_filtered_ports(filter))
+                        .collect::<Vec<usize>>(),
+                    self.entity.ports.origin().get_filtered_ports(filter),
+                    self.entity
+                        .components
+                        .iter()
+                        .filter(|c| {
+                            c.origin()
+                                .sig
+                                .short_name
+                                .to_lowercase()
+                                .contains(&filter.to_lowercase())
+                        })
+                        .map(|c| c.origin().sig().id)
+                        .collect::<Vec<usize>>(),
+                ]
+                .concat()
+            })
+            .map(|mut ids| {
+                ids.sort();
+                ids.dedup();
+                ids
+            })
     }
 
     pub fn align_to_grid(&mut self, grid: &Grid) -> Result<(), E> {
@@ -633,8 +640,10 @@ impl Render<Composition> {
         if self.hidden {
             return Ok(Vec::new());
         }
+        let mut stored: Vec<usize> = Vec::new();
         fn scan(
             found: &mut Vec<ElementCoors>,
+            stored: &mut Vec<usize>,
             ports: &Representation<Ports>,
             ids: &[usize],
             own_relative: Relative,
@@ -652,6 +661,10 @@ impl Render<Composition> {
                         let view = &render.view.container;
                         let (x, y) = view.get_coors_with_zoom(relative);
                         let (w, h) = view.get_box_size();
+                        if stored.contains(&p.sig().id) {
+                            return;
+                        }
+                        stored.push(p.sig().id);
                         found.push((
                             p.sig().id.to_string(),
                             ElementType::Port,
@@ -670,6 +683,7 @@ impl Render<Composition> {
         for component in self.entity.components.iter() {
             scan(
                 &mut found,
+                &mut stored,
                 &component.origin().ports,
                 ids,
                 component.render()?.own_relative(),
@@ -680,6 +694,7 @@ impl Render<Composition> {
         for composition in self.entity.compositions.iter() {
             scan(
                 &mut found,
+                &mut stored,
                 &composition.origin().ports,
                 ids,
                 composition.render()?.own_relative(),
@@ -689,6 +704,7 @@ impl Render<Composition> {
         }
         scan(
             &mut found,
+            &mut stored,
             &self.origin().ports,
             ids,
             self.own_relative(),
