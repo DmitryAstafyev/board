@@ -119,7 +119,7 @@ impl Render<Composition> {
             })
             .collect::<Vec<Representation<Connection>>>();
         entity.ports = if let Representation::Origin(ports) = entity.ports {
-            Representation::Render(Render::<Ports>::new(ports, options))
+            Representation::Render(Render::<Ports>::new(ports, options, true))
         } else {
             entity.ports
         };
@@ -935,7 +935,8 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 sig: sig_producer.next_for("joined port IN"),
                 port_type: PortType::In,
                 contains: ports_in,
-                connected: 0,
+                p_connected: 0,
+                r_connected: 0,
                 visibility: true,
             };
             let joined_port_out = Port {
@@ -945,7 +946,8 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 sig: sig_producer.next_for("joined port OUT"),
                 port_type: PortType::Out,
                 contains: ports_out,
-                connected: 0,
+                p_connected: 0,
+                r_connected: 0,
                 visibility: true,
             };
             added_connections.push(Representation::Origin(Connection {
@@ -1048,7 +1050,8 @@ pub fn group_unbound_ports(
                     sig: sig_producer.next_for("unbound grouped"),
                     port_type: PortType::Unbound,
                     contains: unbound_ports,
-                    connected: 0,
+                    p_connected: 0,
+                    r_connected: 0,
                     visibility: true,
                 }),
                 Some(0),
@@ -1080,7 +1083,8 @@ pub fn group_unbound_ports(
                 required_interface: None,
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
-                connected: 0,
+                p_connected: 0,
+                r_connected: 0,
                 visibility: true,
             }),
             Some(0),
@@ -1111,7 +1115,8 @@ pub fn group_unbound_ports(
                 sig: sig_producer.next_for("unbound grouped"),
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
-                connected: 0,
+                p_connected: 0,
+                r_connected: 0,
                 visibility: true,
             }),
             Some(0),

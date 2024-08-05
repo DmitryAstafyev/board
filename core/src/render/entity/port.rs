@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 use crate::{
     entity::{Port, PortType, Ports, Signature, SignatureGetter},
     error::E,
@@ -102,13 +104,13 @@ impl<'a> Filter<'a> {
     }
 }
 impl Render<Ports> {
-    pub fn new(mut entity: Ports, options: &Options) -> Self {
+    pub fn new(mut entity: Ports, options: &Options, composition: bool) -> Self {
         entity.ports = entity
             .ports
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(port) = r {
-                    Representation::Render(Render::<Port>::new(port, options))
+                    Representation::Render(Render::<Port>::new(port, options, composition))
                 } else {
                     r
                 }
@@ -281,7 +283,7 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Port> {
 }
 
 impl Render<Port> {
-    pub fn new(entity: Port, options: &Options) -> Self {
+    pub fn new(entity: Port, options: &Options, composition: bool) -> Self {
         let id = entity.sig.id;
         let label = if entity.contains.is_empty() {
             entity.get_label(options)
@@ -295,7 +297,9 @@ impl Render<Port> {
             PortType::In | PortType::Unbound => label::Align::Right,
         };
         let ratio = options.ratio();
-        let connected = entity.connected;
+        let p_connected = entity.p_connected;
+        let r_connected = entity.r_connected;
+        let connected = p_connected + r_connected;
         let badge = entity
             .provided_interface
             .as_ref()
@@ -356,10 +360,16 @@ impl Render<Port> {
                                 label,
                                 if unbound_port {
                                     Some("unlinked".to_string())
-                                } else if connected <= 1 {
+                                } else if !composition {
+                                    if connected <= 1 {
+                                        None
+                                    } else {
+                                        Some(format!("{connected} linked"))
+                                    }
+                                } else if connected == 0 {
                                     None
                                 } else {
-                                    Some(format!("{connected} linked"))
+                                    Some(format!("P:{p_connected}; R:{r_connected}"))
                                 },
                                 badge,
                                 4,

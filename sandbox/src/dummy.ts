@@ -26,7 +26,8 @@ export function getDummyComposition(
                 visibility: true,
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
-                connected: 0,
+                p_connected: 0,
+                r_connected: 0,
                 contains: [],
             });
         }
@@ -85,7 +86,8 @@ export function getDummyComposition(
                 port_type: Math.random() > 0.5 ? PortType.In : PortType.Out,
                 sig: getSignature(),
                 visibility: true,
-                connected: 0,
+                p_connected: 0,
+                r_connected: 0,
                 contains: [],
             },
         });

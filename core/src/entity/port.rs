@@ -19,7 +19,8 @@ pub struct Port {
     pub provided_required_interface: Option<Signature>,
     pub required_interface: Option<Signature>,
     pub contains: Vec<usize>,
-    pub connected: usize,
+    pub p_connected: usize,
+    pub r_connected: usize,
     pub visibility: bool,
 }
 

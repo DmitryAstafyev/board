@@ -65,7 +65,8 @@ function load(parent, elements, holder) {
                                         : null,
                                     port_type: board_1.PortType.Unbound,
                                     visibility: true,
-                                    connected: 0,
+                                    p_connected: 0,
+                                    r_connected: 0,
                                     contains: [],
                                 },
                             };
@@ -118,7 +119,8 @@ function load(parent, elements, holder) {
                                             ? getSignatureFromEl(required_interface)
                                             : null,
                                         port_type: board_1.PortType.Unbound,
-                                        connected: 0,
+                                        p_connected: 0,
+                                        r_connected: 0,
                                         visibility: true,
                                         contains: [],
                                     },
@@ -138,7 +140,8 @@ function load(parent, elements, holder) {
         }
     });
     let notFoundConnectors = 0;
-    let counts = new Map();
+    const pCounts = new Map();
+    const rCounts = new Map();
     parent.connector.forEach((connectionId) => {
         const connection = (() => {
             try {
@@ -217,10 +220,10 @@ function load(parent, elements, holder) {
         pPortRef[0].Origin.visibility = true;
         rPortRef[0].Origin.port_type = board_1.PortType.In;
         rPortRef[0].Origin.visibility = true;
-        let count = counts.get(pPortRef[0].Origin.sig.id);
-        counts.set(pPortRef[0].Origin.sig.id, count === undefined ? 1 : count + 1);
-        count = counts.get(rPortRef[0].Origin.sig.id);
-        counts.set(rPortRef[0].Origin.sig.id, count === undefined ? 1 : count + 1);
+        let count = pCounts.get(pPortRef[0].Origin.sig.id);
+        pCounts.set(pPortRef[0].Origin.sig.id, count === undefined ? 1 : count + 1);
+        count = rCounts.get(rPortRef[0].Origin.sig.id);
+        rCounts.set(rPortRef[0].Origin.sig.id, count === undefined ? 1 : count + 1);
         holder.connections.push({
             Origin: {
                 sig: {
@@ -242,20 +245,23 @@ function load(parent, elements, holder) {
             },
         });
     });
+    const updateCounts = (port) => {
+        const pCount = pCounts.get(port.sig.id);
+        port.p_connected = pCount === undefined ? port.p_connected : pCount;
+        const rCount = rCounts.get(port.sig.id);
+        port.r_connected = rCount === undefined ? port.r_connected : rCount;
+    };
     holder.ports.Origin.ports.forEach((port) => {
-        const count = counts.get(port.Origin.sig.id);
-        port.Origin.connected = count === undefined ? 0 : count;
+        updateCounts(port.Origin);
     });
     holder.components.forEach((comp) => {
         comp.Origin.ports.Origin.ports.forEach((port) => {
-            const count = counts.get(port.Origin.sig.id);
-            port.Origin.connected = count === undefined ? 0 : count;
+            updateCounts(port.Origin);
         });
     });
     holder.compositions.forEach((comp) => {
         comp.Origin.ports.Origin.ports.forEach((port) => {
-            const count = counts.get(port.Origin.sig.id);
-            port.Origin.connected = count === undefined ? 0 : count;
+            updateCounts(port.Origin);
         });
     });
     if (notFoundConnectors > 0) {

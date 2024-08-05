@@ -21,7 +21,7 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Component> {
 impl Render<Component> {
     pub fn new(mut entity: Component, options: &Options, mut ty: Option<ElementType>) -> Self {
         entity.ports = if let Representation::Origin(ports) = entity.ports {
-            Representation::Render(Render::<Ports>::new(ports, options))
+            Representation::Render(Render::<Ports>::new(ports, options, false))
         } else {
             entity.ports
         };

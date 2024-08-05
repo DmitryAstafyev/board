@@ -59,6 +59,7 @@ impl Composition {
             ports: Representation::Render(Render::<Ports>::new(
                 self.ports.origin().clone(),
                 options,
+                true,
             )),
             composition: true,
         }
