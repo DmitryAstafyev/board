@@ -810,27 +810,28 @@ export class Board extends Subscriber {
         if (coors.length === 0) {
             return;
         }
-        const used = this.board.get_size() as [number, number];
-        if (used[0] < this.size.width) {
-            return;
-        }
         const coor = coors[0][2] as unknown as [number, number, number, number];
-        const left = coor[0] + (coor[2] - coor[0]) / 2;
-        const x_middle = this.size.width / 2;
-        if (left > x_middle) {
-            this.position.x -= (left - x_middle) / this.position.zoom;
-        } else {
-            this.position.x += (x_middle - left) / this.position.zoom;
+        const used = this.board.get_size() as [number, number];
+        if (used[0] > this.size.width) {
+            const left = coor[0] + (coor[2] - coor[0]) / 2;
+            const x_middle = this.size.width / 2;
+            if (left > x_middle) {
+                this.position.x -= (left - x_middle) / this.position.zoom;
+            } else {
+                this.position.x += (x_middle - left) / this.position.zoom;
+            }
+            this.validate().x();
         }
-        this.validate().x();
-        const top = coor[1]; // do not consider height, because if it's component or composition, it might be too high
-        const y_middle = this.size.height / 2;
-        if (top > y_middle) {
-            this.position.y -= (top - y_middle) / this.position.zoom;
-        } else {
-            this.position.y += (y_middle - top) / this.position.zoom;
+        if (used[1] > this.size.height) {
+            const top = coor[1]; // do not consider height, because if it's component or composition, it might be too high
+            const y_middle = this.size.height / 2;
+            if (top > y_middle) {
+                this.position.y -= (top - y_middle) / this.position.zoom;
+            } else {
+                this.position.y += (y_middle - top) / this.position.zoom;
+            }
+            this.validate().y();
         }
-        this.validate().y();
         this.scroll.moveTo(
             -this.position.x * this.position.zoom,
             -this.position.y * this.position.zoom
