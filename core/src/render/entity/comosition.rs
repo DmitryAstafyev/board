@@ -119,7 +119,7 @@ impl Render<Composition> {
             })
             .collect::<Vec<Representation<Connection>>>();
         entity.ports = if let Representation::Origin(ports) = entity.ports {
-            Representation::Render(Render::<Ports>::new(ports, options, true))
+            Representation::Render(Render::<Ports>::new(ports, options))
         } else {
             entity.ports
         };
@@ -393,6 +393,7 @@ impl Render<Composition> {
         options: &Options,
     ) -> Result<(), E> {
         let relative = &state.get_view_relative();
+        let root_composition_id = self.entity.sig.id;
         // Create composition grid
         let mut composition_grid = Grid::new(&options.grid, options.ratio());
         for composition in self.entity.compositions.iter_mut() {
@@ -414,7 +415,7 @@ impl Render<Composition> {
             }
             component
                 .render_mut()?
-                .calc(context, relative, options, state)?;
+                .calc(context, relative, options, state, root_composition_id)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
         let mut dependencies: Vec<(usize, usize)> = Vec::new();
@@ -466,6 +467,7 @@ impl Render<Composition> {
             relative,
             options,
             state,
+            root_composition_id,
         )?;
         composition_grid
             .set_min_height(self.entity.ports.render_mut()?.height(state, options) as u32);
@@ -935,8 +937,7 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 sig: sig_producer.next_for("joined port IN"),
                 port_type: PortType::In,
                 contains: ports_in,
-                p_connected: 0,
-                r_connected: 0,
+                connected: HashMap::new(),
                 visibility: true,
             };
             let joined_port_out = Port {
@@ -946,8 +947,7 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 sig: sig_producer.next_for("joined port OUT"),
                 port_type: PortType::Out,
                 contains: ports_out,
-                p_connected: 0,
-                r_connected: 0,
+                connected: HashMap::new(),
                 visibility: true,
             };
             added_connections.push(Representation::Origin(Connection {
@@ -1050,8 +1050,7 @@ pub fn group_unbound_ports(
                     sig: sig_producer.next_for("unbound grouped"),
                     port_type: PortType::Unbound,
                     contains: unbound_ports,
-                    p_connected: 0,
-                    r_connected: 0,
+                    connected: HashMap::new(),
                     visibility: true,
                 }),
                 Some(0),
@@ -1083,8 +1082,7 @@ pub fn group_unbound_ports(
                 required_interface: None,
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
-                p_connected: 0,
-                r_connected: 0,
+                connected: HashMap::new(),
                 visibility: true,
             }),
             Some(0),
@@ -1115,8 +1113,7 @@ pub fn group_unbound_ports(
                 sig: sig_producer.next_for("unbound grouped"),
                 port_type: PortType::Unbound,
                 contains: unbound_ports,
-                p_connected: 0,
-                r_connected: 0,
+                connected: HashMap::new(),
                 visibility: true,
             }),
             Some(0),

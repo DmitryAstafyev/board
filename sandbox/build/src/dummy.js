@@ -15,8 +15,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
                 visibility: true,
                 port_type: Math.random() > 0.5 ? board_1.PortType.In : board_1.PortType.Out,
                 sig: (0, types_1.getSignature)(),
-                p_connected: 0,
-                r_connected: 0,
+                connected: new Map(),
                 contains: [],
             });
         }
@@ -75,8 +74,7 @@ function getDummyComposition(comps, portsPerComp, deep, parent) {
                 port_type: Math.random() > 0.5 ? board_1.PortType.In : board_1.PortType.Out,
                 sig: (0, types_1.getSignature)(),
                 visibility: true,
-                p_connected: 0,
-                r_connected: 0,
+                connected: new Map(),
                 contains: [],
             },
         });

@@ -21,7 +21,7 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Component> {
 impl Render<Component> {
     pub fn new(mut entity: Component, options: &Options, mut ty: Option<ElementType>) -> Self {
         entity.ports = if let Representation::Origin(ports) = entity.ports {
-            Representation::Render(Render::<Ports>::new(ports, options, false))
+            Representation::Render(Render::<Ports>::new(ports, options))
         } else {
             entity.ports
         };
@@ -74,6 +74,7 @@ impl Render<Component> {
         relative: &Relative,
         options: &Options,
         state: &State,
+        root: usize,
     ) -> Result<(), E> {
         // Calc ports
         let self_relative = self.relative(relative);
@@ -83,6 +84,7 @@ impl Render<Component> {
             &self_relative,
             options,
             state,
+            root,
         )?;
         let min_height = options.ratio().get(MIN_HEIGHT);
         // Set self size

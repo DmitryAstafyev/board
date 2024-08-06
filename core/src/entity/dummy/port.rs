@@ -1,4 +1,4 @@
-use std::ops::RangeInclusive;
+use std::{collections::HashMap, ops::RangeInclusive};
 
 use crate::entity::{
     dummy::{Dummy, SignatureProducer},
@@ -20,8 +20,7 @@ impl Dummy<Port, ()> for Port {
                 PortType::Out
             },
             contains: Vec::new(),
-            p_connected: 0,
-            r_connected: 0,
+            connected: HashMap::new(),
             visibility: true,
         }
     }

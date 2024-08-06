@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use crate::{
     entity::{Port, PortType, Ports, Signature, SignatureGetter},
     error::E,
@@ -104,13 +102,13 @@ impl<'a> Filter<'a> {
     }
 }
 impl Render<Ports> {
-    pub fn new(mut entity: Ports, options: &Options, composition: bool) -> Self {
+    pub fn new(mut entity: Ports, options: &Options) -> Self {
         entity.ports = entity
             .ports
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(port) = r {
-                    Representation::Render(Render::<Port>::new(port, options, composition))
+                    Representation::Render(Render::<Port>::new(port, options))
                 } else {
                     r
                 }
@@ -162,10 +160,11 @@ impl Render<Ports> {
         relative: &Relative,
         options: &Options,
         state: &State,
+        root: usize,
     ) -> Result<(), E> {
         // Calc ports
         for port in self.filter().all(state) {
-            port.render_mut()?.calc(context, relative, options)?;
+            port.render_mut()?.calc(context, relative, options, root)?;
         }
         let ratio = options.ratio();
         let padding = ratio.get(PORTS_VERTICAL_OFFSET);
@@ -283,7 +282,7 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Port> {
 }
 
 impl Render<Port> {
-    pub fn new(entity: Port, options: &Options, composition: bool) -> Self {
+    pub fn new(entity: Port, options: &Options) -> Self {
         let id = entity.sig.id;
         let label = if entity.contains.is_empty() {
             entity.get_label(options)
@@ -297,9 +296,6 @@ impl Render<Port> {
             PortType::In | PortType::Unbound => label::Align::Right,
         };
         let ratio = options.ratio();
-        let p_connected = entity.p_connected;
-        let r_connected = entity.r_connected;
-        let connected = p_connected + r_connected;
         let badge = entity
             .provided_interface
             .as_ref()
@@ -328,7 +324,6 @@ impl Render<Port> {
                     )
                 })
             });
-        let unbound_port = matches!(entity.port_type, PortType::Unbound);
         Self {
             entity,
             view: View {
@@ -358,19 +353,7 @@ impl Render<Port> {
                                 0,
                                 0,
                                 label,
-                                if unbound_port {
-                                    Some("unlinked".to_string())
-                                } else if !composition {
-                                    if connected <= 1 {
-                                        None
-                                    } else {
-                                        Some(format!("{connected} linked"))
-                                    }
-                                } else if connected == 0 {
-                                    None
-                                } else {
-                                    Some(format!("P:{p_connected}; R:{r_connected}"))
-                                },
+                                None,
                                 badge,
                                 4,
                                 id.to_string(),
@@ -395,7 +378,19 @@ impl Render<Port> {
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
         _options: &Options,
+        root: usize,
     ) -> Result<(), E> {
+        if let Form::Label(_, form) = &mut self.view.container.form {
+            let unbound_port = matches!(self.entity.port_type, PortType::Unbound);
+            let connected = *self.entity.connected.get(&root).unwrap_or(&0);
+            form.subtitle = if unbound_port {
+                Some("unlinked".to_string())
+            } else if connected <= 1 {
+                None
+            } else {
+                Some(format!("{connected} linked"))
+            };
+        }
         self.view.container.form.calc(context, relative);
         Ok(())
     }

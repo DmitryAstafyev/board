@@ -23,8 +23,7 @@ export interface Port {
     required_interface: Signature | null;
     visibility: boolean;
     contains: number[];
-    p_connected: number;
-    r_connected: number;
+    connected: Map<number, number>;
 }
 
 export interface Representation<T> {

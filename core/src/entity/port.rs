@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     entity::{EntityProps, Signature, SignatureGetter},
     render::{options::Options, Representation},
@@ -19,8 +21,7 @@ pub struct Port {
     pub provided_required_interface: Option<Signature>,
     pub required_interface: Option<Signature>,
     pub contains: Vec<usize>,
-    pub p_connected: usize,
-    pub r_connected: usize,
+    pub connected: HashMap<usize, usize>,
     pub visibility: bool,
 }
 
