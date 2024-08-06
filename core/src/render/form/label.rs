@@ -34,6 +34,7 @@ pub struct Label {
     pub label: String,
     pub subtitle: Option<String>,
     pub badge: Option<(String, String, String)>,
+    pub subbadge: Option<(String, String, String)>,
     pub padding: i32,
     pub id: String,
     pub align: Align,
@@ -51,6 +52,8 @@ impl Label {
         subtitle: Option<String>,
         // value, bk_color, fg_color
         badge: Option<(String, String, String)>,
+        // value, bk_color, fg_color
+        subbadge: Option<(String, String, String)>,
         padding: i32,
         id: String,
         align: Align,
@@ -65,6 +68,7 @@ impl Label {
             label,
             subtitle,
             badge,
+            subbadge,
             padding: ratio.get(padding),
             id,
             align,
@@ -154,6 +158,26 @@ impl Label {
             };
             context.set_fill_style(&JsValue::from_str(bk_c));
             context.fill_rect(x, y + p, bw + p * 2.0, h);
+            context.set_fill_style(&JsValue::from_str(fg_c));
+            let _ = context.fill_text(badge, x + p, y + p * 2.0);
+        }
+        if let Some((badge, bk_c, fg_c)) = &self.subbadge {
+            context.set_font(&format!("{}px serif", (self.h as f64 * 0.4).round()));
+            let bw = if let Ok(metric) = context.measure_text(badge) {
+                metric.width()
+            } else {
+                36f64
+            };
+            let h = self.h as f64 * 0.7;
+            let p = self.h as f64 * 0.15;
+            let x = match self.align {
+                Align::Left => x + self.w as f64 + p,
+                Align::Right => x - bw - p * 3.0,
+            };
+            context.set_fill_style(&JsValue::from_str(bk_c));
+            context.fill_rect(x, y + p, bw + p * 2.0, h);
+            // context.set_stroke_style(&JsValue::from_str(fg_c));
+            // context.stroke_rect(x, y + p, bw + p * 2.0, h);
             context.set_fill_style(&JsValue::from_str(fg_c));
             let _ = context.fill_text(badge, x + p, y + p * 2.0);
         }

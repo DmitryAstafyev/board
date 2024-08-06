@@ -355,6 +355,7 @@ impl Render<Port> {
                                 label,
                                 None,
                                 badge,
+                                None,
                                 4,
                                 id.to_string(),
                                 align,
@@ -390,6 +391,18 @@ impl Render<Port> {
             } else {
                 Some(format!("{connected} linked"))
             };
+            form.subbadge = self
+                .entity
+                .connected
+                .iter()
+                .find(|(id, _)| id != &&root)
+                .map(|(_, connected)| {
+                    (
+                        connected.to_string(),
+                        "rgb(240,240,240)".to_owned(),
+                        "rgb(25,25,25)".to_owned(),
+                    )
+                });
         }
         self.view.container.form.calc(context, relative);
         Ok(())

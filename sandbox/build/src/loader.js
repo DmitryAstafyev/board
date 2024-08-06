@@ -245,11 +245,7 @@ function load(parent, elements, holder) {
     const updateCounts = (port) => {
         const count = counts.get(port.sig.id);
         if (count !== undefined) {
-            port.connected.set(parent.id, count);
-        }
-        if (port.sig.id == 2348814760) {
-            console.log(port);
-            console.log(`PARENT: ${parent.id}/${holder.sig.id}: ${parent.shortName}`);
+            port.connected.set(holder.sig.id, count);
         }
     };
     holder.ports.Origin.ports.forEach((port) => {
