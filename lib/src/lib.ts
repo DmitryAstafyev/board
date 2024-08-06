@@ -556,9 +556,6 @@ export class Board extends Subscriber {
             return;
         }
         this.board.unselect_all();
-        console.log(
-            `>>>>>>>>>>>>>>>> JS goto: ${composition.sig.id}; ${composition.sig.short_name}`
-        );
         this.board.bind(composition);
         this.data.composition !== undefined &&
             this.history.set(this.data.composition, this.position.clone());
@@ -700,6 +697,7 @@ export class Board extends Subscriber {
     } {
         return {
             set: (filter: string | undefined): void => {
+                this.highlight().set([]);
                 this._matches.filter =
                     filter === undefined
                         ? undefined

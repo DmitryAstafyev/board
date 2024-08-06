@@ -153,7 +153,6 @@ function real() {
                         matches_state.innerHTML = `${event.current}/${event.total} (${event.id})`;
                     }
                 });
-            console.log(`>>>>>>>>>>>>>>>> JS root: ${root.sig.id}`);
             board.bind(root);
             board.render();
         });

@@ -160,13 +160,13 @@ impl Render<Composition> {
         &mut self,
         filter: Option<String>,
     ) -> Option<(Vec<usize>, Vec<usize>, Vec<usize>)> {
-        // self.entity
-        //     .components
-        //     .retain(|c| c.render().map_or(true, |r| !r.is_composition()));
-        // self.entity
-        //     .compositions
-        //     .iter_mut()
-        //     .for_each(|c| c.render_mut().unwrap().show());
+        self.entity
+            .components
+            .retain(|c| c.render().map_or(true, |r| !r.is_composition()));
+        self.entity
+            .compositions
+            .iter_mut()
+            .for_each(|c| c.render_mut().unwrap().show());
         filter.as_ref().map(|filter| {
             let filtered = [
                 self.entity
