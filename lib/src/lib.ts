@@ -752,6 +752,7 @@ export class Board extends Subscriber {
             next: (): number | undefined => {
                 if (this._matches.ids.length === 0) {
                     this.subjects.get().onMatches.emit(undefined);
+                    this.render();
                     return undefined;
                 }
                 this._matches.currentIndex += 1;
@@ -775,6 +776,7 @@ export class Board extends Subscriber {
             prev: (): number | undefined => {
                 if (this._matches.ids.length === 0) {
                     this.subjects.get().onMatches.emit(undefined);
+                    this.render();
                     return undefined;
                 }
                 this._matches.currentIndex -= 1;
