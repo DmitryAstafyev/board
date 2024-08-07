@@ -745,7 +745,7 @@ impl Render<Composition> {
     }
 
     /// Returns information about single connection
-    pub fn get_connection_info(&self, port: usize) -> Option<(ConnectionData, ConnectionData)> {
+    pub fn get_connection(&self, port: usize) -> Option<(ConnectionData, ConnectionData)> {
         self.entity
             .connections
             .iter()
@@ -777,10 +777,7 @@ impl Render<Composition> {
     }
 
     /// Returns information about all connections related to port
-    pub fn get_connections_info_by_port(
-        &self,
-        port: usize,
-    ) -> Vec<(ConnectionData, ConnectionData)> {
+    pub fn get_connections(&self, port: usize) -> Vec<(ConnectionData, ConnectionData)> {
         self.entity
             .connections
             .iter()
@@ -813,7 +810,7 @@ impl Render<Composition> {
     }
 
     /// Returns information about all connections related to component
-    pub fn get_connections_info_by_component(
+    pub fn get_connections_by_component(
         &self,
         component: usize,
     ) -> Vec<(ConnectionData, ConnectionData)> {
@@ -864,8 +861,12 @@ impl Render<Composition> {
     }
 
     fn find_port<'a>(&'a self, parent_id: &usize, port_id: &usize) -> Option<&'a Port> {
-        self.find_entity(parent_id)
-            .and_then(|entry| entry.ports().origin().find(port_id).map(|p| p.origin()))
+        if self.sig().id == *parent_id {
+            self.get_port(*port_id)
+        } else {
+            self.find_entity(parent_id)
+                .and_then(|entry| entry.ports().origin().find(port_id).map(|p| p.origin()))
+        }
     }
 }
 

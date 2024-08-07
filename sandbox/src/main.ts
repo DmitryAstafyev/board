@@ -86,8 +86,8 @@ function real() {
             board.subjects.get().onPortClick.subscribe((event) => {
                 console.log(`Click on: ${event}`);
                 console.log(board.getPort(event));
-                console.log(board.getPortsProps());
-                console.log(board.getCompsProps());
+                // console.log(board.getPortsProps());
+                // console.log(board.getCompsProps());
             });
             board.subjects.get().onComponentHover.subscribe((event) => {});
             board.subjects.get().onSelectionChange.subscribe((event) => {

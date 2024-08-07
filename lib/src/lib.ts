@@ -41,12 +41,15 @@ import("core")
 const CLICK_DURATION = 250;
 const SCROLLBAR_SIZE = 16;
 
-export interface ConnectionInfo {
+export interface ConnectionSide {
     port: number;
     contains: number[];
     component: number;
 }
-
+export interface ConnectionInfo {
+    outter: ConnectionSide;
+    inner: ConnectionSide;
+}
 type IncomeConnectionInfo = [number, number[], number];
 
 export interface PortHoverEvent {
@@ -70,6 +73,11 @@ export interface MatchesEvent {
 export interface ILocation {
     id: number;
     sig: Types.Signature;
+}
+export interface SelectionEvent {
+    components: number[];
+    ports: number[];
+    connections: ConnectionInfo[];
 }
 export class Board extends Subscriber {
     protected readonly board: Core.Board;
@@ -176,8 +184,34 @@ export class Board extends Subscriber {
         this.setSize();
         this.board = new wasm.core.Board(
             options,
+            // [components_id[], ports_id[]]
             (event: [number[], number[]]) => {
-                this.subjects.get().onSelectionChange.emit(event);
+                setTimeout(() => {
+                    const components = event[0];
+                    const ports = event[1];
+                    let connections: ConnectionInfo[] = [];
+                    components.forEach((id) => {
+                        const data = this.getConnectionsByComponent(id);
+                        data !== undefined &&
+                            (connections = connections.concat(
+                                connections,
+                                data
+                            ));
+                    });
+                    ports.forEach((id) => {
+                        const data = this.getConnections(id);
+                        data !== undefined &&
+                            (connections = connections.concat(
+                                connections,
+                                data
+                            ));
+                    });
+                    this.subjects.get().onSelectionChange.emit({
+                        components,
+                        ports,
+                        connections,
+                    });
+                }, 0);
             }
         );
         this.board.attach(this.id);
@@ -339,7 +373,6 @@ export class Board extends Subscriber {
         if (!this.movement.processing) {
             return;
         }
-        const canvas = this.board.get_size();
         if (!this.position.xLocked) {
             this.position.x -=
                 (this.movement.x - event.screenX) / this.position.zoom;
@@ -597,8 +630,7 @@ export class Board extends Subscriber {
         onComponentHoverOver: Subject<void>;
         onPortHoverOver: Subject<void>;
         onPortClick: Subject<number>;
-        // [components_id[], ports_id[]]
-        onSelectionChange: Subject<[number[], number[]]>;
+        onSelectionChange: Subject<SelectionEvent>;
         onLocationChange: Subject<ILocation[]>;
         bound: Subject<void>;
         onMatches: Subject<MatchesEvent | undefined>;
@@ -609,7 +641,7 @@ export class Board extends Subscriber {
         onPortHover: new Subject<PortHoverEvent>(),
         onPortHoverOver: new Subject<void>(),
         onPortClick: new Subject<number>(),
-        onSelectionChange: new Subject<[number[], number[]]>(),
+        onSelectionChange: new Subject<SelectionEvent>(),
         onLocationChange: new Subject<ILocation[]>(),
         bound: new Subject<void>(),
         onMatches: new Subject<MatchesEvent | undefined>(),
@@ -840,16 +872,11 @@ export class Board extends Subscriber {
         this.render();
     }
 
-    public getConnectionInfo(port: number):
-        | {
-              outter: ConnectionInfo;
-              inner: ConnectionInfo;
-          }
-        | undefined {
+    public getConnection(port: number): ConnectionInfo | undefined {
         const info:
             | [IncomeConnectionInfo, IncomeConnectionInfo]
             | undefined
-            | string = this.board.get_connection_info(port);
+            | string = this.board.get_connection(port);
         if (typeof info === "string") {
             console.error(info);
             return undefined;
@@ -871,16 +898,11 @@ export class Board extends Subscriber {
         };
     }
 
-    public getConnectionsInfoByPort(port: number):
-        | {
-              outter: ConnectionInfo;
-              inner: ConnectionInfo;
-          }[]
-        | undefined {
+    public getConnections(port: number): ConnectionInfo[] | undefined {
         const info:
             | [IncomeConnectionInfo, IncomeConnectionInfo][]
             | undefined
-            | string = this.board.get_connections_info_by_port(port);
+            | string = this.board.get_connections(port);
         if (typeof info === "string") {
             console.error(info);
             return undefined;
@@ -904,16 +926,13 @@ export class Board extends Subscriber {
         });
     }
 
-    public getConnectionsInfoByComponent(component: number):
-        | {
-              outter: ConnectionInfo;
-              inner: ConnectionInfo;
-          }[]
-        | undefined {
+    public getConnectionsByComponent(
+        component: number
+    ): ConnectionInfo[] | undefined {
         const info:
             | [IncomeConnectionInfo, IncomeConnectionInfo][]
             | undefined
-            | string = this.board.get_connections_info_by_component(component);
+            | string = this.board.get_connections_by_component(component);
         if (typeof info === "string") {
             console.error(info);
             return undefined;
