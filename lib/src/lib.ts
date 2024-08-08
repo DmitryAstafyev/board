@@ -578,7 +578,7 @@ export class Board extends Subscriber {
         this.updateSize();
     }
 
-    protected goToComposition(id: number) {
+    public goToComposition(id: number) {
         if (this.data.root === undefined) {
             return;
         }
@@ -765,7 +765,7 @@ export class Board extends Subscriber {
                         : this._matches.currentIndex;
                 this._matches.currentId =
                     this._matches.ids[this._matches.currentIndex];
-                this.goTo(this._matches.currentId);
+                this.alignTo(this._matches.currentId);
                 this.subjects.get().onMatches.emit({
                     total: this._matches.ids.length,
                     current: this._matches.currentIndex,
@@ -789,7 +789,7 @@ export class Board extends Subscriber {
                         : this._matches.currentIndex;
                 this._matches.currentId =
                     this._matches.ids[this._matches.currentIndex];
-                this.goTo(this._matches.currentId);
+                this.alignTo(this._matches.currentId);
                 this.subjects.get().onMatches.emit({
                     total: this._matches.ids.length,
                     current: this._matches.currentIndex,
@@ -838,7 +838,7 @@ export class Board extends Subscriber {
         return this.board.get_coors_by_ids(Uint32Array.from(ids));
     }
 
-    public goTo(id: number) {
+    public alignTo(id: number) {
         this.highlight().set([]);
         const coors = this.getCoorsByIds([id]);
         if (coors.length === 0) {
