@@ -578,51 +578,6 @@ export class Board extends Subscriber {
         this.updateSize();
     }
 
-    public goToComposition(id: number) {
-        if (this.data.root === undefined) {
-            return;
-        }
-        this.matches().drop();
-        const composition = Types.getComposition(this.data.root, id);
-        if (composition === undefined) {
-            console.log(`Fail to find composition ID: ${id}`);
-            return;
-        }
-        this.board.unselect_all();
-        this.board.bind(composition);
-        this.data.composition !== undefined &&
-            this.history.set(this.data.composition, this.position.clone());
-        if (
-            this.data.history.length > 0 &&
-            this.data.history[this.data.history.length - 1].id == id
-        ) {
-            this.data.history.pop();
-        } else {
-            this.data.composition !== undefined &&
-                this.data.history.push({
-                    id: this.data.composition,
-                    sig: composition.sig,
-                });
-        }
-        this.data.composition = id;
-        this.data.grouped = this.board.get_grouped_ports();
-        const recent = this.history.get(id);
-        if (recent !== undefined) {
-            this.position = Position.from(recent);
-        } else {
-            this.position.dropCoors();
-        }
-        this.updateSize();
-        this.subjects.get().bound.emit();
-        this.subjects
-            .get()
-            .onLocationChange.emit(
-                [{ id: this.data.root.sig.id, sig: this.data.root.sig }].concat(
-                    this.data.history
-                )
-            );
-    }
-
     public readonly subjects: Subjects<{
         onComponentHover: Subject<HoverMouseEvent>;
         onComponentClick: Subject<number>;
@@ -666,6 +621,7 @@ export class Board extends Subscriber {
         this.updateSize();
         this.data.composition = composition.sig.id;
         this.data.root = composition;
+        this.data.history = [{ id: composition.sig.id, sig: composition.sig }];
         this.data.grouped = this.getGroupedPorts();
         this.subjects.get().bound.emit();
         this.subjects
@@ -689,12 +645,46 @@ export class Board extends Subscriber {
         this.board.render();
     }
 
+    public goToComposition(id: number) {
+        if (this.data.root === undefined) {
+            return;
+        }
+        this.matches().drop();
+        const composition = Types.getComposition(this.data.root, id);
+        if (composition === undefined) {
+            console.log(`Fail to find composition ID: ${id}`);
+            return;
+        }
+        this.board.unselect_all();
+        this.board.bind(composition);
+        this.data.composition !== undefined &&
+            this.history.set(this.data.composition, this.position.clone());
+        const pos = this.data.history.findIndex((el) => el.id === id);
+        pos !== -1 && this.data.history.splice(pos, this.data.history.length);
+        this.data.composition !== undefined &&
+            this.data.history.push({
+                id,
+                sig: composition.sig,
+            });
+        this.data.composition = id;
+        this.data.grouped = this.board.get_grouped_ports();
+        const recent = this.history.get(id);
+        if (recent !== undefined) {
+            this.position = Position.from(recent);
+        } else {
+            this.position.dropCoors();
+        }
+        this.updateSize();
+        this.subjects.get().bound.emit();
+        this.subjects.get().onLocationChange.emit(this.data.history);
+    }
+
     public toPrevComposition() {
-        if (this.data.history.length === 0) {
+        if (this.data.history.length <= 1) {
             return;
         }
         this.goToComposition(
-            this.data.history[this.data.history.length - 1].id
+            this.data.history[this.data.history.length - 2].id
         );
     }
 
