@@ -274,6 +274,60 @@ impl Render<Composition> {
             })
     }
 
+    pub fn get_matches_extended(
+        &mut self,
+        filter: Option<String>,
+    ) -> Option<Vec<(usize, Option<usize>)>> {
+        filter
+            .as_ref()
+            .map(|filter| {
+                [
+                    self.entity
+                        .components
+                        .iter()
+                        .flat_map(|c| {
+                            c.origin()
+                                .ports
+                                .origin()
+                                .get_filtered_ports_expanded(filter)
+                        })
+                        .collect::<Vec<(usize, Option<usize>)>>(),
+                    self.entity
+                        .compositions
+                        .iter()
+                        .flat_map(|c| {
+                            c.origin()
+                                .ports
+                                .origin()
+                                .get_filtered_ports_expanded(filter)
+                        })
+                        .collect::<Vec<(usize, Option<usize>)>>(),
+                    self.entity
+                        .ports
+                        .origin()
+                        .get_filtered_ports_expanded(filter),
+                    self.entity
+                        .components
+                        .iter()
+                        .filter(|c| {
+                            c.origin()
+                                .sig
+                                .short_name
+                                .to_lowercase()
+                                .contains(&filter.to_lowercase())
+                        })
+                        .map(|c| (c.origin().sig().id, None))
+                        .collect::<Vec<(usize, Option<usize>)>>(),
+                ]
+                .concat()
+            })
+            .map(|mut ids| {
+                ids.sort_by(|(a, _), (b, _)| a.cmp(b));
+                ids.dedup_by(|(a, _), (b, _)| a.eq(&b));
+                ids
+            })
+    }
+
     pub fn align_to_grid(&mut self, grid: &Grid) -> Result<(), E> {
         for comp in self.entity.components.iter_mut() {
             let relative = grid.relative(comp.sig().id);

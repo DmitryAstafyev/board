@@ -119,6 +119,7 @@ function real() {
                 else {
                     matches_state.innerHTML = `${event.current}/${event.total} (${event.id})`;
                 }
+                console.log(board.matches().extended());
             });
             board.bind(root);
             board.render();

@@ -202,4 +202,36 @@ impl Ports {
             .map(|p| p.sig().id)
             .collect()
     }
+
+    pub fn get_filtered_ports_expanded(&self, filter: &str) -> Vec<(usize, Option<usize>)> {
+        fn is_filtered(filter: &str, origin: &Port) -> bool {
+            origin
+                .sig
+                .short_name
+                .to_lowercase()
+                .contains(&filter.to_lowercase())
+        }
+        let ports = &self.ports;
+        let mut expanded = Vec::new();
+        ports.iter().for_each(|port| {
+            let origin = port.origin();
+            if origin.visibility {
+                if origin.contains.is_empty() {
+                    if is_filtered(filter, origin) {
+                        expanded.push((port.sig().id, None));
+                    }
+                } else {
+                    let parent = Some(port.sig().id);
+                    origin.contains.iter().for_each(|port_id| {
+                        if let Some(port) = ports.iter().find(|p| &p.sig().id == port_id) {
+                            if is_filtered(filter, port.origin()) {
+                                expanded.push((*port_id, parent));
+                            }
+                        }
+                    });
+                }
+            }
+        });
+        expanded
+    }
 }

@@ -79,6 +79,11 @@ export interface SelectionEvent {
     ports: number[];
     connections: ConnectionInfo[];
 }
+export interface Match {
+    id: number;
+    holder: number | undefined;
+}
+
 export class Board extends Subscriber {
     protected readonly board: Core.Board;
     protected readonly canvas: HTMLCanvasElement;
@@ -134,11 +139,13 @@ export class Board extends Subscriber {
     };
     protected _matches: {
         ids: number[];
+        extended: Match[];
         filter: string | undefined;
         currentIndex: number;
         currentId: number | undefined;
     } = {
         ids: [],
+        extended: [],
         filter: undefined,
         currentIndex: -1,
         currentId: undefined,
@@ -713,6 +720,7 @@ export class Board extends Subscriber {
     public matches(): {
         set(filter: string | undefined): void;
         get(): number[];
+        extended(): Match[];
         next(): number | undefined;
         prev(): number | undefined;
         drop(): void;
@@ -738,6 +746,20 @@ export class Board extends Subscriber {
             },
             get: (): number[] => {
                 return this.board.get_matches();
+            },
+            extended: (): Match[] => {
+                return (
+                    this.board.get_extended_matches() as [
+                        number,
+                        number | null | undefined
+                    ][]
+                ).map((match: [number, number | null | undefined]) => {
+                    return {
+                        id: match[0],
+                        holder:
+                            typeof match[1] === "number" ? match[1] : match[0],
+                    };
+                });
             },
             next: (): number | undefined => {
                 if (this._matches.ids.length === 0) {

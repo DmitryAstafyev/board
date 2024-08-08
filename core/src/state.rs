@@ -78,6 +78,7 @@ pub struct State {
     // linked - ports linked to filtered ports
     // owners - components and compositions onwers of filtered and linked ports
     pub filtered: Option<(Vec<usize>, Vec<usize>, Vec<usize>)>,
+    pub matches_extended: Option<Vec<(usize, Option<usize>)>>,
     pub matches: Option<Vec<usize>>,
     pub highlighted: Option<Vec<usize>>,
     pub x: i32,
@@ -95,6 +96,7 @@ impl State {
             hovered: None,
             filtered: None,
             matches: None,
+            matches_extended: None,
             highlighted: None,
             hmargin,
             vmargin,
@@ -146,18 +148,27 @@ impl State {
         self.filtered.as_ref().map(|(ids, _, _)| ids)
     }
 
-    pub fn set_matches(&mut self, matches: Option<Vec<usize>>) {
+    pub fn set_matches(
+        &mut self,
+        matches: Option<Vec<usize>>,
+        extended: Option<Vec<(usize, Option<usize>)>>,
+    ) {
         self.matches = matches;
+        self.matches_extended = extended;
     }
 
     pub fn get_matches(&self) -> Option<&Vec<usize>> {
         self.matches.as_ref()
     }
 
-    pub fn is_match(&self, id: &usize) -> bool {
+    pub fn get_extended_matches(&self) -> Option<&Vec<(usize, Option<usize>)>> {
+        self.matches_extended.as_ref()
+    }
+
+    pub fn is_match(&self, port_id: &usize) -> bool {
         self.matches
             .as_ref()
-            .map(|ids| ids.contains(id))
+            .map(|ids| ids.contains(port_id))
             .unwrap_or(false)
     }
 

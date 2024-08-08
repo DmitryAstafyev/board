@@ -231,12 +231,24 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn set_matches(&mut self, filter: Option<String>) {
-        self.state.set_matches(self.render.get_matches(filter));
+        self.state.set_matches(
+            self.render.get_matches(filter.clone()),
+            self.render.get_matches_extended(filter),
+        );
     }
 
     #[wasm_bindgen]
     pub fn get_matches(&self) -> Result<JsValue, String> {
-        serde_wasm_bindgen::to_value(&self.state.get_matches()).map_err(|e| e.to_string())
+        let empty = Vec::new();
+        let matches = self.state.get_matches().unwrap_or(&empty);
+        serde_wasm_bindgen::to_value(&matches).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_extended_matches(&self) -> Result<JsValue, String> {
+        let empty = Vec::new();
+        let matches = self.state.get_extended_matches().unwrap_or(&empty);
+        serde_wasm_bindgen::to_value(&matches).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
