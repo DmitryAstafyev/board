@@ -97,9 +97,13 @@ function real() {
                 'input[id="filter"]'
             ) as HTMLInputElement;
             filter.addEventListener("keyup", () => {
-                board.setFilter(
-                    filter.value.trim() === "" ? undefined : filter.value.trim()
-                );
+                board
+                    .filter()
+                    .set(
+                        filter.value.trim() === ""
+                            ? undefined
+                            : filter.value.trim()
+                    );
                 board.refresh();
             });
             filter.addEventListener("change", () => {

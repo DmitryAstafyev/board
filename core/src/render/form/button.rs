@@ -49,6 +49,7 @@ pub struct Button {
 
 impl Button {
     #[allow(clippy::too_many_arguments)]
+    #[allow(dead_code)]
     pub fn new(
         x: i32,
         y: i32,

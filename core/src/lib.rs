@@ -241,14 +241,34 @@ impl Board {
     pub fn get_matches(&self) -> Result<JsValue, String> {
         let empty = Vec::new();
         let matches = self.state.get_matches().unwrap_or(&empty);
-        serde_wasm_bindgen::to_value(&matches).map_err(|e| e.to_string())
+        if let Some(filtered) = self.state.get_filtered() {
+            serde_wasm_bindgen::to_value(
+                &matches
+                    .iter()
+                    .filter(|id| filtered.contains(id))
+                    .collect::<Vec<&usize>>(),
+            )
+            .map_err(|e| e.to_string())
+        } else {
+            serde_wasm_bindgen::to_value(&matches).map_err(|e| e.to_string())
+        }
     }
 
     #[wasm_bindgen]
     pub fn get_extended_matches(&self) -> Result<JsValue, String> {
         let empty = Vec::new();
         let matches = self.state.get_extended_matches().unwrap_or(&empty);
-        serde_wasm_bindgen::to_value(&matches).map_err(|e| e.to_string())
+        if let Some(filtered) = self.state.get_filtered() {
+            serde_wasm_bindgen::to_value(
+                &matches
+                    .iter()
+                    .filter(|(id, _)| filtered.contains(id))
+                    .collect::<Vec<&(usize, Option<usize>)>>(),
+            )
+            .map_err(|e| e.to_string())
+        } else {
+            serde_wasm_bindgen::to_value(&matches).map_err(|e| e.to_string())
+        }
     }
 
     #[wasm_bindgen]

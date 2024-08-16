@@ -79,7 +79,11 @@ function real() {
             });
             const filter = document.querySelector('input[id="filter"]');
             filter.addEventListener("keyup", () => {
-                board.setFilter(filter.value.trim() === "" ? undefined : filter.value.trim());
+                board
+                    .filter()
+                    .set(filter.value.trim() === ""
+                    ? undefined
+                    : filter.value.trim());
                 board.refresh();
             });
             filter.addEventListener("change", () => {

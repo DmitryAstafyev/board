@@ -68,7 +68,7 @@ export interface HoverMouseEvent {
 export interface MatchesEvent {
     total: number;
     current: number;
-    id: number;
+    id: number | undefined;
 }
 export interface ILocation {
     id: number;
@@ -695,12 +695,19 @@ export class Board extends Subscriber {
         );
     }
 
-    public setFilter(filter: string | undefined) {
-        this.board.set_filter(filter);
-    }
-
-    public getFiltered(): number[] {
-        return this.board.get_filtered();
+    public filter(): {
+        set(filter: string | undefined): void;
+        get(): number[];
+    } {
+        return {
+            set: (filter: string | undefined): void => {
+                this.board.set_filter(filter);
+                this.matches().update();
+            },
+            get: (): number[] => {
+                return this.board.get_filtered();
+            },
+        };
     }
 
     public highlight(): {
@@ -724,6 +731,7 @@ export class Board extends Subscriber {
         next(): number | undefined;
         prev(): number | undefined;
         drop(): void;
+        update(): void;
     } {
         return {
             set: (filter: string | undefined): void => {
@@ -776,8 +784,11 @@ export class Board extends Subscriber {
                         ? 0
                         : this._matches.currentIndex;
                 this._matches.currentId =
-                    this._matches.ids[this._matches.currentIndex];
-                this.alignTo(this._matches.currentId);
+                    this._matches.currentIndex === -1
+                        ? undefined
+                        : this._matches.ids[this._matches.currentIndex];
+                this._matches.currentId !== undefined &&
+                    this.alignTo(this._matches.currentId);
                 this.subjects.get().onMatches.emit({
                     total: this._matches.ids.length,
                     current: this._matches.currentIndex,
@@ -800,8 +811,11 @@ export class Board extends Subscriber {
                         ? this._matches.ids.length - 1
                         : this._matches.currentIndex;
                 this._matches.currentId =
-                    this._matches.ids[this._matches.currentIndex];
-                this.alignTo(this._matches.currentId);
+                    this._matches.currentIndex === -1
+                        ? undefined
+                        : this._matches.ids[this._matches.currentIndex];
+                this._matches.currentId !== undefined &&
+                    this.alignTo(this._matches.currentId);
                 this.subjects.get().onMatches.emit({
                     total: this._matches.ids.length,
                     current: this._matches.currentIndex,
@@ -817,6 +831,31 @@ export class Board extends Subscriber {
                 this._matches.ids = [];
                 this.subjects.get().onMatches.emit(undefined);
                 this.highlight().set([]);
+            },
+            update: (): void => {
+                if (
+                    this._matches.filter === undefined ||
+                    this._matches.currentId === undefined
+                ) {
+                    return;
+                }
+                this._matches.ids = this.matches().get();
+                if (!this._matches.ids.includes(this._matches.currentId)) {
+                    this._matches.currentIndex -= 1;
+                    this._matches.currentIndex =
+                        this._matches.ids.length > 0
+                            ? 0
+                            : this._matches.currentIndex;
+                    this._matches.currentId =
+                        this._matches.currentIndex === -1
+                            ? undefined
+                            : this._matches.ids[this._matches.currentIndex];
+                }
+                this.subjects.get().onMatches.emit({
+                    total: this._matches.ids.length,
+                    current: this._matches.currentIndex,
+                    id: this._matches.currentId,
+                });
             },
         };
     }
