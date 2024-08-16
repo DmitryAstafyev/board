@@ -262,7 +262,11 @@ impl Board {
             serde_wasm_bindgen::to_value(
                 &matches
                     .iter()
-                    .filter(|(id, _)| filtered.contains(id))
+                    .filter(|(id, host)| {
+                        host.as_ref()
+                            .map(|id| filtered.contains(id))
+                            .unwrap_or(filtered.contains(id))
+                    })
                     .collect::<Vec<&(usize, Option<usize>)>>(),
             )
             .map_err(|e| e.to_string())
