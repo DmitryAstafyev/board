@@ -102,13 +102,17 @@ impl<'a> Filter<'a> {
     }
 }
 impl Render<Ports> {
-    pub fn new(mut entity: Ports, options: &Options) -> Self {
+    pub fn new(mut entity: Ports, options: &Options, belong_to_inner_composition: bool) -> Self {
         entity.ports = entity
             .ports
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(port) = r {
-                    Representation::Render(Render::<Port>::new(port, options))
+                    Representation::Render(Render::<Port>::new(
+                        port,
+                        options,
+                        belong_to_inner_composition,
+                    ))
                 } else {
                     r
                 }
@@ -282,7 +286,7 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Port> {
 }
 
 impl Render<Port> {
-    pub fn new(entity: Port, options: &Options) -> Self {
+    pub fn new(entity: Port, options: &Options, belong_to_inner_composition: bool) -> Self {
         let id = entity.sig.id;
         let label = if entity.contains.is_empty() {
             entity.get_label(options)
@@ -356,6 +360,7 @@ impl Render<Port> {
                                 None,
                                 badge,
                                 None,
+                                belong_to_inner_composition,
                                 4,
                                 id.to_string(),
                                 align,

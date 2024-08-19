@@ -119,7 +119,7 @@ impl Render<Composition> {
             })
             .collect::<Vec<Representation<Connection>>>();
         entity.ports = if let Representation::Origin(ports) = entity.ports {
-            Representation::Render(Render::<Ports>::new(ports, options))
+            Representation::Render(Render::<Ports>::new(ports, options, false))
         } else {
             entity.ports
         };
