@@ -236,6 +236,8 @@ impl Render<Composition> {
         })
     }
 
+    // TODO: we have to remove dupblicates, but it's a wierd fact we have it at all. It should be checked: why
+    // we have duplicates of ports
     pub fn get_matches(&mut self, filter: Option<String>) -> Option<Vec<usize>> {
         filter
             .as_ref()
