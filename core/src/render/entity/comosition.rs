@@ -267,9 +267,14 @@ impl Render<Composition> {
                 ]
                 .concat()
             })
-            .map(|mut ids| {
-                ids.sort();
-                ids.dedup();
+            .map(|dirty| {
+                // We should not sort originaly collected dirty ids, because it's sorted by component/composition
+                let mut ids: Vec<usize> = Vec::new();
+                dirty.into_iter().for_each(|id| {
+                    if !ids.contains(&id) {
+                        ids.push(id);
+                    }
+                });
                 ids
             })
     }
@@ -321,9 +326,16 @@ impl Render<Composition> {
                 ]
                 .concat()
             })
-            .map(|mut ids| {
-                ids.sort_by(|(a, _), (b, _)| a.cmp(b));
-                ids.dedup_by(|(a, _), (b, _)| a.eq(&b));
+            .map(|dirty| {
+                // We should not sort originaly collected dirty ids, because it's sorted by component/composition
+                let mut ids: Vec<(usize, Option<usize>)> = Vec::new();
+                let mut collected: Vec<usize> = Vec::new();
+                dirty.into_iter().for_each(|(id, owner)| {
+                    if !collected.contains(&id) {
+                        collected.push(id);
+                        ids.push((id, owner));
+                    }
+                });
                 ids
             })
     }

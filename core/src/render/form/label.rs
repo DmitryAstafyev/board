@@ -183,8 +183,6 @@ impl Label {
             };
             context.set_fill_style(&JsValue::from_str(bk_c));
             context.fill_rect(x, y + p, bw + p * 2.0, h);
-            // context.set_stroke_style(&JsValue::from_str(fg_c));
-            // context.stroke_rect(x, y + p, bw + p * 2.0, h);
             context.set_fill_style(&JsValue::from_str(fg_c));
             let _ = context.fill_text(badge, x + p, y + p * 2.0);
         }
