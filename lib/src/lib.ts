@@ -82,6 +82,7 @@ export interface SelectionEvent {
 export interface Match {
     id: number;
     holder: number | undefined;
+    owner: number;
 }
 
 export class Board extends Subscriber {
@@ -759,13 +760,15 @@ export class Board extends Subscriber {
                 return (
                     this.board.get_extended_matches() as [
                         number,
-                        number | null | undefined
+                        number | null | undefined,
+                        number
                     ][]
-                ).map((match: [number, number | null | undefined]) => {
+                ).map((match: [number, number | null | undefined, number]) => {
                     return {
                         id: match[0],
                         holder:
                             typeof match[1] === "number" ? match[1] : match[0],
+                        owner: match[2],
                     };
                 });
             },
