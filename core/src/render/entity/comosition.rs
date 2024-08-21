@@ -281,10 +281,12 @@ impl Render<Composition> {
             })
     }
 
+    // Vec<(port_id, holder_port_id, component_id)>
     pub fn get_matches_extended(
         &mut self,
         filter: Option<String>,
-    ) -> Option<Vec<(usize, Option<usize>)>> {
+    ) -> Option<Vec<(usize, Option<usize>, usize)>> {
+        let parent_id = self.sig().id;
         filter
             .as_ref()
             .map(|filter| {
@@ -293,26 +295,37 @@ impl Render<Composition> {
                         .components
                         .iter()
                         .flat_map(|c| {
+                            let parent_id = c.sig().id;
                             c.origin()
                                 .ports
                                 .origin()
                                 .get_filtered_ports_expanded(filter)
+                                .into_iter()
+                                .map(|(port_id, holder_id)| (port_id, holder_id, parent_id))
+                                .collect::<Vec<(usize, Option<usize>, usize)>>()
                         })
-                        .collect::<Vec<(usize, Option<usize>)>>(),
+                        .collect::<Vec<(usize, Option<usize>, usize)>>(),
                     self.entity
                         .compositions
                         .iter()
                         .flat_map(|c| {
+                            let parent_id = c.sig().id;
                             c.origin()
                                 .ports
                                 .origin()
                                 .get_filtered_ports_expanded(filter)
+                                .into_iter()
+                                .map(|(port_id, holder_id)| (port_id, holder_id, parent_id))
+                                .collect::<Vec<(usize, Option<usize>, usize)>>()
                         })
-                        .collect::<Vec<(usize, Option<usize>)>>(),
+                        .collect::<Vec<(usize, Option<usize>, usize)>>(),
                     self.entity
                         .ports
                         .origin()
-                        .get_filtered_ports_expanded(filter),
+                        .get_filtered_ports_expanded(filter)
+                        .into_iter()
+                        .map(|(port_id, holder_id)| (port_id, holder_id, parent_id))
+                        .collect::<Vec<(usize, Option<usize>, usize)>>(),
                     self.entity
                         .components
                         .iter()
@@ -323,19 +336,19 @@ impl Render<Composition> {
                                 .to_lowercase()
                                 .contains(&filter.to_lowercase())
                         })
-                        .map(|c| (c.origin().sig().id, None))
-                        .collect::<Vec<(usize, Option<usize>)>>(),
+                        .map(|c| (c.origin().sig().id, None, parent_id))
+                        .collect::<Vec<(usize, Option<usize>, usize)>>(),
                 ]
                 .concat()
             })
             .map(|dirty| {
                 // We should not sort originaly collected dirty ids, because it's sorted by component/composition
-                let mut ids: Vec<(usize, Option<usize>)> = Vec::new();
+                let mut ids: Vec<(usize, Option<usize>, usize)> = Vec::new();
                 let mut collected: Vec<usize> = Vec::new();
-                dirty.into_iter().for_each(|(id, owner)| {
+                dirty.into_iter().for_each(|(id, holder, owner)| {
                     if !collected.contains(&id) {
                         collected.push(id);
-                        ids.push((id, owner));
+                        ids.push((id, holder, owner));
                     }
                 });
                 ids
