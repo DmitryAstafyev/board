@@ -159,6 +159,16 @@ impl Grid {
         }
     }
 
+    pub fn is_in_viewport(&self, id: &usize) -> bool {
+        self.map.iter().any(|(inner, _)| {
+            if let Ok(inner) = inner.parse::<usize>() {
+                id == &inner
+            } else {
+                false
+            }
+        })
+    }
+
     pub fn get_coors_by_ids(
         &self,
         ids: &[usize],

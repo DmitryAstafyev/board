@@ -217,6 +217,11 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn is_in_viewport(&self, id: usize) -> bool {
+        self.grid.is_in_viewport(&id)
+    }
+
+    #[wasm_bindgen]
     pub fn set_filter(&mut self, filter: Option<String>) {
         self.state
             .set_filtered(self.render.get_filtered_ports(filter));

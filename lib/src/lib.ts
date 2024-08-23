@@ -653,6 +653,10 @@ export class Board extends Subscriber {
         this.board.render();
     }
 
+    public isInViewport(id: number): boolean {
+        return this.board.is_in_viewport(id);
+    }
+
     public goToComposition(id: number) {
         if (this.data.root === undefined) {
             return;
