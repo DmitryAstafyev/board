@@ -35,24 +35,25 @@ export function load(
         };
     }
     parent.component.forEach((id: number) => {
-        const compPrototype: IComponentPrototype | undefined =
-            asComponentPrototype(find(id, elements));
-        if (compPrototype === undefined) {
+        const prototype: IComponentPrototype | undefined = asComponentPrototype(
+            find(id, elements)
+        );
+        if (prototype === undefined) {
             console.error(`Element ${id} isn't IComponentPrototype`);
             return;
         }
-        const smth = find(compPrototype.rType, elements);
+        const smth = find(prototype.rType, elements);
         const composition = asComposition(smth);
         const componentType = asComponentType(smth);
         if (composition !== undefined) {
             const nested: Composition = {
                 sig: {
                     id,
-                    class_name: composition.className,
+                    class_name: prototype.className,
                     short_name:
-                        composition.shortName === undefined
+                        prototype.shortName === undefined
                             ? UNKNOWN
-                            : composition.shortName,
+                            : prototype.shortName,
                 },
                 components: [],
                 connections: [],
@@ -122,11 +123,11 @@ export function load(
                 Origin: {
                     sig: {
                         id,
-                        class_name: componentType.className,
+                        class_name: prototype.className,
                         short_name:
-                            componentType.shortName === undefined
+                            prototype.shortName === undefined
                                 ? UNKNOWN
-                                : componentType.shortName,
+                                : prototype.shortName,
                     },
                     ports: {
                         Origin: {

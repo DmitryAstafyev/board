@@ -18,22 +18,22 @@ function load(parent, elements, holder) {
         };
     }
     parent.component.forEach((id) => {
-        const compPrototype = (0, types_1.asComponentPrototype)((0, types_1.find)(id, elements));
-        if (compPrototype === undefined) {
+        const prototype = (0, types_1.asComponentPrototype)((0, types_1.find)(id, elements));
+        if (prototype === undefined) {
             console.error(`Element ${id} isn't IComponentPrototype`);
             return;
         }
-        const smth = (0, types_1.find)(compPrototype.rType, elements);
+        const smth = (0, types_1.find)(prototype.rType, elements);
         const composition = (0, types_1.asComposition)(smth);
         const componentType = (0, types_1.asComponentType)(smth);
         if (composition !== undefined) {
             const nested = {
                 sig: {
                     id,
-                    class_name: composition.className,
-                    short_name: composition.shortName === undefined
+                    class_name: prototype.className,
+                    short_name: prototype.shortName === undefined
                         ? types_1.UNKNOWN
-                        : composition.shortName,
+                        : prototype.shortName,
                 },
                 components: [],
                 connections: [],
@@ -87,10 +87,10 @@ function load(parent, elements, holder) {
                 Origin: {
                     sig: {
                         id,
-                        class_name: componentType.className,
-                        short_name: componentType.shortName === undefined
+                        class_name: prototype.className,
+                        short_name: prototype.shortName === undefined
                             ? types_1.UNKNOWN
-                            : componentType.shortName,
+                            : prototype.shortName,
                     },
                     ports: {
                         Origin: {
