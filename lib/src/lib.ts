@@ -87,6 +87,12 @@ export interface Match {
 export interface ContextMenuEvent {
     port: number | undefined;
     component: number | undefined;
+    x: number;
+    y: number;
+    clientX: number;
+    clientY: number;
+    screenX: number;
+    screenY: number;
 }
 
 export class Board extends Subscriber {
@@ -344,23 +350,51 @@ export class Board extends Subscriber {
         const targets = this.getTargetsOnMouse(event);
         if (targets.ports.length === 1) {
             const targetId = parseInt(targets.ports[0][0], 10);
-            this.subjects
-                .get()
-                .onContextMenu.emit({ port: targetId, component: undefined });
+            this.subjects.get().onContextMenu.emit({
+                port: targetId,
+                component: undefined,
+                clientX: event.clientX,
+                clientY: event.clientY,
+                screenX: event.screenX,
+                screenY: event.screenY,
+                x: event.x,
+                y: event.y,
+            });
         } else if (targets.components.length === 1) {
             const targetId = parseInt(targets.components[0][0], 10);
-            this.subjects
-                .get()
-                .onContextMenu.emit({ port: undefined, component: targetId });
+            this.subjects.get().onContextMenu.emit({
+                port: undefined,
+                component: targetId,
+                clientX: event.clientX,
+                clientY: event.clientY,
+                screenX: event.screenX,
+                screenY: event.screenY,
+                x: event.x,
+                y: event.y,
+            });
         } else if (targets.compositions.length === 1) {
             const targetId = parseInt(targets.compositions[0][0], 10);
-            this.subjects
-                .get()
-                .onContextMenu.emit({ port: undefined, component: targetId });
+            this.subjects.get().onContextMenu.emit({
+                port: undefined,
+                component: targetId,
+                clientX: event.clientX,
+                clientY: event.clientY,
+                screenX: event.screenX,
+                screenY: event.screenY,
+                x: event.x,
+                y: event.y,
+            });
         } else {
-            this.subjects
-                .get()
-                .onContextMenu.emit({ port: undefined, component: undefined });
+            this.subjects.get().onContextMenu.emit({
+                port: undefined,
+                component: undefined,
+                clientX: event.clientX,
+                clientY: event.clientY,
+                screenX: event.screenX,
+                screenY: event.screenY,
+                x: event.x,
+                y: event.y,
+            });
         }
     }
 
