@@ -84,6 +84,10 @@ export interface Match {
     holder: number | undefined;
     owner: number;
 }
+export interface ContextMenuEvent {
+    port: number | undefined;
+    component: number | undefined;
+}
 
 export class Board extends Subscriber {
     protected readonly board: Core.Board;
@@ -237,11 +241,13 @@ export class Board extends Subscriber {
         this.onResize = this.onResize.bind(this);
         this.onFocus = this.onFocus.bind(this);
         this.onBlur = this.onBlur.bind(this);
+        this.onContextMenu = this.onContextMenu.bind(this);
         this.parent.addEventListener("focus", this.onFocus);
         this.parent.addEventListener("blur", this.onBlur);
         this.parent.addEventListener("mousemove", this.onHover);
         this.parent.addEventListener("mouseleave", this.onHoverOver);
         this.parent.addEventListener("mousedown", this.onMouseDown);
+        this.parent.addEventListener("contextmenu", this.onContextMenu);
         document.addEventListener("wheel", this.onWheel, { passive: false });
         this.parent.addEventListener("click", this.onClick);
         this.parent.addEventListener("dblclick", this.onDblClick);
@@ -321,6 +327,41 @@ export class Board extends Subscriber {
     protected onKeyUp(_event: KeyboardEvent) {
         this.state.ctrl = false;
         this.scroll.locked(false);
+    }
+
+    protected onContextMenu(event: MouseEvent): void {
+        if (event.target == this.parent) {
+            // Click on scroll bars
+            return;
+        }
+        this.hover.component.hide();
+        this.hover.port.hide();
+        clearTimeout(this.movement.clickTimer);
+        if (this.movement.processing || this.movement.dropClick) {
+            return;
+        }
+        DOM.stop(event);
+        const targets = this.getTargetsOnMouse(event);
+        if (targets.ports.length === 1) {
+            const targetId = parseInt(targets.ports[0][0], 10);
+            this.subjects
+                .get()
+                .onContextMenu.emit({ port: targetId, component: undefined });
+        } else if (targets.components.length === 1) {
+            const targetId = parseInt(targets.components[0][0], 10);
+            this.subjects
+                .get()
+                .onContextMenu.emit({ port: undefined, component: targetId });
+        } else if (targets.compositions.length === 1) {
+            const targetId = parseInt(targets.compositions[0][0], 10);
+            this.subjects
+                .get()
+                .onContextMenu.emit({ port: undefined, component: targetId });
+        } else {
+            this.subjects
+                .get()
+                .onContextMenu.emit({ port: undefined, component: undefined });
+        }
     }
 
     protected onMouseDown(event: MouseEvent): void {
@@ -591,6 +632,7 @@ export class Board extends Subscriber {
         onComponentClick: Subject<number>;
         onPortHover: Subject<PortHoverEvent>;
         onComponentHoverOver: Subject<void>;
+        onContextMenu: Subject<ContextMenuEvent>;
         onPortHoverOver: Subject<void>;
         onPortClick: Subject<number>;
         onSelectionChange: Subject<SelectionEvent>;
@@ -601,6 +643,7 @@ export class Board extends Subscriber {
         onComponentHover: new Subject<HoverMouseEvent>(),
         onComponentClick: new Subject<number>(),
         onComponentHoverOver: new Subject<void>(),
+        onContextMenu: new Subject<ContextMenuEvent>(),
         onPortHover: new Subject<PortHoverEvent>(),
         onPortHoverOver: new Subject<void>(),
         onPortClick: new Subject<number>(),
@@ -616,6 +659,7 @@ export class Board extends Subscriber {
         document.removeEventListener("wheel", this.onWheel);
         this.parent.removeEventListener("mousemove", this.onHover);
         this.parent.removeEventListener("mouseleave", this.onHoverOver);
+        this.parent.removeEventListener("contextmenu", this.onContextMenu);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
         window.removeEventListener("keydown", this.onKeyDown);

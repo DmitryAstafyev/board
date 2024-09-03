@@ -158,6 +158,9 @@ function real() {
                     }
                     console.log(board.matches().extended());
                 });
+            board.subjects.get().onContextMenu.subscribe((event) => {
+                console.log(event);
+            });
             board.bind(root);
             board.render();
         });
