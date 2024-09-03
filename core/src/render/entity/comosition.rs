@@ -433,27 +433,29 @@ impl Render<Composition> {
             let relative_outs = out_rel?;
             let size_port_in = port_in.render()?.view.container.get_box_size();
             let size_port_out = port_out.render()?.view.container.get_box_size();
-            let points: Vec<Point> = vec![
-                Point {
-                    x: relative_inns.x(coors_port_in.0)
-                        + if matches!(port_in.origin().port_type, PortType::Out) {
-                            size_port_in.0
-                        } else {
-                            0
-                        },
-                    y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
-                },
-                Point {
-                    x: relative_outs.x(coors_port_out.0)
-                        + if matches!(port_out.origin().port_type, PortType::Out) {
-                            size_port_out.0
-                        } else {
-                            0
-                        },
-                    y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
-                },
-            ];
-
+            let points: Vec<Point> = if matches!(port_in.origin().port_type, PortType::Out) {
+                vec![
+                    Point {
+                        x: relative_inns.x(coors_port_in.0) + size_port_in.0,
+                        y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
+                    },
+                    Point {
+                        x: relative_outs.x(coors_port_out.0),
+                        y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
+                    },
+                ]
+            } else {
+                vec![
+                    Point {
+                        x: relative_outs.x(coors_port_out.0) + size_port_out.0,
+                        y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
+                    },
+                    Point {
+                        x: relative_inns.x(coors_port_in.0),
+                        y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
+                    },
+                ]
+            };
             let path = Path::new(conn.sig().id.to_string(), points, &options.ratio());
             conn.render_mut()?
                 .view

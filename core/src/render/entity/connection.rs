@@ -39,13 +39,13 @@ impl Render<Connection> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
-        state: &State,
+        _state: &State,
     ) -> Result<(), E> {
-        let in_port = *self.origin().in_port();
-        let out_port = *self.origin().out_port();
         if let Form::Path(_, path) = &mut self.view.container.form {
-            path.sdot = state.is_port_selected(&in_port);
-            path.edot = state.is_port_selected(&out_port);
+            path.sarrow = true;
+            path.sdot = false;
+            path.edot = true;
+            path.earrow = false;
         }
         self.view.render(context, relative);
         Ok(())
