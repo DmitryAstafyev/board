@@ -1010,6 +1010,10 @@ export class Board extends Subscriber {
         this.render();
     }
 
+    public showConnectionsByPorts(ids: number[]) {
+        this.board.show_connections_by_ports(Uint32Array.from(ids));
+    }
+
     public getConnection(port: number): ConnectionInfo | undefined {
         const info:
             | [IncomeConnectionInfo, IncomeConnectionInfo]

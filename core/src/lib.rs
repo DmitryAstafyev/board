@@ -516,6 +516,30 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn show_connections_by_ports(&mut self, ids: &[usize]) -> Result<(), String> {
+        self.state.unselect_all(true);
+        for id in ids {
+            let connections = self.render.origin().find_connections_by_port(id);
+            let inserted = self.state.insert_port(id);
+            for connection in connections.iter() {
+                let rel_port = if (&id).is_input_port(*connection) {
+                    connection.out_port()
+                } else {
+                    connection.in_port()
+                };
+                if inserted {
+                    // Added
+                    self.state.highlight_port(rel_port);
+                } else {
+                    // Removed
+                    self.state.unhighlight_port(rel_port);
+                }
+            }
+        }
+        self.render()
+    }
+
+    #[wasm_bindgen]
     pub fn insert_component(&mut self, id: usize) -> Result<(), String> {
         if self.state.insert_component(&id) {
             self.render()
