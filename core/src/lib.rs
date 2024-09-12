@@ -518,7 +518,22 @@ impl Board {
     #[wasm_bindgen]
     pub fn show_connections_by_ports(&mut self, ids: &[usize]) -> Result<(), String> {
         self.state.unselect_all(true);
+        let grouped = self.render.get_grouped_ports()?;
+        let mut processed: Vec<usize> = Vec::new();
         for id in ids {
+            let id = if let Some(id) = grouped
+                .iter()
+                .find(|(_, inners)| inners.contains(id))
+                .map(|(p, _)| p)
+            {
+                id
+            } else {
+                id
+            };
+            if processed.contains(id) {
+                continue;
+            }
+            processed.push(*id);
             let connections = self.render.origin().find_connections_by_port(id);
             let inserted = self.state.insert_port(id);
             for connection in connections.iter() {
