@@ -68,21 +68,17 @@ impl Composition {
     pub fn find_connections_by_port(&self, id: &usize) -> Vec<&Connection> {
         self.connections
             .iter()
-            .filter(|c| id.included_as_port(*c).is_some())
+            .filter(|c| id.included_as_port(*c))
             .map(|rep| rep.origin())
             .collect::<Vec<&Connection>>()
     }
 
-    // pub fn find_connected_port(&self, id: &usize) -> Option<usize> {
-    //     self.connections.iter().find_map(|c| id.included_as_port(c))
-    // }
-
-    // pub fn find_ports_by_component(&self, id: &usize) -> Vec<&usize> {
+    // pub fn find_connections_by_ports(&self, ids: &(usize, usize)) -> Vec<&Connection> {
     //     self.connections
     //         .iter()
-    //         .filter(|c| id.included_as_component(*c))
-    //         .flat_map(|conn| conn.origin().get_ports())
-    //         .collect::<Vec<&usize>>()
+    //         .filter(|c| ids.included_as_port(*c))
+    //         .map(|rep| rep.origin())
+    //         .collect::<Vec<&Connection>>()
     // }
 
     pub fn find_connections_by_component(&self, id: &usize) -> Vec<&Connection> {

@@ -1010,8 +1010,11 @@ export class Board extends Subscriber {
         this.render();
     }
 
-    public showConnectionsByPorts(ids: number[]) {
-        this.board.show_connections_by_ports(Uint32Array.from(ids));
+    public showConnectionsByPorts(ids: [number, number][]) {
+        this.board.show_connections_by_ports(
+            Uint32Array.from(ids.map((pair) => pair[0])),
+            Uint32Array.from(ids.map((pair) => pair[1]))
+        );
     }
 
     public getConnection(port: number): ConnectionInfo | undefined {

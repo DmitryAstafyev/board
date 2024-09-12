@@ -832,7 +832,7 @@ impl Render<Composition> {
         self.entity
             .connections
             .iter()
-            .find(|c| (&port).included_as_port(*c).is_some())
+            .find(|c| (&port).included_as_port(*c))
             .map(|c| {
                 let origin = c.origin();
                 let port_out = self.find_port(origin.out_comp(), origin.out_port());
@@ -864,7 +864,7 @@ impl Render<Composition> {
         self.entity
             .connections
             .iter()
-            .filter(|c| (&port).included_as_port(*c).is_some())
+            .filter(|c| (&port).included_as_port(*c))
             .map(|c| {
                 let origin = c.origin();
                 let port_out = self.find_port(origin.out_comp(), origin.out_port());
@@ -1019,7 +1019,7 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 provided_required_interface: None,
                 required_interface: None,
                 sig: sig_producer.next_for("joined port IN"),
-                port_type: PortType::In,
+                port_type: PortType::Out,
                 contains: ports_in,
                 connected: HashMap::new(),
                 visibility: true,
@@ -1029,7 +1029,7 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 provided_required_interface: None,
                 required_interface: None,
                 sig: sig_producer.next_for("joined port OUT"),
-                port_type: PortType::Out,
+                port_type: PortType::In,
                 contains: ports_out,
                 connected: HashMap::new(),
                 visibility: true,

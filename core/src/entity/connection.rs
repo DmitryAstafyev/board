@@ -53,28 +53,34 @@ impl<'a> GetIncludedComponent<'a, Representation<Connection>, Connection> for &u
 }
 
 pub trait IsPortIncluded<T> {
-    fn included_as_port(&self, connection: &T) -> Option<usize>;
+    fn included_as_port(&self, connection: &T) -> bool;
 }
 
 impl IsPortIncluded<Connection> for &usize {
-    fn included_as_port(&self, connection: &Connection) -> Option<usize> {
-        if &&connection.joint_in.port == self || &&connection.joint_out.port == self {
-            Some(**self)
-        } else {
-            None
-        }
+    fn included_as_port(&self, connection: &Connection) -> bool {
+        &&connection.joint_in.port == self || &&connection.joint_out.port == self
     }
 }
 
 impl IsPortIncluded<Representation<Connection>> for &usize {
-    fn included_as_port(&self, connection: &Representation<Connection>) -> Option<usize> {
-        if &&connection.origin().joint_in.port == self
-            || &&connection.origin().joint_out.port == self
-        {
-            Some(**self)
-        } else {
-            None
-        }
+    fn included_as_port(&self, connection: &Representation<Connection>) -> bool {
+        &&connection.origin().joint_in.port == self || &&connection.origin().joint_out.port == self
+    }
+}
+
+impl IsPortIncluded<Connection> for &(usize, usize) {
+    fn included_as_port(&self, connection: &Connection) -> bool {
+        (connection.joint_in.port == self.0 && connection.joint_out.port == self.1)
+            || (connection.joint_in.port == self.1 && connection.joint_out.port == self.0)
+    }
+}
+
+impl IsPortIncluded<Representation<Connection>> for &(usize, usize) {
+    fn included_as_port(&self, connection: &Representation<Connection>) -> bool {
+        (connection.origin().joint_in.port == self.0
+            && connection.origin().joint_out.port == self.1)
+            || (connection.origin().joint_in.port == self.1
+                && connection.origin().joint_out.port == self.0)
     }
 }
 

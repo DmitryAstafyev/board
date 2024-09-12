@@ -516,40 +516,37 @@ impl Board {
     }
 
     #[wasm_bindgen]
-    pub fn show_connections_by_ports(&mut self, ids: &[usize]) -> Result<(), String> {
+    pub fn show_connections_by_ports(
+        &mut self,
+        left: &[usize],
+        right: &[usize],
+    ) -> Result<(), String> {
         self.state.unselect_all(true);
         let grouped = self.render.get_grouped_ports()?;
-        let mut processed: Vec<usize> = Vec::new();
-        for id in ids {
-            let id = if let Some(id) = grouped
-                .iter()
-                .find(|(_, inners)| inners.contains(id))
-                .map(|(p, _)| p)
-            {
-                id
-            } else {
-                id
-            };
-            if processed.contains(id) {
-                continue;
-            }
-            processed.push(*id);
-            let connections = self.render.origin().find_connections_by_port(id);
-            let inserted = self.state.insert_port(id);
-            for connection in connections.iter() {
-                let rel_port = if (&id).is_input_port(*connection) {
-                    connection.out_port()
+        for (n, id) in left.iter().enumerate() {
+            let pair = (*id, right[n]);
+            let pair = (
+                if let Some(id) = grouped
+                    .iter()
+                    .find(|(_, inners)| inners.contains(&pair.0))
+                    .map(|(p, _)| p)
+                {
+                    *id
                 } else {
-                    connection.in_port()
-                };
-                if inserted {
-                    // Added
-                    self.state.highlight_port(rel_port);
+                    pair.0
+                },
+                if let Some(id) = grouped
+                    .iter()
+                    .find(|(_, inners)| inners.contains(&pair.1))
+                    .map(|(p, _)| p)
+                {
+                    *id
                 } else {
-                    // Removed
-                    self.state.unhighlight_port(rel_port);
-                }
-            }
+                    pair.1
+                },
+            );
+            self.state.insert_port(&pair.0);
+            self.state.insert_port(&pair.1);
         }
         self.render()
     }
