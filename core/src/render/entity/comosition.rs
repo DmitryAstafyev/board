@@ -831,36 +831,32 @@ impl Render<Composition> {
         None
     }
 
+    fn connection_to_connection_data(&self, conn: &Connection) -> (ConnectionData, ConnectionData) {
+        let port_out = self.find_port(conn.out_comp(), conn.out_port());
+        let port_in = self.find_port(conn.in_comp(), conn.in_port());
+        if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
+            (
+                (
+                    *conn.out_port(),
+                    port_out.contains.clone(),
+                    *conn.out_comp(),
+                ),
+                (*conn.in_port(), port_in.contains.clone(), *conn.in_comp()),
+            )
+        } else {
+            (
+                (*conn.out_port(), Vec::new(), *conn.out_comp()),
+                (*conn.in_port(), Vec::new(), *conn.in_comp()),
+            )
+        }
+    }
     /// Returns information about single connection
     pub fn get_connection(&self, port: usize) -> Option<(ConnectionData, ConnectionData)> {
         self.entity
             .connections
             .iter()
             .find(|c| (&port).included_as_port(*c))
-            .map(|c| {
-                let origin = c.origin();
-                let port_out = self.find_port(origin.out_comp(), origin.out_port());
-                let port_in = self.find_port(origin.in_comp(), origin.in_port());
-                if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
-                    (
-                        (
-                            *origin.out_port(),
-                            port_out.contains.clone(),
-                            *origin.out_comp(),
-                        ),
-                        (
-                            *origin.in_port(),
-                            port_in.contains.clone(),
-                            *origin.in_comp(),
-                        ),
-                    )
-                } else {
-                    (
-                        (*origin.out_port(), Vec::new(), *origin.out_comp()),
-                        (*origin.in_port(), Vec::new(), origin.joint_in.component),
-                    )
-                }
-            })
+            .map(|c| self.connection_to_connection_data(c.origin()))
     }
 
     /// Returns information about all connections related to port
@@ -869,30 +865,7 @@ impl Render<Composition> {
             .connections
             .iter()
             .filter(|c| (&port).included_as_port(*c))
-            .map(|c| {
-                let origin = c.origin();
-                let port_out = self.find_port(origin.out_comp(), origin.out_port());
-                let port_in = self.find_port(origin.in_comp(), origin.in_port());
-                if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
-                    (
-                        (
-                            *origin.out_port(),
-                            port_out.contains.clone(),
-                            *origin.out_comp(),
-                        ),
-                        (
-                            *origin.in_port(),
-                            port_in.contains.clone(),
-                            origin.joint_in.component,
-                        ),
-                    )
-                } else {
-                    (
-                        (*origin.out_port(), Vec::new(), *origin.out_comp()),
-                        (*origin.in_port(), Vec::new(), origin.joint_in.component),
-                    )
-                }
-            })
+            .map(|c| self.connection_to_connection_data(c.origin()))
             .collect()
     }
 
@@ -905,30 +878,16 @@ impl Render<Composition> {
             .connections
             .iter()
             .filter(|c| (&component).included_as_component(*c))
-            .map(|c| {
-                let origin = c.origin();
-                let port_out = self.find_port(origin.out_comp(), origin.out_port());
-                let port_in = self.find_port(origin.in_comp(), origin.in_port());
-                if let (Some(port_out), Some(port_in)) = (port_out, port_in) {
-                    (
-                        (
-                            *origin.out_port(),
-                            port_out.contains.clone(),
-                            *origin.out_comp(),
-                        ),
-                        (
-                            *origin.in_port(),
-                            port_in.contains.clone(),
-                            *origin.in_comp(),
-                        ),
-                    )
-                } else {
-                    (
-                        (*origin.out_port(), Vec::new(), *origin.out_comp()),
-                        (*origin.in_port(), Vec::new(), *origin.in_comp()),
-                    )
-                }
-            })
+            .map(|c| self.connection_to_connection_data(c.origin()))
+            .collect()
+    }
+
+    /// Returns information about all connections of current composition
+    pub fn get_all_connections(&self) -> Vec<(ConnectionData, ConnectionData)> {
+        self.entity
+            .connections
+            .iter()
+            .map(|c| self.connection_to_connection_data(c.origin()))
             .collect()
     }
 

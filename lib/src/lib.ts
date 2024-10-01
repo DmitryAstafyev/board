@@ -50,7 +50,47 @@ export interface ConnectionInfo {
     outter: ConnectionSide;
     inner: ConnectionSide;
 }
+
 type IncomeConnectionInfo = [number, number[], number];
+
+function getConnectionFromIncome(
+    income: [IncomeConnectionInfo, IncomeConnectionInfo] | undefined | string
+): ConnectionInfo | undefined {
+    if (typeof income === "string") {
+        console.error(income);
+        return undefined;
+    }
+    if (income === undefined || income === null) {
+        return undefined;
+    }
+    return {
+        outter: {
+            port: income[0][0],
+            contains: income[0][1],
+            component: income[0][2],
+        },
+        inner: {
+            port: income[1][0],
+            contains: income[1][1],
+            component: income[1][2],
+        },
+    };
+}
+
+function getConnectionsFromIncome(
+    income: [IncomeConnectionInfo, IncomeConnectionInfo][] | undefined | string
+): ConnectionInfo[] | undefined {
+    if (typeof income === "string") {
+        console.error(income);
+        return undefined;
+    }
+    if (income === undefined || income === null) {
+        return undefined;
+    }
+    return income
+        .map((slot) => getConnectionFromIncome(slot))
+        .filter((c) => c !== undefined) as ConnectionInfo[];
+}
 
 export interface PortHoverEvent {
     id: number;
@@ -1022,25 +1062,7 @@ export class Board extends Subscriber {
             | [IncomeConnectionInfo, IncomeConnectionInfo]
             | undefined
             | string = this.board.get_connection(port);
-        if (typeof info === "string") {
-            console.error(info);
-            return undefined;
-        }
-        if (info === undefined || info === null) {
-            return undefined;
-        }
-        return {
-            outter: {
-                port: info[0][0],
-                contains: info[0][1],
-                component: info[0][2],
-            },
-            inner: {
-                port: info[1][0],
-                contains: info[1][1],
-                component: info[1][2],
-            },
-        };
+        return getConnectionFromIncome(info);
     }
 
     public getConnections(port: number): ConnectionInfo[] | undefined {
@@ -1048,27 +1070,7 @@ export class Board extends Subscriber {
             | [IncomeConnectionInfo, IncomeConnectionInfo][]
             | undefined
             | string = this.board.get_connections(port);
-        if (typeof info === "string") {
-            console.error(info);
-            return undefined;
-        }
-        if (info === undefined || info === null) {
-            return undefined;
-        }
-        return info.map((slot) => {
-            return {
-                outter: {
-                    port: slot[0][0],
-                    contains: slot[0][1],
-                    component: slot[0][2],
-                },
-                inner: {
-                    port: slot[1][0],
-                    contains: slot[1][1],
-                    component: slot[1][2],
-                },
-            };
-        });
+        return getConnectionsFromIncome(info);
     }
 
     public getConnectionsByComponent(
@@ -1078,27 +1080,15 @@ export class Board extends Subscriber {
             | [IncomeConnectionInfo, IncomeConnectionInfo][]
             | undefined
             | string = this.board.get_connections_by_component(component);
-        if (typeof info === "string") {
-            console.error(info);
-            return undefined;
-        }
-        if (info === undefined || info === null) {
-            return undefined;
-        }
-        return info.map((slot) => {
-            return {
-                outter: {
-                    port: slot[0][0],
-                    contains: slot[0][1],
-                    component: slot[0][2],
-                },
-                inner: {
-                    port: slot[1][0],
-                    contains: slot[1][1],
-                    component: slot[1][2],
-                },
-            };
-        });
+        return getConnectionsFromIncome(info);
+    }
+
+    public getAllConnections(): ConnectionInfo[] | undefined {
+        const info:
+            | [IncomeConnectionInfo, IncomeConnectionInfo][]
+            | undefined
+            | string = this.board.get_all_connections();
+        return getConnectionsFromIncome(info);
     }
 
     public offsetX(x: number): number {
