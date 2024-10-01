@@ -286,7 +286,7 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Port> {
 }
 
 impl Render<Port> {
-    pub fn new(entity: Port, options: &Options, belong_to_inner_composition: bool) -> Self {
+    pub fn new(entity: Port, options: &Options, _belong_to_inner_composition: bool) -> Self {
         let id = entity.sig.id;
         let label = if entity.contains.is_empty() {
             entity.get_label(options)
@@ -356,11 +356,12 @@ impl Render<Port> {
                                 0,
                                 0,
                                 0,
+                                options.font.to_owned(),
                                 label,
                                 None,
                                 badge,
                                 None,
-                                belong_to_inner_composition,
+                                None,
                                 4,
                                 id.to_string(),
                                 align,
@@ -391,10 +392,13 @@ impl Render<Port> {
             let connected = *self.entity.connected.get(&root).unwrap_or(&0);
             form.subtitle = if unbound_port {
                 Some("unlinked".to_string())
-            } else if connected <= 1 {
+            } else {
+                None
+            };
+            form.index_label = if connected == 0 {
                 None
             } else {
-                Some(format!("{connected} linked"))
+                Some((connected, "rgb(0,0,0)".to_owned(), None))
             };
             form.subbadge = self
                 .entity

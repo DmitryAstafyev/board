@@ -40,6 +40,7 @@ pub struct Button {
     pub y: i32,
     pub w: i32,
     pub h: i32,
+    pub font: String,
     pub label: String,
     pub padding: i32,
     pub id: String,
@@ -55,6 +56,7 @@ impl Button {
         y: i32,
         w: i32,
         h: i32,
+        font: String,
         label: String,
         padding: i32,
         id: String,
@@ -67,6 +69,7 @@ impl Button {
             y,
             w,
             h,
+            font,
             label,
             padding: ratio.get(padding),
             id,
@@ -106,7 +109,7 @@ impl Button {
 
     pub fn calc(&mut self, context: &mut web_sys::CanvasRenderingContext2d, _relative: &Relative) {
         context.set_text_baseline("middle");
-        context.set_font(&format!("{}px serif", self.params.f_size));
+        context.set_font(&format!("{}px {}", self.params.f_size, self.font));
         let w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width()
         } else {
@@ -118,7 +121,7 @@ impl Button {
 
     pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
         context.set_text_baseline("middle");
-        context.set_font(&format!("{}px serif", self.params.f_size));
+        context.set_font(&format!("{}px {}", self.params.f_size, self.font));
         let w = if let Ok(metric) = context.measure_text(&self.label) {
             metric.width()
         } else {

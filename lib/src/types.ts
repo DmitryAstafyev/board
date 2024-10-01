@@ -123,6 +123,7 @@ export interface Options {
     grid: GridOptions;
     labels: LabelsOptions;
     ratio: number;
+    font: string;
 }
 
 export function getDefaultsOptions(): Options {
@@ -153,5 +154,6 @@ export function getDefaultsOptions(): Options {
             comp_label_max_len: 12,
         },
         ratio: DEVICE_PIXEL_RATIO,
+        font: "Roboto, sans-serif",
     };
 }

@@ -63,6 +63,7 @@ impl Container {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum Form {
     GridRectangle(ElementType, GridRectangle),

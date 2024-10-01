@@ -47,6 +47,7 @@ pub struct Options {
     pub grid: GridOptions,
     pub labels: Labels,
     pub ratio: u8,
+    pub font: String,
 }
 
 impl Options {
@@ -82,6 +83,7 @@ impl Default for Options {
                 comp_label_max_len: 12,
             },
             ratio: 1,
+            font: String::from("Roboto, sans-serif"),
         }
     }
 }

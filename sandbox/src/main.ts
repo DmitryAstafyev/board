@@ -35,7 +35,7 @@ function getLabeledPortsOptions(): Options {
             vmargin: 0,
             cell_size_px: 25,
             cells_space_vertical: 3,
-            cells_space_horizontal: 10,
+            cells_space_horizontal: 11,
             visible: false,
         },
         labels: {
@@ -46,6 +46,7 @@ function getLabeledPortsOptions(): Options {
             comp_label_max_len: 12,
         },
         ratio: DEVICE_PIXEL_RATIO,
+        font: "Roboto, sans-serif",
     };
 }
 

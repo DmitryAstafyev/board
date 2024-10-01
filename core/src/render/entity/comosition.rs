@@ -606,7 +606,11 @@ impl Render<Composition> {
         let ratio = options.ratio();
         context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
         context.set_text_baseline("bottom");
-        context.set_font(&format!("{}px serif", ratio.get(relative.zoom(12))));
+        context.set_font(&format!(
+            "{}px {}",
+            ratio.get(relative.zoom(12)),
+            options.font
+        ));
         context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
         let _ = context.fill_text(
             &self.origin().get_label(options),
