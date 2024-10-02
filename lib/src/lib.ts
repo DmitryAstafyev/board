@@ -775,6 +775,10 @@ export class Board extends Subscriber {
         return this.board.is_in_viewport(id);
     }
 
+    public getCurrentCompositionId(): number | undefined {
+        return this.data.composition;
+    }
+
     public goToComposition(id: number) {
         if (this.data.root === undefined) {
             return;
