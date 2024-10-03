@@ -235,6 +235,30 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn set_targeted(&mut self, filter: Option<String>) {
+        self.state
+            .set_targeted(self.render.get_targeted_components(filter));
+    }
+
+    #[wasm_bindgen]
+    pub fn get_targeted(&self) -> Result<JsValue, String> {
+        let empty = (Vec::new(), Vec::new());
+        let filtered = self.state.get_targeted().unwrap_or(&empty);
+        serde_wasm_bindgen::to_value(&filtered).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_all_components(&self) -> Result<JsValue, String> {
+        serde_wasm_bindgen::to_value(&self.render.get_all_components()).map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_components_linked_to(&self, ids: Vec<usize>) -> Result<JsValue, String> {
+        serde_wasm_bindgen::to_value(&self.render.get_components_linked_to(ids))
+            .map_err(|e| e.to_string())
+    }
+
+    #[wasm_bindgen]
     pub fn set_matches(&mut self, filter: Option<String>) {
         self.state.set_matches(
             self.render.get_matches(filter.clone()),

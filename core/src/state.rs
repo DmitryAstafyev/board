@@ -78,6 +78,11 @@ pub struct State {
     // linked - ports linked to filtered ports
     // owners - components and compositions onwers of filtered and linked ports
     pub filtered: Option<(Vec<usize>, Vec<usize>, Vec<usize>)>,
+    // List of targeted components
+    // (targeted, linked)
+    // targeted - has a match with filter
+    // linked - has connection with targeted
+    pub targeted: Option<(Vec<usize>, Vec<usize>)>,
     pub matches_extended: Option<Vec<(usize, Option<usize>, usize)>>,
     pub matches: Option<Vec<usize>>,
     pub highlighted: Option<Vec<usize>>,
@@ -95,6 +100,7 @@ impl State {
             ports_highlighted: Vec::new(),
             hovered: None,
             filtered: None,
+            targeted: None,
             matches: None,
             matches_extended: None,
             highlighted: None,
@@ -148,6 +154,14 @@ impl State {
         self.filtered.as_ref().map(|(ids, _, _)| ids)
     }
 
+    pub fn set_targeted(&mut self, ids: Option<(Vec<usize>, Vec<usize>)>) {
+        self.targeted = ids;
+    }
+
+    pub fn get_targeted(&self) -> Option<&(Vec<usize>, Vec<usize>)> {
+        self.targeted.as_ref()
+    }
+
     pub fn set_matches(
         &mut self,
         matches: Option<Vec<usize>>,
@@ -195,12 +209,16 @@ impl State {
         }
     }
 
-    pub fn is_port_owner_filtered(&self, id: &usize) -> bool {
-        if let Some((_filtered, _linked, owners)) = self.filtered.as_ref() {
-            owners.contains(id)
-        } else {
-            true
-        }
+    pub fn is_comp_included(&self, id: &usize) -> bool {
+        self.filtered
+            .as_ref()
+            .map(|(_, _, owners)| owners.contains(id))
+            .unwrap_or_else(|| {
+                self.targeted
+                    .as_ref()
+                    .map(|(targeted, linked)| targeted.contains(id) || linked.contains(id))
+                    .unwrap_or(true)
+            })
     }
 
     pub fn is_port_filtered_or_linked(&self, port: &Port) -> bool {
@@ -337,8 +355,4 @@ impl State {
     pub fn is_component_selected(&self, id: &usize) -> bool {
         self.components.contains(id)
     }
-
-    // pub fn is_any_port_selected(&self, ids: Vec<&usize>) -> bool {
-    //     ids.iter().any(|id| self.ports.contains(id))
-    // }
 }

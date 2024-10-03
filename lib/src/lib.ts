@@ -713,6 +713,7 @@ export class Board extends Subscriber {
         onLocationChange: Subject<ILocation[]>;
         bound: Subject<void>;
         onMatches: Subject<MatchesEvent | undefined>;
+        onComponentsFiltered: Subject<void>;
     }> = new Subjects({
         onComponentHover: new Subject<HoverMouseEvent>(),
         onComponentClick: new Subject<number>(),
@@ -725,6 +726,7 @@ export class Board extends Subscriber {
         onLocationChange: new Subject<ILocation[]>(),
         bound: new Subject<void>(),
         onMatches: new Subject<MatchesEvent | undefined>(),
+        onComponentsFiltered: new Subject<void>(),
     });
 
     public destroy(): void {
@@ -822,6 +824,33 @@ export class Board extends Subscriber {
         );
     }
 
+    public components(): {
+        filter(filter: string | undefined): void;
+        // [filtered, linked]
+        getFiltered(): [number[], number[]];
+        getAll(): number[];
+        getLinkedTo(targets: number[]): number[];
+    } {
+        return {
+            filter: (filter: string | undefined): void => {
+                this.board.set_targeted(filter);
+                this.refresh();
+                this.subjects.get().onComponentsFiltered.emit();
+            },
+            // [filtered, linked]
+            getFiltered: (): [number[], number[]] => {
+                return this.board.get_targeted();
+            },
+            getAll: (): number[] => {
+                return this.board.get_all_components();
+            },
+            getLinkedTo: (targets: number[]): number[] => {
+                return this.board.get_components_linked_to(
+                    Uint32Array.from(targets)
+                );
+            },
+        };
+    }
     public filter(): {
         set(filter: string | undefined): void;
         get(): number[];

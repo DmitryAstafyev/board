@@ -236,6 +236,88 @@ impl Render<Composition> {
         })
     }
 
+    pub fn get_targeted_components(
+        &mut self,
+        filter: Option<String>,
+    ) -> Option<(Vec<usize>, Vec<usize>)> {
+        self.entity
+            .components
+            .retain(|c| c.render().map_or(true, |r| !r.is_composition()));
+        self.entity
+            .compositions
+            .iter_mut()
+            .for_each(|c| c.render_mut().unwrap().show());
+        filter.as_ref().map(|filter| {
+            let targeted = [
+                self.entity
+                    .components
+                    .iter()
+                    .filter_map(|c| {
+                        if c.sig()
+                            .short_name
+                            .to_lowercase()
+                            .contains(&filter.to_lowercase())
+                        {
+                            Some(c.sig().id)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<usize>>(),
+                self.entity
+                    .compositions
+                    .iter()
+                    .filter_map(|c| {
+                        if c.sig()
+                            .short_name
+                            .to_lowercase()
+                            .contains(&filter.to_lowercase())
+                        {
+                            Some(c.sig().id)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<usize>>(),
+                self.entity.ports.origin().get_filtered_ports(filter),
+            ]
+            .concat();
+            let linked = self
+                .entity
+                .connections
+                .iter()
+                .filter_map(|c| {
+                    let connection = c.origin();
+                    if targeted.contains(connection.in_comp()) {
+                        Some(*connection.out_comp())
+                    } else if targeted.contains(connection.out_comp()) {
+                        Some(*connection.in_comp())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<usize>>();
+            (targeted, linked)
+        })
+    }
+
+    pub fn get_components_linked_to(&self, targeted: Vec<usize>) -> Vec<usize> {
+        self.entity
+            .connections
+            .iter()
+            .filter_map(|c| {
+                let connection = c.origin();
+                if targeted.contains(connection.in_comp()) {
+                    Some(*connection.out_comp())
+                } else if targeted.contains(connection.out_comp()) {
+                    Some(*connection.in_comp())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<usize>>()
+    }
+
     // TODO: we have to remove dupblicates, but it's a wierd fact we have it at all. It should be checked: why
     // we have duplicates of ports
     pub fn get_matches(&mut self, filter: Option<String>) -> Option<Vec<usize>> {
@@ -391,8 +473,8 @@ impl Render<Composition> {
         for conn in self.entity.connections.iter_mut().filter(|conn| {
             let origin = conn.origin();
             origin.visibility
-                && state.is_port_owner_filtered(origin.in_comp())
-                && state.is_port_owner_filtered(origin.out_comp())
+                && state.is_comp_included(origin.in_comp())
+                && state.is_comp_included(origin.out_comp())
         }) {
             let (Some((port_in, in_rel)), Some((port_out, out_rel))) = (
                 find(components, compositions, conn.origin().in_comp())
@@ -480,7 +562,7 @@ impl Render<Composition> {
         // Create composition grid
         let mut composition_grid = Grid::new(&options.grid, options.ratio());
         for composition in self.entity.compositions.iter_mut() {
-            if !state.is_port_owner_filtered(&composition.sig().id) {
+            if !state.is_comp_included(&composition.sig().id) {
                 continue;
             }
             self.entity
@@ -493,7 +575,7 @@ impl Render<Composition> {
             composition.render_mut()?.hide();
         }
         for component in self.entity.components.iter_mut() {
-            if !state.is_port_owner_filtered(&component.sig().id) {
+            if !state.is_comp_included(&component.sig().id) {
                 continue;
             }
             component
@@ -530,7 +612,7 @@ impl Render<Composition> {
             .entity
             .components
             .iter()
-            .filter(|c| state.is_port_owner_filtered(&c.sig().id))
+            .filter(|c| state.is_comp_included(&c.sig().id))
         {
             if !located.contains(&component.sig().id) {
                 let component_grid = Grid::forms_as_pair(
@@ -889,6 +971,11 @@ impl Render<Composition> {
             .iter()
             .map(|c| self.connection_to_connection_data(c.origin()))
             .collect()
+    }
+
+    /// Returns list of all components (including owned compositions)
+    pub fn get_all_components(&self) -> Vec<usize> {
+        self.entity.components.iter().map(|c| c.sig().id).collect()
     }
 
     fn find_entity<'a>(&'a self, id: &usize) -> Option<Entry<'a>> {

@@ -170,8 +170,8 @@ impl Connection {
     ) -> Vec<(usize, usize, usize)> {
         let mut map: HashMap<usize, (usize, usize, usize)> = HashMap::new();
         connections.iter().for_each(|c| {
-            if state.is_port_owner_filtered(&c.origin().joint_out.component)
-                && state.is_port_owner_filtered(&c.origin().joint_in.component)
+            if state.is_comp_included(&c.origin().joint_out.component)
+                && state.is_comp_included(&c.origin().joint_in.component)
             {
                 map.entry(c.origin().joint_out.component)
                     .and_modify(|(_, _, outs)| {
@@ -213,7 +213,7 @@ impl Connection {
                 } else {
                     c.origin().joint_out.component
                 };
-                if state.is_port_owner_filtered(&connected_comp_id) {
+                if state.is_comp_included(&connected_comp_id) {
                     let entry = map.entry(connected_comp_id);
                     entry
                         .and_modify(|(_, ins, outs)| {
