@@ -786,6 +786,7 @@ export class Board extends Subscriber {
             return;
         }
         this.matches().drop();
+        this.components().drop();
         const composition = Types.getComposition(this.data.root, id);
         if (composition === undefined) {
             console.log(`Fail to find composition ID: ${id}`);
@@ -826,6 +827,7 @@ export class Board extends Subscriber {
 
     public components(): {
         filter(filter: string | undefined): void;
+        drop(): void;
         // [filtered, linked]
         getFiltered(): [number[], number[]];
         getAll(): number[];
@@ -836,6 +838,9 @@ export class Board extends Subscriber {
                 this.board.set_targeted(filter);
                 this.refresh();
                 this.subjects.get().onComponentsFiltered.emit();
+            },
+            drop: (): void => {
+                this.board.set_targeted(undefined);
             },
             // [filtered, linked]
             getFiltered: (): [number[], number[]] => {
