@@ -241,6 +241,12 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn set_targeted_by_ids(&mut self, ids: Vec<usize>) {
+        self.state
+            .set_targeted(self.render.get_targeted_components_by_ids(ids));
+    }
+
+    #[wasm_bindgen]
     pub fn get_targeted(&self) -> Result<JsValue, String> {
         let empty = (Vec::new(), Vec::new());
         let filtered = self.state.get_targeted().unwrap_or(&empty);

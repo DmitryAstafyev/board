@@ -279,7 +279,6 @@ impl Render<Composition> {
                         }
                     })
                     .collect::<Vec<usize>>(),
-                self.entity.ports.origin().get_filtered_ports(filter),
             ]
             .concat();
             let linked = self
@@ -299,6 +298,39 @@ impl Render<Composition> {
                 .collect::<Vec<usize>>();
             (targeted, linked)
         })
+    }
+
+    pub fn get_targeted_components_by_ids(
+        &mut self,
+        targeted: Vec<usize>,
+    ) -> Option<(Vec<usize>, Vec<usize>)> {
+        self.entity
+            .components
+            .retain(|c| c.render().map_or(true, |r| !r.is_composition()));
+        self.entity
+            .compositions
+            .iter_mut()
+            .for_each(|c| c.render_mut().unwrap().show());
+        let linked = self
+            .entity
+            .connections
+            .iter()
+            .filter_map(|c| {
+                let connection = c.origin();
+                if targeted.contains(connection.in_comp()) {
+                    Some(*connection.out_comp())
+                } else if targeted.contains(connection.out_comp()) {
+                    Some(*connection.in_comp())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<usize>>();
+        if targeted.is_empty() && linked.is_empty() {
+            None
+        } else {
+            Some((targeted, linked))
+        }
     }
 
     pub fn get_components_linked_to(&self, targeted: Vec<usize>) -> Vec<usize> {

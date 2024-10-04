@@ -827,6 +827,7 @@ export class Board extends Subscriber {
 
     public components(): {
         filter(filter: string | undefined): void;
+        byIds(ids: number[]): void;
         drop(): void;
         // [filtered, linked]
         getFiltered(): [number[], number[]];
@@ -836,6 +837,11 @@ export class Board extends Subscriber {
         return {
             filter: (filter: string | undefined): void => {
                 this.board.set_targeted(filter);
+                this.refresh();
+                this.subjects.get().onComponentsFiltered.emit();
+            },
+            byIds: (ids: number[]): void => {
+                this.board.set_targeted_by_ids(Uint32Array.from(ids));
                 this.refresh();
                 this.subjects.get().onComponentsFiltered.emit();
             },
