@@ -1068,7 +1068,19 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
             .and_modify(|count| *count += 1)
             .or_insert(1);
     });
-    ports.retain(|_, count| *count == 1);
+    // Exclude ports with more than 1 connection and self ports with outside connections
+    let self_ports = entity.ports.origin();
+    ports.retain(|port_id, count| {
+        if *count == 1 {
+            let Some(port) = self_ports.find(port_id) else {
+                return true;
+            };
+            port.origin().connected.len() == 1
+        } else {
+            false
+        }
+    });
+
     // Take only related connections
     connections
         .iter()
