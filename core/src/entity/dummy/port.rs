@@ -15,9 +15,9 @@ impl Dummy<Port, ()> for Port {
             required_interface: None,
             sig: producer.next(),
             port_type: if rand::random() {
-                PortType::In
+                PortType::Left
             } else {
-                PortType::Out
+                PortType::Right
             },
             contains: Vec::new(),
             connected: HashMap::new(),

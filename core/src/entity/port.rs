@@ -8,9 +8,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PortType {
-    In,
-    Out,
-    Unbound,
+    Left,
+    Right,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,13 +93,6 @@ impl Ports {
     pub fn get_mut(&mut self, index: usize) -> &mut Port {
         // TODO: not safe!
         self.ports[index].origin_mut()
-    }
-
-    pub fn filter(&self, targets: &[PortType]) -> Vec<&Representation<Port>> {
-        self.ports
-            .iter()
-            .filter(|r| targets.contains(&r.origin().port_type))
-            .collect::<Vec<&Representation<Port>>>()
     }
 
     pub fn filter_mut(&mut self, targets: &[PortType]) -> Vec<&mut Representation<Port>> {

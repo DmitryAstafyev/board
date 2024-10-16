@@ -16,6 +16,20 @@ import {
     find,
 } from "./types";
 
+function getPortType(
+    pi: unknown | undefined,
+    ri: unknown | undefined,
+    pri: unknown | undefined
+): PortType {
+    return pri !== undefined
+        ? PortType.Right
+        : ri !== undefined
+        ? PortType.Left
+        : pi !== undefined
+        ? PortType.Right
+        : PortType.Left;
+}
+
 export function load(
     parent: IComposition,
     elements: IElement[],
@@ -98,7 +112,11 @@ export function load(
                                                       required_interface
                                                   )
                                                 : null,
-                                        port_type: PortType.Unbound,
+                                        port_type: getPortType(
+                                            provided_interface,
+                                            required_interface,
+                                            provided_required_interface
+                                        ),
                                         visibility: true,
                                         connected: new Map(),
                                         contains: [],
@@ -171,7 +189,11 @@ export function load(
                                                           required_interface
                                                       )
                                                     : null,
-                                            port_type: PortType.Unbound,
+                                            port_type: getPortType(
+                                                provided_interface,
+                                                required_interface,
+                                                provided_required_interface
+                                            ),
                                             connected: new Map(),
                                             visibility: true,
                                             contains: [],
@@ -295,9 +317,9 @@ export function load(
             console.error(`Cannot create connection definition`);
             return;
         }
-        pPortRef[0].Origin.port_type = PortType.Out;
+        // pPortRef[0].Origin.port_type = PortType.Right;
         pPortRef[0].Origin.visibility = true;
-        rPortRef[0].Origin.port_type = PortType.In;
+        // rPortRef[0].Origin.port_type = PortType.Left;
         rPortRef[0].Origin.visibility = true;
         let count = counts.get(pPortRef[0].Origin.sig.id);
         counts.set(

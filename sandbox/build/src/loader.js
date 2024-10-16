@@ -3,6 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.load = void 0;
 const board_1 = require("board");
 const types_1 = require("./types");
+function getPortType(pi, ri, pri) {
+    return pri !== undefined
+        ? board_1.PortType.Right
+        : ri !== undefined
+            ? board_1.PortType.Left
+            : pi !== undefined
+                ? board_1.PortType.Right
+                : board_1.PortType.Left;
+}
 function load(parent, elements, holder) {
     function getDef(id) {
         if (typeof id !== "number") {
@@ -63,7 +72,7 @@ function load(parent, elements, holder) {
                                     required_interface: required_interface !== undefined
                                         ? getSignatureFromEl(required_interface)
                                         : null,
-                                    port_type: board_1.PortType.Unbound,
+                                    port_type: getPortType(provided_interface, required_interface, provided_required_interface),
                                     visibility: true,
                                     connected: new Map(),
                                     contains: [],
@@ -117,7 +126,7 @@ function load(parent, elements, holder) {
                                         required_interface: required_interface !== undefined
                                             ? getSignatureFromEl(required_interface)
                                             : null,
-                                        port_type: board_1.PortType.Unbound,
+                                        port_type: getPortType(provided_interface, required_interface, provided_required_interface),
                                         connected: new Map(),
                                         visibility: true,
                                         contains: [],
@@ -213,9 +222,9 @@ function load(parent, elements, holder) {
             console.error(`Cannot create connection definition`);
             return;
         }
-        pPortRef[0].Origin.port_type = board_1.PortType.Out;
+        // pPortRef[0].Origin.port_type = PortType.Right;
         pPortRef[0].Origin.visibility = true;
-        rPortRef[0].Origin.port_type = board_1.PortType.In;
+        // rPortRef[0].Origin.port_type = PortType.Left;
         rPortRef[0].Origin.visibility = true;
         let count = counts.get(pPortRef[0].Origin.sig.id);
         counts.set(pPortRef[0].Origin.sig.id, count === undefined ? 1 : count + 1);

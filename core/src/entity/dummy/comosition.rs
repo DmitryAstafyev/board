@@ -40,13 +40,13 @@ impl Dummy<Composition, (RangeInclusive<usize>, RangeInclusive<usize>)> for Comp
                     .ports
                     .origin_mut()
                     .get_mut(selected)
-                    .set_type(PortType::In);
+                    .set_type(PortType::Left);
                 comp[1]
                     .origin_mut()
                     .ports
                     .origin_mut()
                     .get_mut(selected)
-                    .set_type(PortType::Out);
+                    .set_type(PortType::Right);
                 let left = &comp[0];
                 let right = &comp[1];
                 connections.push(Connection::new(

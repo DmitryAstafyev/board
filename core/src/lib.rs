@@ -27,22 +27,23 @@ pub struct Board {
     options: Options,
     state: State,
     ratio: Ratio,
+    sig_producer: SignatureProducer,
 }
 
 #[wasm_bindgen]
 impl Board {
     #[wasm_bindgen]
     pub fn dummy(components: usize, ports: usize, selcb: js_sys::Function) -> Self {
-        let mut producer = SignatureProducer::new(0);
+        let mut sig_producer = SignatureProducer::new(0);
         let composition = Composition::dummy(
-            &mut producer,
+            &mut sig_producer,
             (
                 RangeInclusive::new(components, components + components / 5),
                 RangeInclusive::new(ports, ports + ports),
             ),
         );
         let options = Options::default();
-        let render = Render::<Composition>::new(composition, true, &options);
+        let render = Render::<Composition>::new(composition, true, &options, &mut sig_producer);
         let mut grid_options = options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;
@@ -61,6 +62,7 @@ impl Board {
             grid,
             state,
             ratio,
+            sig_producer,
         }
     }
 
@@ -73,8 +75,13 @@ impl Board {
                 Options::default()
             }
         };
-        let render =
-            Render::<Composition>::new(Composition::new(Signature::default()), true, &options);
+        let mut sig_producer = SignatureProducer::new(0);
+        let render = Render::<Composition>::new(
+            Composition::new(Signature::default()),
+            true,
+            &options,
+            &mut sig_producer,
+        );
         let mut grid_options = options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;
@@ -93,6 +100,7 @@ impl Board {
             grid,
             state,
             ratio,
+            sig_producer,
         }
     }
 
@@ -142,7 +150,8 @@ impl Board {
     pub fn bind(&mut self, composition: JsValue) -> Result<(), String> {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
-        self.render = Render::<Composition>::new(composition, true, &self.options);
+        self.render =
+            Render::<Composition>::new(composition, true, &self.options, &mut self.sig_producer);
         let mut grid_options = self.options.grid.clone();
         grid_options.vpadding = 0;
         grid_options.hpadding = 0;

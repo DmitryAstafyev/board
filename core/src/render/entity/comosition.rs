@@ -71,19 +71,17 @@ impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Render<Composition> {
 }
 
 impl Render<Composition> {
-    pub fn new(mut entity: Composition, root: bool, options: &Options) -> Self {
-        let mut sig_producer = SignatureProducer::new(100000000);
+    pub fn new(
+        mut entity: Composition,
+        root: bool,
+        options: &Options,
+        sig_producer: &mut SignatureProducer,
+    ) -> Self {
         if options.ports.grouping && root {
-            group_ports(&mut entity, &mut sig_producer);
+            group_ports(&mut entity, sig_producer);
         }
         if options.ports.group_unbound {
-            group_unbound_ports(Some(&mut entity), &mut [], &mut [], &mut sig_producer);
-            group_unbound_ports(
-                None,
-                &mut entity.compositions,
-                &mut entity.components,
-                &mut sig_producer,
-            );
+            group_unbound_ports(&mut entity, sig_producer);
         }
         entity.components = entity
             .components
@@ -101,7 +99,12 @@ impl Render<Composition> {
             .drain(..)
             .map(|r| {
                 if let Representation::Origin(composition) = r {
-                    Representation::Render(Render::<Composition>::new(composition, false, options))
+                    Representation::Render(Render::<Composition>::new(
+                        composition,
+                        false,
+                        options,
+                        sig_producer,
+                    ))
                 } else {
                     r
                 }
@@ -547,7 +550,36 @@ impl Render<Composition> {
             let relative_outs = out_rel?;
             let size_port_in = port_in.render()?.view.container.get_box_size();
             let size_port_out = port_out.render()?.view.container.get_box_size();
-            let points: Vec<Point> = if matches!(port_in.origin().port_type, PortType::Out) {
+            let is_self_connection = self_ports
+                .origin()
+                .find(&port_in.sig().id)
+                .or_else(|| self_ports.origin().find(&port_out.sig().id))
+                .is_some();
+            let points: Vec<Point> = if is_self_connection {
+                if matches!(port_in.origin().port_type, PortType::Right) {
+                    vec![
+                        Point {
+                            x: relative_outs.x(coors_port_out.0) + size_port_out.0,
+                            y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
+                        },
+                        Point {
+                            x: relative_inns.x(coors_port_in.0),
+                            y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
+                        },
+                    ]
+                } else {
+                    vec![
+                        Point {
+                            x: relative_inns.x(coors_port_in.0) + size_port_in.0,
+                            y: relative_inns.y(coors_port_in.1) + size_port_in.1 / 2,
+                        },
+                        Point {
+                            x: relative_outs.x(coors_port_out.0),
+                            y: relative_outs.y(coors_port_out.1) + size_port_out.1 / 2,
+                        },
+                    ]
+                }
+            } else if matches!(port_in.origin().port_type, PortType::Right) {
                 vec![
                     Point {
                         x: relative_inns.x(coors_port_in.0) + size_port_in.0,
@@ -590,7 +622,6 @@ impl Render<Composition> {
         options: &Options,
     ) -> Result<(), E> {
         let relative = &state.get_view_relative();
-        let root_composition_id = self.entity.sig.id;
         // Create composition grid
         let mut composition_grid = Grid::new(&options.grid, options.ratio());
         for composition in self.entity.compositions.iter_mut() {
@@ -612,7 +643,7 @@ impl Render<Composition> {
             }
             component
                 .render_mut()?
-                .calc(context, relative, options, state, root_composition_id)?;
+                .calc(context, relative, options, state, self.entity.sig.id)?;
         }
         // Get dependencies data (list of components with IN / OUT connections)
         let mut dependencies: Vec<(usize, usize)> = Vec::new();
@@ -664,7 +695,7 @@ impl Render<Composition> {
             relative,
             options,
             state,
-            root_composition_id,
+            self.entity.sig.id,
         )?;
         composition_grid
             .set_min_height(self.entity.ports.render_mut()?.height(state, options) as u32);
@@ -705,7 +736,7 @@ impl Render<Composition> {
         {
             component
                 .render_mut()?
-                .draw(context, relative, options, state)?;
+                .draw(context, relative, options, state, self.entity.sig.id)?;
         }
         for composition in self
             .entity
@@ -731,10 +762,13 @@ impl Render<Composition> {
             relative.x(self.view.container.get_coors().0) as f64,
             relative.y(self.view.container.get_coors().1 - ratio.get(3)) as f64,
         );
-        self.entity
-            .ports
-            .render_mut()?
-            .draw(context, relative, options, state)?;
+        self.entity.ports.render_mut()?.draw(
+            context,
+            relative,
+            options,
+            state,
+            self.entity.sig.id,
+        )?;
         for connection in self.entity.connections.iter_mut().filter(|conn| {
             conn.origin().visibility
                 && (state.is_port_selected_or_highlighted(conn.origin().in_port())
@@ -766,7 +800,7 @@ impl Render<Composition> {
             component.render_mut()?.set_over_style(style);
             component
                 .render_mut()?
-                .draw(context, relative, options, state)?;
+                .draw(context, relative, options, state, self.entity.sig.id)?;
         }
         grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())
@@ -1108,24 +1142,48 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
             {
                 return;
             }
+            let in_self_connection = ports_in.iter().any(|port_id| {
+                self_ports
+                    .find(port_id)
+                    .or_else(|| self_ports.find(port_id))
+                    .is_some()
+            });
+            let out_self_connection = ports_out.iter().any(|port_id| {
+                self_ports
+                    .find(port_id)
+                    .or_else(|| self_ports.find(port_id))
+                    .is_some()
+            });
+            let mut connected = HashMap::new();
+            connected.insert(entity.sig().id, 1);
             let joined_port_in = Port {
                 provided_interface: None,
                 provided_required_interface: None,
                 required_interface: None,
                 sig: sig_producer.next_for("joined port IN"),
-                port_type: PortType::Out,
+                port_type: if in_self_connection {
+                    PortType::Left
+                } else {
+                    PortType::Right
+                },
                 contains: ports_in,
-                connected: HashMap::new(),
+                connected,
                 visibility: true,
             };
+            let mut connected = HashMap::new();
+            connected.insert(entity.sig().id, 1);
             let joined_port_out = Port {
                 provided_interface: None,
                 provided_required_interface: None,
                 required_interface: None,
                 sig: sig_producer.next_for("joined port OUT"),
-                port_type: PortType::In,
+                port_type: if out_self_connection {
+                    PortType::Right
+                } else {
+                    PortType::Left
+                },
                 contains: ports_out,
-                connected: HashMap::new(),
+                connected,
                 visibility: true,
             };
             added_connections.push(Representation::Origin(Connection {
@@ -1204,44 +1262,39 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
     }
 }
 
-pub fn group_unbound_ports(
-    composition: Option<&mut Composition>,
-    compositions: &mut [Representation<Composition>],
-    components: &mut [Representation<Component>],
-    sig_producer: &mut SignatureProducer,
-) {
-    if let Some(composition) = composition {
-        let unbound_ports = composition
-            .ports
-            .origin()
-            .filter(&[PortType::Unbound])
-            .iter()
-            .map(|p| p.sig().id)
-            .collect::<Vec<usize>>();
-        if !unbound_ports.is_empty() && unbound_ports.len() != 1 {
-            composition.ports.origin_mut().hide(&unbound_ports);
-            composition.ports.origin_mut().add(
-                Representation::Origin(Port {
-                    provided_interface: None,
-                    provided_required_interface: None,
-                    required_interface: None,
-                    sig: sig_producer.next_for("unbound grouped"),
-                    port_type: PortType::Unbound,
-                    contains: unbound_ports,
-                    connected: HashMap::new(),
-                    visibility: true,
-                }),
-                Some(0),
-            );
-        }
+pub fn group_unbound_ports(entity: &mut Composition, sig_producer: &mut SignatureProducer) {
+    let unbound_ports = entity
+        .ports
+        .origin()
+        .ports
+        .iter()
+        .filter(|p| p.origin().connected.is_empty() && p.origin().contains.is_empty())
+        .map(|p| p.sig().id)
+        .collect::<Vec<usize>>();
+    if !unbound_ports.is_empty() && unbound_ports.len() != 1 {
+        entity.ports.origin_mut().hide(&unbound_ports);
+        entity.ports.origin_mut().add(
+            Representation::Origin(Port {
+                provided_interface: None,
+                provided_required_interface: None,
+                required_interface: None,
+                sig: sig_producer.next_for("unbound grouped"),
+                port_type: PortType::Left,
+                contains: unbound_ports,
+                connected: HashMap::new(),
+                visibility: true,
+            }),
+            Some(0),
+        );
     }
-    for component in components.iter_mut() {
+    for component in entity.components.iter_mut() {
         let unbound_ports = component
             .origin()
             .ports
             .origin()
-            .filter(&[PortType::Unbound])
+            .ports
             .iter()
+            .filter(|p| p.origin().connected.is_empty() && p.origin().contains.is_empty())
             .map(|p| p.sig().id)
             .collect::<Vec<usize>>();
         if unbound_ports.is_empty() || unbound_ports.len() == 1 {
@@ -1258,38 +1311,7 @@ pub fn group_unbound_ports(
                 provided_interface: None,
                 provided_required_interface: None,
                 required_interface: None,
-                port_type: PortType::Unbound,
-                contains: unbound_ports,
-                connected: HashMap::new(),
-                visibility: true,
-            }),
-            Some(0),
-        );
-    }
-    for composition in compositions.iter_mut() {
-        let unbound_ports = composition
-            .origin()
-            .ports
-            .origin()
-            .filter(&[PortType::Unbound])
-            .iter()
-            .map(|p| p.sig().id)
-            .collect::<Vec<usize>>();
-        if unbound_ports.is_empty() || unbound_ports.len() == 1 {
-            continue;
-        }
-        composition
-            .origin_mut()
-            .ports
-            .origin_mut()
-            .hide(&unbound_ports);
-        composition.origin_mut().ports.origin_mut().add(
-            Representation::Origin(Port {
-                provided_interface: None,
-                provided_required_interface: None,
-                required_interface: None,
-                sig: sig_producer.next_for("unbound grouped"),
-                port_type: PortType::Unbound,
+                port_type: PortType::Left,
                 contains: unbound_ports,
                 connected: HashMap::new(),
                 visibility: true,

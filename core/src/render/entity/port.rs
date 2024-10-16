@@ -81,7 +81,7 @@ impl<'a> Filter<'a> {
         let hide = self.bound.origin().hide_invisible;
         self.bound
             .entity
-            .filter_mut(&[PortType::In, PortType::Unbound])
+            .filter_mut(&[PortType::Left])
             .into_iter()
             .filter(|p| {
                 (p.origin().visibility || !hide) && state.is_port_filtered_or_linked(p.origin())
@@ -93,7 +93,7 @@ impl<'a> Filter<'a> {
         let hide = self.bound.origin().hide_invisible;
         self.bound
             .entity
-            .filter_mut(&[PortType::Out])
+            .filter_mut(&[PortType::Right])
             .into_iter()
             .filter(|p| {
                 (p.origin().visibility || !hide) && state.is_port_filtered_or_linked(p.origin())
@@ -233,11 +233,12 @@ impl Render<Ports> {
         relative: &Relative,
         options: &Options,
         state: &State,
+        root: usize,
     ) -> Result<(), E> {
         let self_relative = self.relative(relative);
         for port in self.filter().all(state) {
             port.render_mut()?
-                .draw(context, &self_relative, options, state)?;
+                .draw(context, &self_relative, options, state, root)?;
         }
         Ok(())
     }
@@ -296,26 +297,26 @@ impl Render<Port> {
             format!("{} ports", entity.contains.len())
         };
         let align = match entity.port_type {
-            PortType::Out => label::Align::Left,
-            PortType::In | PortType::Unbound => label::Align::Right,
+            PortType::Right => label::Align::Left,
+            PortType::Left => label::Align::Right,
         };
         let ratio = options.ratio();
         let badge = entity
-            .provided_interface
+            .provided_required_interface
             .as_ref()
             .map(|v| {
                 (
                     abbreviation(&v.class_name),
-                    "rgb(200,200,200)".to_owned(),
-                    "rgb(0,0,0)".to_owned(),
+                    "rgb(40,140,40)".to_owned(),
+                    "rgb(255,255,255)".to_owned(),
                 )
             })
             .or_else(|| {
-                entity.provided_required_interface.as_ref().map(|v| {
+                entity.provided_interface.as_ref().map(|v| {
                     (
                         abbreviation(&v.class_name),
-                        "rgb(40,40,40)".to_owned(),
-                        "rgb(255,255,255)".to_owned(),
+                        "rgb(200,200,200)".to_owned(),
+                        "rgb(0,0,0)".to_owned(),
                     )
                 })
             })
@@ -388,9 +389,8 @@ impl Render<Port> {
         root: usize,
     ) -> Result<(), E> {
         if let Form::Label(_, form) = &mut self.view.container.form {
-            let unbound_port = matches!(self.entity.port_type, PortType::Unbound);
             let connected = *self.entity.connected.get(&root).unwrap_or(&0);
-            form.subtitle = if unbound_port {
+            form.subtitle = if connected == 0 {
                 Some("unlinked".to_string())
             } else {
                 None
@@ -423,13 +423,15 @@ impl Render<Port> {
         relative: &Relative,
         _options: &Options,
         state: &State,
+        root: usize,
     ) -> Result<(), E> {
+        let connected = *self.entity.connected.get(&root).unwrap_or(&0);
         if state.is_hovered(&self.entity.sig.id) {
             self.view.container.style = Style {
                 stroke_style: String::from("rgb(50,50,50)"),
                 fill_style: String::from("rgb(200,200,200)"),
             };
-        } else if matches!(self.entity.port_type, PortType::Unbound) {
+        } else if connected == 0 {
             self.view.container.style = Style {
                 stroke_style: String::from("rgb(50,50,50)"),
                 fill_style: String::from("rgb(200,200,240)"),

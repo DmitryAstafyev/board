@@ -113,6 +113,7 @@ impl Render<Component> {
         relative: &Relative,
         options: &Options,
         state: &State,
+        root: usize,
     ) -> Result<(), E> {
         if state.is_hovered(&self.entity.sig.id) {
             self.view.container.style = Style {
@@ -156,7 +157,7 @@ impl Render<Component> {
         self.entity
             .ports
             .render_mut()?
-            .draw(context, &self_relative, options, state)?;
+            .draw(context, &self_relative, options, state, root)?;
         context.set_text_baseline("bottom");
         context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
         context.set_font(&format!(

@@ -10,9 +10,8 @@ export interface Signature {
 }
 
 export enum PortType {
-    In = "In",
-    Out = "Out",
-    Unbound = "Unbound",
+    Left = "Left",
+    Right = "Right",
 }
 
 export interface Port {
