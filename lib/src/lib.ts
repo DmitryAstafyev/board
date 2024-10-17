@@ -760,7 +760,26 @@ export class Board extends Subscriber {
     }
 
     public rebind() {
-        this.board.bind(this.data.root);
+        if (
+            this.data.root === undefined ||
+            this.data.composition === undefined
+        ) {
+            return;
+        }
+        this.matches().drop();
+        this.components().drop();
+        const composition = Types.getComposition(
+            this.data.root,
+            this.data.composition
+        );
+        if (composition === undefined) {
+            console.log(
+                `Fail to find composition ID: ${this.data.composition}`
+            );
+            return;
+        }
+        this.board.unselect_all();
+        this.board.bind(composition);
         this.updateSize();
         this.data.grouped = this.getGroupedPorts();
     }
