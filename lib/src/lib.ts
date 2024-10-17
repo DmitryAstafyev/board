@@ -759,6 +759,12 @@ export class Board extends Subscriber {
             ]);
     }
 
+    public rebind() {
+        this.board.bind(this.data.root);
+        this.updateSize();
+        this.data.grouped = this.getGroupedPorts();
+    }
+
     public setOptions(opt: Types.Options) {
         this.board.set_options(opt);
     }
