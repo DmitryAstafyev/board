@@ -18,12 +18,47 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
+struct Active {
+    pub grid: Grid,
+    pub composition: Render<Composition>,
+}
+
+impl Active {
+    pub fn new(options: &Options, composition: Render<Composition>) -> Self {
+        let mut grid_options = options.grid.clone();
+        grid_options.vpadding = 0;
+        grid_options.hpadding = 0;
+        Self {
+            grid: Grid::new(&grid_options, options.ratio()),
+            composition,
+        }
+    }
+    pub fn drop_grid(&mut self, options: &Options) {
+        let mut grid_options = options.grid.clone();
+        grid_options.vpadding = 0;
+        grid_options.hpadding = 0;
+        self.grid = Grid::new(&grid_options, options.ratio());
+        self.grid.apply_margin();
+    }
+
+    pub fn calc(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        state: &State,
+        options: &Options,
+    ) -> Result<(), E> {
+        self.composition
+            .calc(context, &mut self.grid, state, options)?;
+        self.grid.apply_margin();
+        Ok(())
+    }
+}
+
 #[wasm_bindgen]
 pub struct Board {
-    render: Render<Composition>,
+    active: Active,
     context: Option<CanvasRenderingContext2d>,
     canvas: Option<HtmlCanvasElement>,
-    grid: Grid,
     options: Options,
     state: State,
     ratio: Ratio,
@@ -43,23 +78,20 @@ impl Board {
             ),
         );
         let options = Options::default();
-        let render = Render::<Composition>::new(composition, true, &options, &mut sig_producer);
-        let mut grid_options = options.grid.clone();
-        grid_options.vpadding = 0;
-        grid_options.hpadding = 0;
-        let ratio = options.ratio();
-        let grid = Grid::new(&grid_options, ratio.clone());
+        let composition =
+            Render::<Composition>::new(composition, true, &options, &mut sig_producer);
+        let active = Active::new(&options, composition);
         let state = State::new(
-            grid.as_px(grid_options.hmargin),
-            grid.as_px(grid_options.vmargin),
+            active.grid.as_px(options.grid.hmargin),
+            active.grid.as_px(options.grid.vmargin),
             selcb,
         );
+        let ratio = options.ratio();
         Self {
             options,
-            render,
+            active,
             context: None,
             canvas: None,
-            grid,
             state,
             ratio,
             sig_producer,
@@ -76,32 +108,36 @@ impl Board {
             }
         };
         let mut sig_producer = SignatureProducer::new(0);
-        let render = Render::<Composition>::new(
+        let composition = Render::<Composition>::new(
             Composition::new(Signature::default()),
             true,
             &options,
             &mut sig_producer,
         );
-        let mut grid_options = options.grid.clone();
-        grid_options.vpadding = 0;
-        grid_options.hpadding = 0;
-        let ratio = options.ratio();
-        let grid = Grid::new(&grid_options, ratio.clone());
+        let active = Active::new(&options, composition);
         let state = State::new(
-            grid.as_px(grid_options.hmargin),
-            grid.as_px(grid_options.vmargin),
+            active.grid.as_px(options.grid.hmargin),
+            active.grid.as_px(options.grid.vmargin),
             selcb,
         );
+        let ratio = options.ratio();
         Self {
             options,
-            render,
+            active,
             context: None,
             canvas: None,
-            grid,
             state,
             ratio,
             sig_producer,
         }
+    }
+
+    #[wasm_bindgen]
+    pub fn set_options(&mut self, options: JsValue) -> Result<(), String> {
+        let options =
+            serde_wasm_bindgen::from_value::<Options>(options).map_err(|e| e.to_string())?;
+        self.options = options;
+        Ok(())
     }
 
     #[wasm_bindgen]
@@ -150,41 +186,32 @@ impl Board {
     pub fn bind(&mut self, composition: JsValue) -> Result<(), String> {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
-        self.render =
-            Render::<Composition>::new(composition, true, &self.options, &mut self.sig_producer);
-        let mut grid_options = self.options.grid.clone();
-        grid_options.vpadding = 0;
-        grid_options.hpadding = 0;
-        self.grid = Grid::new(&grid_options, self.ratio.clone());
-        self.state.set_filtered(None);
-        self.state.set_view_state(0, 0, 1.0);
-        self.render.calc(
+        self.active = Active::new(
+            &self.options,
+            Render::<Composition>::new(composition, true, &self.options, &mut self.sig_producer),
+        );
+        self.active.calc(
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
-            &mut self.grid,
             &self.state,
             &self.options,
         )?;
-        self.grid.apply_margin();
+        self.state.set_filtered(None);
+        self.state.set_view_state(0, 0, 1.0);
         Ok(())
     }
 
     #[wasm_bindgen]
     pub fn recalc(&mut self) -> Result<(), String> {
-        let mut grid_options = self.options.grid.clone();
-        grid_options.vpadding = 0;
-        grid_options.hpadding = 0;
-        self.grid = Grid::new(&grid_options, self.ratio.clone());
+        self.active.drop_grid(&self.options);
         let zoom = self.state.zoom;
         // Calculation goes without considering zoom factor. During calculation zoom factor should be 1.0
         self.state.zoom = 1.0;
-        self.render.calc(
+        self.active.calc(
             self.context.as_mut().ok_or(E::NoCanvasContext)?,
-            &mut self.grid,
             &self.state,
             &self.options,
         )?;
         self.state.zoom = zoom;
-        self.grid.apply_margin();
         self.render()
     }
 
@@ -202,13 +229,13 @@ impl Board {
             .ok_or(String::from("Board isn't inited; no context"))?
             .height();
         cx.clear_rect(0.0, 0.0, cw as f64, ch as f64);
-        let targets = self.grid.viewport(
+        let targets = self.active.grid.viewport(
             (self.state.x_margin(), self.state.y_margin()),
             (cw, ch),
             self.state.zoom,
         );
         let relative = self.state.get_grid_relative();
-        if let Err(e) = self.render.draw(
+        if let Err(e) = self.active.composition.draw(
             cx,
             &relative,
             &targets
@@ -220,20 +247,20 @@ impl Board {
         ) {
             Err(e)?
         } else {
-            let _ = self.grid.draw(cx, &relative);
+            let _ = self.active.grid.draw(cx, &relative);
             Ok(())
         }
     }
 
     #[wasm_bindgen]
     pub fn is_in_viewport(&self, id: usize) -> bool {
-        self.grid.is_in_viewport(&id)
+        self.active.grid.is_in_viewport(&id)
     }
 
     #[wasm_bindgen]
     pub fn set_filter(&mut self, filter: Option<String>) {
         self.state
-            .set_filtered(self.render.get_filtered_ports(filter));
+            .set_filtered(self.active.composition.get_filtered_ports(filter));
     }
 
     #[wasm_bindgen]
@@ -246,13 +273,13 @@ impl Board {
     #[wasm_bindgen]
     pub fn set_targeted(&mut self, filter: Option<String>) {
         self.state
-            .set_targeted(self.render.get_targeted_components(filter));
+            .set_targeted(self.active.composition.get_targeted_components(filter));
     }
 
     #[wasm_bindgen]
     pub fn set_targeted_by_ids(&mut self, ids: Vec<usize>) {
         self.state
-            .set_targeted(self.render.get_targeted_components_by_ids(ids));
+            .set_targeted(self.active.composition.get_targeted_components_by_ids(ids));
     }
 
     #[wasm_bindgen]
@@ -264,20 +291,21 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn get_all_components(&self) -> Result<JsValue, String> {
-        serde_wasm_bindgen::to_value(&self.render.get_all_components()).map_err(|e| e.to_string())
+        serde_wasm_bindgen::to_value(&self.active.composition.get_all_components())
+            .map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn get_components_linked_to(&self, ids: Vec<usize>) -> Result<JsValue, String> {
-        serde_wasm_bindgen::to_value(&self.render.get_components_linked_to(ids))
+        serde_wasm_bindgen::to_value(&self.active.composition.get_components_linked_to(ids))
             .map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn set_matches(&mut self, filter: Option<String>) {
         self.state.set_matches(
-            self.render.get_matches(filter.clone()),
-            self.render.get_matches_extended(filter),
+            self.active.composition.get_matches(filter.clone()),
+            self.active.composition.get_matches_extended(filter),
         );
     }
 
@@ -321,13 +349,13 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn get_ports_props(&self) -> Result<JsValue, String> {
-        serde_wasm_bindgen::to_value(&self.render.origin().get_ports_props())
+        serde_wasm_bindgen::to_value(&self.active.composition.origin().get_ports_props())
             .map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn get_comps_props(&self) -> Result<JsValue, String> {
-        serde_wasm_bindgen::to_value(&self.render.origin().get_comps_props())
+        serde_wasm_bindgen::to_value(&self.active.composition.origin().get_comps_props())
             .map_err(|e| e.to_string())
     }
 
@@ -347,12 +375,20 @@ impl Board {
         let around = self.ratio.get(around);
         let target_x = self.state.with_hmargin(self.ratio.get(target_x));
         let target_y = self.state.with_vmargin(self.ratio.get(target_y));
-        let ids = self.grid.point((target_x, target_y), around, &relative);
-        let inner = self.render.find(&(target_x, target_y), self.state.zoom)?;
-        let ports = self.render.find_ports(
-            &self.grid.point(
+        let ids = self
+            .active
+            .grid
+            .point((target_x, target_y), around, &relative);
+        let inner = self
+            .active
+            .composition
+            .find(&(target_x, target_y), self.state.zoom)?;
+        let ports = self.active.composition.find_ports(
+            &self.active.grid.point(
                 (target_x, target_y),
-                self.grid.as_px(self.options.grid.cells_space_horizontal),
+                self.active
+                    .grid
+                    .as_px(self.options.grid.cells_space_horizontal),
                 &relative,
             ),
             &(target_x, target_y),
@@ -365,33 +401,42 @@ impl Board {
     #[wasm_bindgen]
     pub fn get_coors_by_ids(&self, ids: Vec<usize>) -> Result<JsValue, String> {
         let relative = self.state.get_grid_relative();
-        let ports = self.render.get_coors_by_ids(&ids, &relative, &self.ratio)?;
-        let components = self.grid.get_coors_by_ids(&ids, &relative, &self.ratio);
+        let ports = self
+            .active
+            .composition
+            .get_coors_by_ids(&ids, &relative, &self.ratio)?;
+        let components = self
+            .active
+            .grid
+            .get_coors_by_ids(&ids, &relative, &self.ratio);
         let elements = [components, ports].concat();
         serde_wasm_bindgen::to_value(&elements).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn get_connection(&self, port: usize) -> Result<JsValue, String> {
-        let result = self.render.get_connection(port);
+        let result = self.active.composition.get_connection(port);
         serde_wasm_bindgen::to_value(&result).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn get_connections(&self, port: usize) -> Result<JsValue, String> {
-        let result = self.render.get_connections(port);
+        let result = self.active.composition.get_connections(port);
         serde_wasm_bindgen::to_value(&result).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn get_connections_by_component(&self, component: usize) -> Result<JsValue, String> {
-        let result = self.render.get_connections_by_component(component);
+        let result = self
+            .active
+            .composition
+            .get_connections_by_component(component);
         serde_wasm_bindgen::to_value(&result).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn get_all_connections(&self) -> Result<JsValue, String> {
-        let result = self.render.get_all_connections();
+        let result = self.active.composition.get_all_connections();
         serde_wasm_bindgen::to_value(&result).map_err(|e| e.to_string())
     }
 
@@ -403,8 +448,8 @@ impl Board {
         fill_style: Option<String>,
     ) -> Result<(), String> {
         if let Some(mut context) = self.context.take() {
-            if let Err(e) = self.render.draw_by_id(
-                &self.grid,
+            if let Err(e) = self.active.composition.draw_by_id(
+                &self.active.grid,
                 &mut context,
                 &self.state.get_grid_relative(),
                 if let (Some(stroke_style), Some(fill_style)) = (stroke_style, fill_style) {
@@ -432,19 +477,20 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn get_grouped_ports(&self) -> Result<JsValue, String> {
-        let ports: Vec<(usize, Vec<usize>)> = self.render.get_grouped_ports()?;
+        let ports: Vec<(usize, Vec<usize>)> = self.active.composition.get_grouped_ports()?;
         serde_wasm_bindgen::to_value(&ports).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn get_port(&self, id: usize) -> Result<JsValue, String> {
-        let port: Option<&entity::Port> = self.render.get_port(id);
+        let port: Option<&entity::Port> = self.active.composition.get_port(id);
         serde_wasm_bindgen::to_value(&port).map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
     pub fn get_size(&mut self) -> Result<JsValue, String> {
-        serde_wasm_bindgen::to_value(&self.grid.get_size_invert_px()).map_err(|e| e.to_string())
+        serde_wasm_bindgen::to_value(&self.active.grid.get_size_invert_px())
+            .map_err(|e| e.to_string())
     }
 
     #[wasm_bindgen]
@@ -462,9 +508,10 @@ impl Board {
     #[wasm_bindgen]
     pub fn toggle_component(&mut self, id: usize, selfishly: bool) -> Result<(), String> {
         let all = |id: &usize| {
-            if let Some(comp) = self.render.origin().get_component(id) {
+            if let Some(comp) = self.active.composition.origin().get_component(id) {
                 [
-                    self.render
+                    self.active
+                        .composition
                         .origin()
                         .find_connections_by_component(id)
                         .iter()
@@ -482,7 +529,7 @@ impl Board {
             }
         };
         let own = |id: &usize| {
-            if let Some(comp) = self.render.origin().get_component(id) {
+            if let Some(comp) = self.active.composition.origin().get_component(id) {
                 comp.ports
                     .origin()
                     .iter()
@@ -494,7 +541,8 @@ impl Board {
         };
         let linked = |id: &usize| {
             let own = own(id);
-            self.render
+            self.active
+                .composition
                 .origin()
                 .find_connections_by_component(id)
                 .iter()
@@ -538,7 +586,11 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn toggle_port(&mut self, id: usize, selfishly: bool) -> Result<(), String> {
-        let connections = self.render.origin().find_connections_by_port(&id);
+        let connections = self
+            .active
+            .composition
+            .origin()
+            .find_connections_by_port(&id);
         if selfishly && !self.state.is_port_selected(&id) {
             self.state.unselect_all(true);
         }
@@ -567,7 +619,7 @@ impl Board {
         right: &[usize],
     ) -> Result<(), String> {
         self.state.unselect_all(true);
-        let grouped = self.render.get_grouped_ports()?;
+        let grouped = self.active.composition.get_grouped_ports()?;
         for (n, id) in left.iter().enumerate() {
             let pair = (*id, right[n]);
             let pair = (
@@ -645,7 +697,7 @@ impl Board {
     #[wasm_bindgen]
     pub fn highlight_connection_by_port(&mut self, _id: usize) -> bool {
         // self.state.highlight_port(&id)
-        //     || if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
+        //     || if let Some(rel_port) = self.active.composition.origin().find_connected_port(&id) {
         //         self.state.highlight_port(&rel_port)
         //     } else {
         //         false
@@ -657,7 +709,7 @@ impl Board {
     pub fn unhighlight_connection_by_port(&mut self, _id: usize) -> bool {
         false
         // self.state.unhighlight_port(&id)
-        //     || if let Some(rel_port) = self.render.origin().find_connected_port(&id) {
+        //     || if let Some(rel_port) = self.active.composition.origin().find_connected_port(&id) {
         //         self.state.unhighlight_port(&rel_port)
         //     } else {
         //         false

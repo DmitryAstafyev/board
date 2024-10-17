@@ -759,6 +759,10 @@ export class Board extends Subscriber {
             ]);
     }
 
+    public setOptions(opt: Types.Options) {
+        this.board.set_options(opt);
+    }
+
     public refresh() {
         this.board.recalc();
         this.updateSize();
