@@ -295,6 +295,8 @@ impl Render<Port> {
             id.to_string()
         } else if let Some(label) = entity.label.as_ref() {
             label.to_owned()
+        } else if entity.connected.is_empty() && !entity.contains.is_empty() {
+            "unlinked".to_owned()
         } else {
             format!("{} ports", entity.contains.len())
         };
@@ -392,15 +394,15 @@ impl Render<Port> {
     ) -> Result<(), E> {
         if let Form::Label(_, form) = &mut self.view.container.form {
             let connected = *self.entity.connected.get(&root).unwrap_or(&0);
-            form.subtitle = if connected == 0 {
-                Some("unlinked".to_string())
-            } else if !self.entity.contains.is_empty() {
+            form.subtitle = if !self.entity.contains.is_empty() && connected > 0 {
                 Some("grouped".to_owned())
             } else {
                 None
             };
-            form.index_label = if connected == 0 {
+            form.index_label = if connected == 0 && self.entity.contains.is_empty() {
                 None
+            } else if connected == 0 && !self.entity.contains.is_empty() {
+                Some((self.entity.contains.len(), "rgb(0,0,0)".to_owned(), None))
             } else {
                 Some((connected, "rgb(0,0,0)".to_owned(), None))
             };

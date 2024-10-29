@@ -1168,8 +1168,12 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 },
                 contains: ports_in,
                 connected,
-                label: find(&entity.components, &entity.compositions, comp_joint_out)
-                    .map(|en| en.sig().short_name.to_owned()),
+                label: if &entity.sig().id == comp_joint_out {
+                    Some(entity.sig().short_name.to_owned())
+                } else {
+                    find(&entity.components, &entity.compositions, comp_joint_out)
+                        .map(|en| en.sig().short_name.to_owned())
+                },
                 visibility: true,
             };
             let mut connected = HashMap::new();
@@ -1186,8 +1190,12 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 },
                 contains: ports_out,
                 connected,
-                label: find(&entity.components, &entity.compositions, comp_joint_in)
-                    .map(|en| en.sig().short_name.to_owned()),
+                label: if &entity.sig().id == comp_joint_in {
+                    Some(entity.sig().short_name.to_owned())
+                } else {
+                    find(&entity.components, &entity.compositions, comp_joint_in)
+                        .map(|en| en.sig().short_name.to_owned())
+                },
                 visibility: true,
             };
             added_connections.push(Representation::Origin(Connection {
