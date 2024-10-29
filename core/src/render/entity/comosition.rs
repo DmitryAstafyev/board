@@ -39,10 +39,10 @@ impl<'a> Entry<'a> {
             Entry::Composition(c) => c.render()?.own_relative(),
         })
     }
-    pub fn _id(&self) -> usize {
+    pub fn sig(&self) -> &Signature {
         match self {
-            Entry::Component(c) => c.sig().id,
-            Entry::Composition(c) => c.sig().id,
+            Entry::Component(c) => c.sig(),
+            Entry::Composition(c) => c.sig(),
         }
     }
 }
@@ -1155,7 +1155,7 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                     .is_some()
             });
             let mut connected = HashMap::new();
-            connected.insert(entity.sig().id, 1);
+            connected.insert(entity.sig().id, ports_in.len());
             let joined_port_in = Port {
                 provided_interface: None,
                 provided_required_interface: None,
@@ -1168,10 +1168,12 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 },
                 contains: ports_in,
                 connected,
+                label: find(&entity.components, &entity.compositions, comp_joint_out)
+                    .map(|en| en.sig().short_name.to_owned()),
                 visibility: true,
             };
             let mut connected = HashMap::new();
-            connected.insert(entity.sig().id, 1);
+            connected.insert(entity.sig().id, ports_out.len());
             let joined_port_out = Port {
                 provided_interface: None,
                 provided_required_interface: None,
@@ -1184,6 +1186,8 @@ pub fn group_ports(entity: &mut Composition, sig_producer: &mut SignatureProduce
                 },
                 contains: ports_out,
                 connected,
+                label: find(&entity.components, &entity.compositions, comp_joint_in)
+                    .map(|en| en.sig().short_name.to_owned()),
                 visibility: true,
             };
             added_connections.push(Representation::Origin(Connection {
@@ -1283,6 +1287,7 @@ pub fn group_unbound_ports(entity: &mut Composition, sig_producer: &mut Signatur
                 contains: unbound_ports,
                 connected: HashMap::new(),
                 visibility: true,
+                label: None,
             }),
             Some(0),
         );
@@ -1315,6 +1320,7 @@ pub fn group_unbound_ports(entity: &mut Composition, sig_producer: &mut Signatur
                 contains: unbound_ports,
                 connected: HashMap::new(),
                 visibility: true,
+                label: None,
             }),
             Some(0),
         );

@@ -22,6 +22,8 @@ pub struct Port {
     pub contains: Vec<usize>,
     pub connected: HashMap<usize, usize>,
     pub visibility: bool,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub label: Option<String>,
 }
 
 impl<'a, 'b: 'a> SignatureGetter<'a, 'b> for Port {

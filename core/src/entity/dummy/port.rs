@@ -22,6 +22,7 @@ impl Dummy<Port, ()> for Port {
             contains: Vec::new(),
             connected: HashMap::new(),
             visibility: true,
+            label: None,
         }
     }
 }

@@ -293,6 +293,8 @@ impl Render<Port> {
             entity.get_label(options)
         } else if let (1, Some(id)) = (entity.contains.len(), entity.contains.first()) {
             id.to_string()
+        } else if let Some(label) = entity.label.as_ref() {
+            label.to_owned()
         } else {
             format!("{} ports", entity.contains.len())
         };
@@ -392,6 +394,8 @@ impl Render<Port> {
             let connected = *self.entity.connected.get(&root).unwrap_or(&0);
             form.subtitle = if connected == 0 {
                 Some("unlinked".to_string())
+            } else if !self.entity.contains.is_empty() {
+                Some("grouped".to_owned())
             } else {
                 None
             };
@@ -430,6 +434,11 @@ impl Render<Port> {
             self.view.container.style = Style {
                 stroke_style: String::from("rgb(50,50,50)"),
                 fill_style: String::from("rgb(200,200,200)"),
+            };
+        } else if !self.origin().contains.is_empty() && connected > 0 {
+            self.view.container.style = Style {
+                stroke_style: String::from("rgb(50,50,50)"),
+                fill_style: String::from("rgb(255,255,200)"),
             };
         } else if connected == 0 {
             self.view.container.style = Style {
