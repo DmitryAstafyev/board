@@ -116,6 +116,125 @@ export interface LabelsOptions {
     port_label_max_len: number;
     comp_label_max_len: number;
 }
+
+export interface RectColor {
+    stroke: string;
+    fill: string;
+}
+
+export interface ColorScheme {
+    composition_rect: RectColor;
+    composition_label: RectColor;
+    composition_as_component_rect: RectColor;
+    component_rect: RectColor;
+    selected_rect: RectColor;
+    highlighted_rect: RectColor;
+    matched_rect: RectColor;
+    hovered_rect: RectColor;
+    connection_line: RectColor;
+    port_highlighted_rect: RectColor;
+    port_rect: RectColor;
+    port_unlinked_rect: RectColor;
+    port_linked_rect: RectColor;
+    port_grouped_rect: RectColor;
+    port_pri_bagde: RectColor;
+    port_pi_bagde: RectColor;
+    port_ri_bagde: RectColor;
+    port_index_label: RectColor;
+    port_subbagde: RectColor;
+    label_subtitle: RectColor;
+    label: RectColor;
+}
+
+export function getDefaultsColorScheme(): ColorScheme {
+    return {
+        composition_rect: {
+            stroke: "rgb(0,0,0)",
+            fill: "rgb(200,200,230)",
+        },
+        composition_label: {
+            stroke: "rgb(30,30,30)",
+            fill: "rgb(0,0,0)",
+        },
+        composition_as_component_rect: {
+            stroke: "rgb(0,0,0)",
+            fill: "rgb(250,200,200)",
+        },
+        component_rect: {
+            stroke: "rgb(0,0,0)",
+            fill: "rgb(240,240,240)",
+        },
+        selected_rect: {
+            stroke: "rgb(0,0,0)",
+            fill: "rgb(100,150,100)",
+        },
+        highlighted_rect: {
+            stroke: "rgb(50,50,50)",
+            fill: "rgb(185,230,255)",
+        },
+        port_highlighted_rect: {
+            stroke: "rgb(0,0,0)",
+            fill: "rgb(220,250,220)",
+        },
+        matched_rect: {
+            stroke: "rgb(50,50,50)",
+            fill: "rgb(195,190,190)",
+        },
+        hovered_rect: {
+            stroke: "rgb(0,0,0)",
+            fill: "rgb(200,200,200)",
+        },
+        connection_line: {
+            stroke: "rgb(30,30,30)",
+            fill: "rgb(30,30,30)",
+        },
+        port_rect: {
+            stroke: "rgb(50,50,50)",
+            fill: "rgb(240,240,240)",
+        },
+        port_unlinked_rect: {
+            stroke: "rgb(50,50,50)",
+            fill: "rgb(200,200,240)",
+        },
+        port_linked_rect: {
+            stroke: "rgb(150,150,150)",
+            fill: "rgb(250,250,250)",
+        },
+        port_grouped_rect: {
+            stroke: "rgb(50,50,50)",
+            fill: "rgb(255,255,200)",
+        },
+        port_pri_bagde: {
+            stroke: "rgb(40,140,40)",
+            fill: "rgb(255,255,255)",
+        },
+        port_pi_bagde: {
+            stroke: "rgb(200,200,200)",
+            fill: "rgb(0,0,0)",
+        },
+        port_ri_bagde: {
+            stroke: "rgb(100,100,100)",
+            fill: "rgb(255,255,255)",
+        },
+        port_index_label: {
+            stroke: "rgb(0,0,0)",
+            fill: "rgb(0,0,0)",
+        },
+        port_subbagde: {
+            stroke: "rgb(240,240,240)",
+            fill: "rgb(25,25,25)",
+        },
+        label_subtitle: {
+            stroke: "rgb(40,40,40)",
+            fill: "rgb(40,40,40)",
+        },
+        label: {
+            stroke: "rgb(0,0,0)",
+            fill: "rgb(0,0,0)",
+        },
+    };
+}
+
 export interface Options {
     ports: PortsOptions;
     connections: ConnectionsOptions;
@@ -123,6 +242,7 @@ export interface Options {
     labels: LabelsOptions;
     ratio: number;
     font: string;
+    scheme: ColorScheme;
 }
 
 export function getDefaultsOptions(): Options {
@@ -154,5 +274,6 @@ export function getDefaultsOptions(): Options {
         },
         ratio: DEVICE_PIXEL_RATIO,
         font: "Roboto, sans-serif",
+        scheme: getDefaultsColorScheme(),
     };
 }

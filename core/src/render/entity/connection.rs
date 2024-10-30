@@ -2,8 +2,7 @@ use crate::{
     entity::{Connection, Signature, SignatureGetter},
     error::E,
     render::{
-        form::Path, grid::ElementType, options::Options, Container, Form, Relative, Render, Style,
-        View,
+        form::Path, grid::ElementType, options::Options, Container, Form, Relative, Render, View,
     },
     state::State,
 };
@@ -25,10 +24,7 @@ impl Render<Connection> {
                         ElementType::Connection,
                         Path::new(id.to_string(), Vec::new(), &options.ratio()),
                     ),
-                    style: Style {
-                        stroke_style: String::from("rgb(30,30,30)"),
-                        fill_style: String::from("rgb(30,30,30)"),
-                    },
+                    style: (&options.scheme.connection_line).into(),
                 },
                 elements: Vec::new(),
             },
@@ -39,6 +35,7 @@ impl Render<Connection> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
+        options: &Options,
         _state: &State,
     ) -> Result<(), E> {
         if let Form::Path(_, path) = &mut self.view.container.form {
@@ -47,7 +44,7 @@ impl Render<Connection> {
             path.edot = true;
             path.earrow = false;
         }
-        self.view.render(context, relative);
+        self.view.render(context, relative, options);
         Ok(())
     }
 }

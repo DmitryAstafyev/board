@@ -142,10 +142,7 @@ impl Render<Composition> {
                             h: 100,
                         },
                     ),
-                    style: Style {
-                        stroke_style: String::from("rgb(0,0,0)"),
-                        fill_style: String::from("rgb(200,200,230)"),
-                    },
+                    style: (&options.scheme.composition_rect).into(),
                 },
                 elements: Vec::new(),
             },
@@ -727,7 +724,7 @@ impl Render<Composition> {
         if !targets.contains(&self.entity.sig.id) || self.hidden {
             return Ok(());
         }
-        self.view.render(context, relative);
+        self.view.render(context, relative, options);
         for component in self
             .entity
             .components
@@ -749,14 +746,14 @@ impl Render<Composition> {
                 .draw(context, relative, targets, options, state)?;
         }
         let ratio = options.ratio();
-        context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
+        context.set_stroke_style(&JsValue::from_str(&options.scheme.composition_label.stroke));
         context.set_text_baseline("bottom");
         context.set_font(&format!(
             "{}px {}",
             ratio.get(relative.zoom(12)),
             options.font
         ));
-        context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
+        context.set_fill_style(&JsValue::from_str(&options.scheme.composition_label.fill));
         let _ = context.fill_text(
             &self.origin().get_label(options),
             relative.x(self.view.container.get_coors().0) as f64,
@@ -774,7 +771,9 @@ impl Render<Composition> {
                 && (state.is_port_selected_or_highlighted(conn.origin().in_port())
                     && state.is_port_selected_or_highlighted(conn.origin().out_port()))
         }) {
-            connection.render_mut()?.draw(context, relative, state)?;
+            connection
+                .render_mut()?
+                .draw(context, relative, options, state)?;
         }
         // grid.draw(context, &Relative::new(0, 0, Some(relative.get_zoom())))?;
         Ok(())

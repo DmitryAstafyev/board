@@ -14,6 +14,8 @@ pub use label::Label;
 pub use path::{Path, Point};
 pub use rectangle::Rectangle;
 
+use super::options::Options;
+
 #[derive(Debug)]
 pub struct View {
     pub container: Container,
@@ -21,11 +23,16 @@ pub struct View {
 }
 
 impl View {
-    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
-        self.container.render(context, relative);
+    pub fn render(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
+        options: &Options,
+    ) {
+        self.container.render(context, relative, options);
         self.elements
             .iter_mut()
-            .for_each(|container| container.render(context, relative));
+            .for_each(|container| container.render(context, relative, options));
     }
 }
 
@@ -57,9 +64,14 @@ impl Container {
     pub fn id(&self) -> String {
         self.form.id()
     }
-    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+    pub fn render(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
+        options: &Options,
+    ) {
         self.style.apply(context);
-        self.form.render(context, relative);
+        self.form.render(context, relative, options);
     }
 }
 
@@ -152,13 +164,18 @@ impl Form {
             Self::Label(_, figure) => figure.id.clone(),
         }
     }
-    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+    pub fn render(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
+        options: &Options,
+    ) {
         match self {
             Self::Rectangle(_, figure) => figure.render(context, relative),
             Self::GridRectangle(_, figure) => figure.render(context, relative),
             Self::Path(_, figure) => figure.render(context, relative),
             Self::Button(_, figure) => figure.render(context, relative),
-            Self::Label(_, figure) => figure.render(context, relative),
+            Self::Label(_, figure) => figure.render(context, relative, options),
         }
     }
 

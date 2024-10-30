@@ -1,4 +1,4 @@
-use crate::render::{grid, Ratio, Relative};
+use crate::render::{grid, options::Options, Ratio, Relative};
 use wasm_bindgen::JsValue;
 
 #[derive(Debug)]
@@ -127,7 +127,12 @@ impl Label {
     }
     // Take into account self.w already condiser zooming, because it's calculated by
     // render and already reflects zoom-factor.
-    pub fn render(&mut self, context: &mut web_sys::CanvasRenderingContext2d, relative: &Relative) {
+    pub fn render(
+        &mut self,
+        context: &mut web_sys::CanvasRenderingContext2d,
+        relative: &Relative,
+        options: &Options,
+    ) {
         self.calc(context, relative);
         let text_hor_padding = relative.zoom(self.params.pad_h) as f64;
         let text_ver_padding = relative.zoom(self.params.pad_v) as f64;
@@ -138,7 +143,7 @@ impl Label {
         let y = relative.y(self.y) as f64;
         context.fill_rect(x, y, self.w as f64, self.h as f64);
         context.stroke_rect(x, y, self.w as f64, self.h as f64);
-        context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
+        context.set_fill_style(&JsValue::from_str(&options.scheme.label.fill));
         if let Some(subtitle) = self.subtitle.as_ref() {
             let _ = context.fill_text(
                 &self.label,
@@ -150,7 +155,7 @@ impl Label {
                 (self.h as f64 * 0.4).round(),
                 self.font,
             ));
-            context.set_fill_style(&JsValue::from_str("rgb(40,40,40)"));
+            context.set_fill_style(&JsValue::from_str(&options.scheme.label_subtitle.fill));
             let _ = context.fill_text(subtitle, x + text_hor_padding, y + self.h as f64 * 0.6);
         } else {
             let _ = context.fill_text(&self.label, x + text_hor_padding, y + text_ver_padding);

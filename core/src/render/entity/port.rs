@@ -6,7 +6,7 @@ use crate::{
         form::{label, Label, Rectangle},
         grid::{ElementCoors, ElementType, CELL},
         options::{self, Options},
-        Container, Form, Relative, Render, Representation, Style, View,
+        Container, Form, Relative, Render, Representation, View,
     },
     state::State,
 };
@@ -132,10 +132,7 @@ impl Render<Ports> {
                             id: String::new(),
                         },
                     ),
-                    style: Style {
-                        stroke_style: String::from("rgb(0,0,0)"),
-                        fill_style: String::from("rgb(0,0,0)"),
-                    },
+                    style: (&options.scheme.port_rect).into(),
                 },
                 elements: Vec::new(),
             },
@@ -311,16 +308,16 @@ impl Render<Port> {
             .map(|v| {
                 (
                     abbreviation(&v.class_name),
-                    "rgb(40,140,40)".to_owned(),
-                    "rgb(255,255,255)".to_owned(),
+                    options.scheme.port_pri_bagde.stroke.to_owned(),
+                    options.scheme.port_pri_bagde.fill.to_owned(),
                 )
             })
             .or_else(|| {
                 entity.provided_interface.as_ref().map(|v| {
                     (
                         abbreviation(&v.class_name),
-                        "rgb(200,200,200)".to_owned(),
-                        "rgb(0,0,0)".to_owned(),
+                        options.scheme.port_pi_bagde.stroke.to_owned(),
+                        options.scheme.port_pi_bagde.fill.to_owned(),
                     )
                 })
             })
@@ -328,8 +325,8 @@ impl Render<Port> {
                 entity.required_interface.as_ref().map(|v| {
                     (
                         abbreviation(&v.class_name),
-                        "rgb(100,100,100)".to_owned(),
-                        "rgb(255,255,255)".to_owned(),
+                        options.scheme.port_ri_bagde.stroke.to_owned(),
+                        options.scheme.port_ri_bagde.fill.to_owned(),
                     )
                 })
             });
@@ -348,10 +345,7 @@ impl Render<Port> {
                                 id: id.to_string(),
                             },
                         ),
-                        style: Style {
-                            stroke_style: String::from("rgb(0,0,0)"),
-                            fill_style: String::from("rgb(50,50,50)"),
-                        },
+                        style: (&options.scheme.port_rect).into(),
                     },
                     options::PortsRepresentation::Labels => Container {
                         form: Form::Label(
@@ -373,10 +367,7 @@ impl Render<Port> {
                                 &options.ratio(),
                             ),
                         ),
-                        style: Style {
-                            stroke_style: String::from("rgb(0,0,0)"),
-                            fill_style: String::from("rgb(220,220,220)"),
-                        },
+                        style: (&options.scheme.port_rect).into(),
                     },
                 },
                 elements: Vec::new(),
@@ -389,7 +380,7 @@ impl Render<Port> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
-        _options: &Options,
+        options: &Options,
         root: usize,
     ) -> Result<(), E> {
         if let Form::Label(_, form) = &mut self.view.container.form {
@@ -402,9 +393,17 @@ impl Render<Port> {
             form.index_label = if connected == 0 && self.entity.contains.is_empty() {
                 None
             } else if connected == 0 && !self.entity.contains.is_empty() {
-                Some((self.entity.contains.len(), "rgb(0,0,0)".to_owned(), None))
+                Some((
+                    self.entity.contains.len(),
+                    options.scheme.port_index_label.stroke.to_owned(),
+                    None,
+                ))
             } else {
-                Some((connected, "rgb(0,0,0)".to_owned(), None))
+                Some((
+                    connected,
+                    options.scheme.port_index_label.stroke.to_owned(),
+                    None,
+                ))
             };
             form.subbadge = self
                 .entity
@@ -414,8 +413,8 @@ impl Render<Port> {
                 .map(|(_, connected)| {
                     (
                         connected.to_string(),
-                        "rgb(240,240,240)".to_owned(),
-                        "rgb(25,25,25)".to_owned(),
+                        options.scheme.port_subbagde.stroke.to_owned(),
+                        options.scheme.port_subbagde.fill.to_owned(),
                     )
                 });
         }
@@ -427,60 +426,34 @@ impl Render<Port> {
         &mut self,
         context: &mut web_sys::CanvasRenderingContext2d,
         relative: &Relative,
-        _options: &Options,
+        options: &Options,
         state: &State,
         root: usize,
     ) -> Result<(), E> {
         let connected = *self.entity.connected.get(&root).unwrap_or(&0);
         if state.is_hovered(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(50,50,50)"),
-                fill_style: String::from("rgb(200,200,200)"),
-            };
+            self.view.container.style = (&options.scheme.hovered_rect).into();
         } else if !self.origin().contains.is_empty() && connected > 0 {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(50,50,50)"),
-                fill_style: String::from("rgb(255,255,200)"),
-            };
+            self.view.container.style = (&options.scheme.port_grouped_rect).into();
         } else if connected == 0 {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(50,50,50)"),
-                fill_style: String::from("rgb(200,200,240)"),
-            };
-        } else if state.is_port_selected(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(150,250,150)"),
-            };
-        } else if state.is_port_highlighted(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(220,250,220)"),
-            };
+            self.view.container.style = (&options.scheme.port_unlinked_rect).into();
         } else if state.is_port_linked(&self.entity) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(150,150,150)"),
-                fill_style: String::from("rgb(250,250,250)"),
-            };
+            self.view.container.style = (&options.scheme.port_linked_rect).into();
         } else {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(50,50,50)"),
-                fill_style: String::from("rgb(240,240,240)"),
-            };
+            self.view.container.style = (&options.scheme.port_rect).into();
+        }
+        if state.is_port_selected(&self.entity.sig.id) {
+            self.view.container.style = (&options.scheme.selected_rect).into();
+        } else if state.is_port_highlighted(&self.entity.sig.id) {
+            self.view.container.style = (&options.scheme.port_highlighted_rect).into();
         }
         if state.is_match(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(50,50,50)"),
-                fill_style: String::from("rgb(195,190,190)"),
-            };
+            self.view.container.style = (&options.scheme.matched_rect).into();
         }
         if state.is_highlighted(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(50,50,50)"),
-                fill_style: String::from("rgb(185,230,255)"),
-            };
+            self.view.container.style = (&options.scheme.highlighted_rect).into();
         }
-        self.view.render(context, relative);
+        self.view.render(context, relative, options);
         Ok(())
     }
 }

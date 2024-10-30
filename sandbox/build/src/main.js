@@ -33,6 +33,7 @@ function getLabeledPortsOptions() {
         },
         ratio: board_1.DEVICE_PIXEL_RATIO,
         font: "Roboto, sans-serif",
+        scheme: (0, board_1.getDefaultsColorScheme)(),
     };
 }
 function real() {

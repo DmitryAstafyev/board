@@ -5,16 +5,10 @@ import {
     DEVICE_PIXEL_RATIO,
     PortsRepresentation,
     MatchesEvent,
+    getDefaultsColorScheme,
 } from "board";
 
-import {
-    IComposition,
-    IElement,
-    UNKNOWN,
-    getSignature,
-    find,
-    Types,
-} from "./types";
+import { IComposition, IElement, UNKNOWN, getSignature, find } from "./types";
 import { getDummyComposition } from "./dummy";
 import { load } from "./loader";
 
@@ -47,6 +41,7 @@ function getLabeledPortsOptions(): Options {
         },
         ratio: DEVICE_PIXEL_RATIO,
         font: "Roboto, sans-serif",
+        scheme: getDefaultsColorScheme(),
     };
 }
 

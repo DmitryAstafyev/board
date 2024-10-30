@@ -3,7 +3,7 @@ use crate::{
     error::E,
     render::{
         elements, form::GridRectangle, grid::ElementType, options::Options, Container, Form,
-        Relative, Render, Representation, Style, View,
+        Relative, Render, Representation, View,
     },
     state::State,
 };
@@ -52,13 +52,10 @@ impl Render<Component> {
                             &options.ratio(),
                         ),
                     ),
-                    style: Style {
-                        stroke_style: String::from("rgb(0,0,0)"),
-                        fill_style: if composition {
-                            String::from("rgb(250,200,200)")
-                        } else {
-                            String::from("rgb(200,250,200)")
-                        },
+                    style: if composition {
+                        (&options.scheme.composition_as_component_rect).into()
+                    } else {
+                        (&options.scheme.component_rect).into()
                     },
                 },
                 elements: Vec::new(),
@@ -116,42 +113,24 @@ impl Render<Component> {
         root: usize,
     ) -> Result<(), E> {
         if state.is_hovered(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(200,200,200)"),
-            };
+            self.view.container.style = (&options.scheme.hovered_rect).into();
         } else if matches!(
             self.view.container.form.get_el_ty(),
             ElementType::Composition
         ) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(250,200,200)"),
-            };
+            self.view.container.style = (&options.scheme.composition_as_component_rect).into();
         } else if state.is_component_selected(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(100,150,100)"),
-            };
+            self.view.container.style = (&options.scheme.selected_rect).into();
         } else {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(0,0,0)"),
-                fill_style: String::from("rgb(250,250,250)"),
-            };
+            self.view.container.style = (&options.scheme.component_rect).into();
         }
         if state.is_match(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(50,50,50)"),
-                fill_style: String::from("rgb(195,190,190)"),
-            };
+            self.view.container.style = (&options.scheme.matched_rect).into();
         }
         if state.is_highlighted(&self.entity.sig.id) {
-            self.view.container.style = Style {
-                stroke_style: String::from("rgb(50,50,50)"),
-                fill_style: String::from("rgb(185,230,255)"),
-            };
+            self.view.container.style = (&options.scheme.highlighted_rect).into();
         }
-        self.view.render(context, relative);
+        self.view.render(context, relative, options);
         let self_relative = self.relative(relative);
         let ratio = options.ratio();
         self.entity
@@ -159,13 +138,13 @@ impl Render<Component> {
             .render_mut()?
             .draw(context, &self_relative, options, state, root)?;
         context.set_text_baseline("bottom");
-        context.set_stroke_style(&JsValue::from_str("rgb(30,30,30)"));
+        context.set_stroke_style(&JsValue::from_str(&options.scheme.composition_label.stroke));
         context.set_font(&format!(
             "{}px {}",
             ratio.get(relative.zoom(12)),
             options.font
         ));
-        context.set_fill_style(&JsValue::from_str("rgb(0,0,0)"));
+        context.set_fill_style(&JsValue::from_str(&options.scheme.composition_label.fill));
         let _ = context.fill_text(
             &self.origin().get_label(options),
             relative.x(self.view.container.get_coors().0) as f64,
