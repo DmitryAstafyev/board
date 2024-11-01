@@ -186,6 +186,7 @@ impl Board {
     pub fn bind(&mut self, composition: JsValue) -> Result<(), String> {
         let composition = serde_wasm_bindgen::from_value::<Composition>(composition)
             .map_err(|e| E::Serde(e.to_string()))?;
+        self.state.drop();
         self.active = Active::new(
             &self.options,
             Render::<Composition>::new(composition, true, &self.options, &mut self.sig_producer),
@@ -195,8 +196,6 @@ impl Board {
             &self.state,
             &self.options,
         )?;
-        self.state.set_filtered(None);
-        self.state.set_view_state(0, 0, 1.0);
         Ok(())
     }
 

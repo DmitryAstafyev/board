@@ -18,6 +18,10 @@ impl Selection {
             selcb: Some(selcb),
         }
     }
+    pub fn drop(&mut self) {
+        self.components.clear();
+        self.ports.clear();
+    }
     pub fn insert_component(&mut self, id: &usize) -> &mut Self {
         if !self.components.contains(id) {
             self.components.push(*id);
@@ -110,6 +114,21 @@ impl State {
             y: 0,
             zoom: 1.0,
         }
+    }
+
+    pub fn drop(&mut self) {
+        self.selection.drop();
+        self.components.clear();
+        self.ports.clear();
+        self.ports_highlighted.clear();
+        self.hovered = None;
+        self.filtered = None;
+        self.targeted = None;
+        self.matches = None;
+        self.matches_extended = None;
+        self.x = 0;
+        self.y = 0;
+        self.zoom = 1.0;
     }
 
     pub fn get_view_relative(&self) -> Relative {
