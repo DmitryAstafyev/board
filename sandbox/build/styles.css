@@ -82,3 +82,11 @@ body span#location {
     background:whitesmoke;
 }
 
+body div.options {
+    position: absolute;
+    right: 8px;
+    top: 98px;
+    border-radius: 3px;
+    border: thin black solid;
+    padding: 3px 6px;
+}

@@ -77,7 +77,8 @@ function real() {
                 !unique.includes(el.className) && unique.push(el.className);
             });
             load(rootElement as IComposition, elements, root);
-            const board = new Board(`div#container`, getLabeledPortsOptions());
+            const options = getLabeledPortsOptions();
+            const board = new Board(`div#container`, options);
             board.subjects.get().onPortHover.subscribe((event) => {});
             board.subjects.get().onPortClick.subscribe((event) => {
                 console.log(`Click on: ${event}`);
@@ -156,6 +157,26 @@ function real() {
                 });
             board.subjects.get().onContextMenu.subscribe((event) => {
                 console.log(event);
+            });
+            const grouping = document.querySelector(
+                `input[id="grouping"]`
+            ) as HTMLInputElement;
+            grouping.addEventListener("change", (event) => {
+                options.ports.grouping = (
+                    event.target as HTMLInputElement
+                ).checked;
+                board.setOptions(options);
+                board.rebind();
+            });
+            const grouping_unbound = document.querySelector(
+                `input[id="grouping_unbound"]`
+            ) as HTMLInputElement;
+            grouping_unbound.addEventListener("change", (event) => {
+                options.ports.group_unbound = (
+                    event.target as HTMLInputElement
+                ).checked;
+                board.setOptions(options);
+                board.rebind();
             });
             board.bind(root);
             board.render();
