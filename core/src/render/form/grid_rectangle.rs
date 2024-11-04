@@ -1,6 +1,8 @@
 use crate::render::{grid, Ratio, Relative};
 
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Params {
     pub cell: u32,
 }
@@ -13,7 +15,7 @@ impl Params {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct GridRectangle {
     pub x: i32,
     pub y: i32,

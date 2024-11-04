@@ -1,6 +1,7 @@
 use crate::render::Relative;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Rectangle {
     pub x: i32,
     pub y: i32,

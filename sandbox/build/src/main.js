@@ -68,7 +68,7 @@ function real() {
             });
             (0, loader_1.load)(rootElement, elements, root);
             const options = getLabeledPortsOptions();
-            const board = new board_1.Board(`div#container`, options);
+            let board = new board_1.Board(`div#container`, options);
             board.subjects.get().onPortHover.subscribe((event) => { });
             board.subjects.get().onPortClick.subscribe((event) => {
                 console.log(`Click on: ${event}`);
@@ -142,6 +142,11 @@ function real() {
                 options.ports.group_unbound = event.target.checked;
                 board.setOptions(options);
                 board.rebind();
+            });
+            document.querySelector('span[id="snapshot"]').addEventListener("click", () => {
+                const snapshot = board.getSnapshot();
+                board = new board_1.Board(`div#container`, options, snapshot);
+                board.render();
             });
             board.bind(root);
             board.render();

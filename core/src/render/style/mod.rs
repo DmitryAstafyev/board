@@ -1,8 +1,9 @@
 use wasm_bindgen::JsValue;
 
 use super::options::RectColor;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Style {
     pub stroke_style: String,
     pub fill_style: String,

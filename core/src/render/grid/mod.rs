@@ -28,7 +28,7 @@ fn as_cells(px: u32, cell: f64) -> u32 {
     (px as f64 / cell).ceil() as u32
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Grid {
     pub options: GridOptions,
     // Total grid size (in cells)

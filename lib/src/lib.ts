@@ -203,7 +203,11 @@ export class Board extends Subscriber {
     };
     protected readonly resize: ResizeObserver;
 
-    constructor(parent: string | HTMLElement, options: Types.Options) {
+    constructor(
+        parent: string | HTMLElement,
+        options: Types.Options,
+        snapshot?: Uint8Array
+    ) {
         super();
         const node: HTMLElement | null = (() => {
             if (typeof parent === "string") {
@@ -242,36 +246,11 @@ export class Board extends Subscriber {
         this.setSize();
         this.board = new wasm.core.Board(
             options,
-            // [components_id[], ports_id[]]
-            (event: [number[], number[]]) => {
-                setTimeout(() => {
-                    const components = event[0];
-                    const ports = event[1];
-                    let connections: ConnectionInfo[] = [];
-                    components.forEach((id) => {
-                        const data = this.getConnectionsByComponent(id);
-                        data !== undefined &&
-                            (connections = connections.concat(
-                                connections,
-                                data
-                            ));
-                    });
-                    ports.forEach((id) => {
-                        const data = this.getConnections(id);
-                        data !== undefined &&
-                            (connections = connections.concat(
-                                connections,
-                                data
-                            ));
-                    });
-                    this.subjects.get().onSelectionChange.emit({
-                        components,
-                        ports,
-                        connections,
-                    });
-                }, 0);
-            }
+            this.onSelectionCb.bind(this)
         );
+        if (snapshot !== undefined) {
+            this.board.load_snapshot(snapshot, this.onSelectionCb.bind(this));
+        }
         this.board.attach(this.id);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
@@ -322,6 +301,32 @@ export class Board extends Subscriber {
         this.register(this.scroll.scroll.subscribe(this.onScroll));
         this.resize = new ResizeObserver(this.onResize);
         this.resize.observe(this.parent);
+    }
+
+    protected onSelectionCb(
+        // [components_id[], ports_id[]]
+        event: [number[], number[]]
+    ) {
+        setTimeout(() => {
+            const components = event[0];
+            const ports = event[1];
+            let connections: ConnectionInfo[] = [];
+            components.forEach((id) => {
+                const data = this.getConnectionsByComponent(id);
+                data !== undefined &&
+                    (connections = connections.concat(connections, data));
+            });
+            ports.forEach((id) => {
+                const data = this.getConnections(id);
+                data !== undefined &&
+                    (connections = connections.concat(connections, data));
+            });
+            this.subjects.get().onSelectionChange.emit({
+                components,
+                ports,
+                connections,
+            });
+        }, 0);
     }
 
     protected onResize(_entries: ResizeObserverEntry[]): void {
@@ -757,6 +762,10 @@ export class Board extends Subscriber {
             .onLocationChange.emit([
                 { id: this.data.root.sig.id, sig: this.data.root.sig },
             ]);
+    }
+
+    public getSnapshot(): Uint8Array {
+        return this.board.save_snapshot();
     }
 
     public rebind() {

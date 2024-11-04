@@ -3,8 +3,9 @@ use std::f64::consts::PI;
 use web_sys::CanvasRenderingContext2d;
 
 use crate::render::{Ratio, Relative};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Params {
     pub radius: u32,
 }
@@ -16,13 +17,14 @@ impl Params {
         }
     }
 }
-#[derive(Debug)]
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Point {
     pub x: i32,
     pub y: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Path {
     pub points: Vec<Point>,
     pub id: String,

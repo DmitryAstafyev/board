@@ -1,7 +1,8 @@
 use crate::render::{grid, options::Options, Ratio, Relative};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Params {
     pub cell: u32,
     pub min_w: i32,
@@ -20,12 +21,12 @@ impl Params {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Align {
     Left,
     Right,
 }
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Label {
     pub x: i32,
     pub y: i32,

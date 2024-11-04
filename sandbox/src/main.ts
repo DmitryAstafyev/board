@@ -78,7 +78,7 @@ function real() {
             });
             load(rootElement as IComposition, elements, root);
             const options = getLabeledPortsOptions();
-            const board = new Board(`div#container`, options);
+            let board = new Board(`div#container`, options);
             board.subjects.get().onPortHover.subscribe((event) => {});
             board.subjects.get().onPortClick.subscribe((event) => {
                 console.log(`Click on: ${event}`);
@@ -177,6 +177,13 @@ function real() {
                 ).checked;
                 board.setOptions(options);
                 board.rebind();
+            });
+            (
+                document.querySelector('span[id="snapshot"]') as HTMLSpanElement
+            ).addEventListener("click", () => {
+                const snapshot = board.getSnapshot();
+                board = new Board(`div#container`, options, snapshot);
+                board.render();
             });
             board.bind(root);
             board.render();

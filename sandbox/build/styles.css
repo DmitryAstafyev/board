@@ -90,3 +90,12 @@ body div.options {
     border: thin black solid;
     padding: 3px 6px;
 }
+
+body div.other {
+    position: absolute;
+    right: 8px;
+    top: 154px;
+    border-radius: 3px;
+    border: thin black solid;
+    padding: 3px 6px;
+}

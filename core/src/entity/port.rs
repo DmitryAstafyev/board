@@ -47,7 +47,6 @@ impl Port {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Ports {
     pub ports: Vec<Representation<Port>>,
-    // #[serde(skip_serializing, skip_deserializing)]
     pub hide_invisible: bool,
     pub sig: Signature,
 }

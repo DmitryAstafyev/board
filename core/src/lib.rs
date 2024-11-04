@@ -12,12 +12,14 @@ use entity::{
 };
 use error::E;
 use render::{options::Options, Grid, Ratio, Render, Style};
+use serde::{Deserialize, Serialize};
 use state::State;
 use std::ops::RangeInclusive;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::console_log;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
+#[derive(Debug, Deserialize, Serialize)]
 struct Active {
     pub grid: Grid,
     pub composition: Render<Composition>,
@@ -54,10 +56,22 @@ impl Active {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct Snapshot {
+    active: Active,
+    options: Options,
+    state: State,
+    ratio: Ratio,
+    sig_producer: SignatureProducer,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 #[wasm_bindgen]
 pub struct Board {
     active: Active,
+    #[serde(skip_serializing, skip_deserializing)]
     context: Option<CanvasRenderingContext2d>,
+    #[serde(skip_serializing, skip_deserializing)]
     canvas: Option<HtmlCanvasElement>,
     options: Options,
     state: State,
@@ -196,6 +210,28 @@ impl Board {
             &self.state,
             &self.options,
         )?;
+        Ok(())
+    }
+
+    #[wasm_bindgen]
+    pub fn save_snapshot(&self) -> Result<Vec<u8>, String> {
+        bincode::serialize(&self).map_err(|e| format!("Fail to convert state into bytes: {e}"))
+    }
+
+    #[wasm_bindgen]
+    pub fn load_snapshot(
+        &mut self,
+        snapshot: Vec<u8>,
+        selcb: js_sys::Function,
+    ) -> Result<(), String> {
+        let board: Board = bincode::deserialize(&snapshot)
+            .map_err(|e| format!("Fail to convert state into bytes: {e}"))?;
+        self.active = board.active;
+        self.state = board.state;
+        self.options = board.options;
+        self.ratio = board.ratio;
+        self.sig_producer = board.sig_producer;
+        self.state.selection.set_selcb(selcb);
         Ok(())
     }
 

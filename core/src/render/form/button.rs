@@ -1,8 +1,9 @@
 use wasm_bindgen::JsValue;
 
 use crate::render::{Ratio, Relative};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Params {
     pub pad_hor: i32,
     pub r_off: i32,
@@ -27,14 +28,14 @@ impl Params {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Align {
     _Left,
     #[allow(dead_code)]
     Right,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Button {
     pub x: i32,
     pub y: i32,

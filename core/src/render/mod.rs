@@ -12,16 +12,24 @@ pub use form::{Container, Form, View};
 pub use grid::Grid;
 pub use ratio::*;
 pub use representation::Representation;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 pub use style::Style;
 
-#[derive(Debug)]
-pub struct Render<T> {
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(bound = "T: Serialize + DeserializeOwned")]
+pub struct Render<T>
+where
+    T: Serialize + DeserializeOwned,
+{
     entity: T,
     view: View,
     hidden: bool,
 }
 
-impl<T> Render<T> {
+impl<T> Render<T>
+where
+    T: Serialize + DeserializeOwned,
+{
     pub fn origin(&self) -> &T {
         &self.entity
     }

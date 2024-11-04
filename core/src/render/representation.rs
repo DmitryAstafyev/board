@@ -3,17 +3,20 @@ use crate::{
     error::E,
     render::Render,
 };
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(bound = "T: Serialize + DeserializeOwned")]
 #[allow(clippy::large_enum_variant)]
-pub enum Representation<T> {
+pub enum Representation<T>
+where
+    T: Serialize + DeserializeOwned,
+{
     Origin(T),
-    #[serde(skip_serializing, skip_deserializing)]
     Render(Render<T>),
 }
 
-impl<'a, 'b: 'a, T: SignatureGetter<'a, 'b>> Representation<T> {
+impl<'a, 'b: 'a, T: SignatureGetter<'a, 'b> + Serialize + DeserializeOwned> Representation<T> {
     pub fn sig(&'b self) -> &'a Signature {
         match self {
             Self::Origin(t) => t.sig(),

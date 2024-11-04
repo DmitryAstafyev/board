@@ -1,11 +1,13 @@
 use crate::{entity::Port, render::Relative};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::console_log;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Selection {
     components: Vec<usize>,
     ports: Vec<usize>,
+    #[serde(skip_serializing, skip_deserializing)]
     // Callback to notify about current selection
     pub selcb: Option<js_sys::Function>,
 }
@@ -17,6 +19,9 @@ impl Selection {
             ports: Vec::new(),
             selcb: Some(selcb),
         }
+    }
+    pub fn set_selcb(&mut self, selcb: js_sys::Function) {
+        self.selcb = Some(selcb);
     }
     pub fn drop(&mut self) {
         self.components.clear();
@@ -68,7 +73,7 @@ impl Selection {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct State {
     pub selection: Selection,
     pub components: Vec<usize>,

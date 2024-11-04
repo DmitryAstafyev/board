@@ -3,8 +3,9 @@ mod component;
 mod port;
 
 use crate::entity::Signature;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct SignatureProducer {
     current: usize,
 }

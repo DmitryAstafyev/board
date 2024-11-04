@@ -15,8 +15,9 @@ pub use path::{Path, Point};
 pub use rectangle::Rectangle;
 
 use super::options::Options;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct View {
     pub container: Container,
     pub elements: Vec<Container>,
@@ -36,7 +37,7 @@ impl View {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Container {
     pub form: Form,
     pub style: Style,
@@ -76,7 +77,7 @@ impl Container {
 }
 
 #[allow(clippy::large_enum_variant)]
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Form {
     GridRectangle(ElementType, GridRectangle),
     Rectangle(ElementType, Rectangle),
