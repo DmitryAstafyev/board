@@ -1,5 +1,21 @@
 import { DEVICE_PIXEL_RATIO } from "./dom";
 
+export interface ILocation {
+    id: number;
+    sig: Signature;
+}
+
+export interface State {
+    composition: number | undefined;
+    grouped: [number, number[]][];
+    root: Composition | undefined;
+    history: ILocation[];
+}
+
+export interface Snapshot {
+    wasm: Uint8Array;
+    state: State;
+}
 //                         [ID    , Type, [x     , y     , x1    , y1    ]]
 export type ElementCoors = [string, string, [number, number, number, number]];
 

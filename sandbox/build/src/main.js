@@ -144,6 +144,8 @@ function real() {
                 board.rebind();
             });
             document.querySelector('span[id="snapshot"]').addEventListener("click", () => {
+                const container = document.querySelector(`div[id="container"]`);
+                container.innerHTML = "";
                 const snapshot = board.getSnapshot();
                 board = new board_1.Board(`div#container`, options, snapshot);
                 board.render();

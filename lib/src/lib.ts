@@ -110,10 +110,7 @@ export interface MatchesEvent {
     current: number;
     id: number | undefined;
 }
-export interface ILocation {
-    id: number;
-    sig: Types.Signature;
-}
+
 export interface SelectionEvent {
     components: number[];
     ports: number[];
@@ -181,7 +178,7 @@ export class Board extends Subscriber {
         composition: number | undefined;
         grouped: [number, number[]][];
         root: Types.Composition | undefined;
-        history: ILocation[];
+        history: Types.ILocation[];
     } = {
         composition: undefined,
         grouped: [],
@@ -206,7 +203,7 @@ export class Board extends Subscriber {
     constructor(
         parent: string | HTMLElement,
         options: Types.Options,
-        snapshot?: Uint8Array
+        snapshot?: Types.Snapshot
     ) {
         super();
         const node: HTMLElement | null = (() => {
@@ -249,7 +246,11 @@ export class Board extends Subscriber {
             this.onSelectionCb.bind(this)
         );
         if (snapshot !== undefined) {
-            this.board.load_snapshot(snapshot, this.onSelectionCb.bind(this));
+            this.board.load_snapshot(
+                snapshot.wasm,
+                this.onSelectionCb.bind(this)
+            );
+            this.data = snapshot.state;
         }
         this.board.attach(this.id);
         this.onMouseDown = this.onMouseDown.bind(this);
@@ -715,7 +716,7 @@ export class Board extends Subscriber {
         onPortHoverOver: Subject<void>;
         onPortClick: Subject<number>;
         onSelectionChange: Subject<SelectionEvent>;
-        onLocationChange: Subject<ILocation[]>;
+        onLocationChange: Subject<Types.ILocation[]>;
         bound: Subject<void>;
         onMatches: Subject<MatchesEvent | undefined>;
         onComponentsFiltered: Subject<void>;
@@ -728,7 +729,7 @@ export class Board extends Subscriber {
         onPortHoverOver: new Subject<void>(),
         onPortClick: new Subject<number>(),
         onSelectionChange: new Subject<SelectionEvent>(),
-        onLocationChange: new Subject<ILocation[]>(),
+        onLocationChange: new Subject<Types.ILocation[]>(),
         bound: new Subject<void>(),
         onMatches: new Subject<MatchesEvent | undefined>(),
         onComponentsFiltered: new Subject<void>(),
@@ -764,8 +765,11 @@ export class Board extends Subscriber {
             ]);
     }
 
-    public getSnapshot(): Uint8Array {
-        return this.board.save_snapshot();
+    public getSnapshot(): Types.Snapshot {
+        return {
+            state: this.data,
+            wasm: this.board.save_snapshot(),
+        };
     }
 
     public rebind() {

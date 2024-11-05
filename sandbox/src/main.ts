@@ -181,6 +181,10 @@ function real() {
             (
                 document.querySelector('span[id="snapshot"]') as HTMLSpanElement
             ).addEventListener("click", () => {
+                const container = document.querySelector(
+                    `div[id="container"]`
+                ) as HTMLInputElement;
+                container.innerHTML = "";
                 const snapshot = board.getSnapshot();
                 board = new Board(`div#container`, options, snapshot);
                 board.render();
