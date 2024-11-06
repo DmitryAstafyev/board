@@ -56,8 +56,17 @@ impl Active {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-struct Snapshot {
+#[derive(Debug, Serialize)]
+struct SnapshotSe<'a> {
+    active: &'a Active,
+    options: &'a Options,
+    state: &'a State,
+    ratio: &'a Ratio,
+    sig_producer: &'a SignatureProducer,
+}
+
+#[derive(Debug, Deserialize)]
+struct SnapshotDe {
     active: Active,
     options: Options,
     state: State,
@@ -65,13 +74,11 @@ struct Snapshot {
     sig_producer: SignatureProducer,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug)]
 #[wasm_bindgen]
 pub struct Board {
     active: Active,
-    #[serde(skip_serializing, skip_deserializing)]
     context: Option<CanvasRenderingContext2d>,
-    #[serde(skip_serializing, skip_deserializing)]
     canvas: Option<HtmlCanvasElement>,
     options: Options,
     state: State,
@@ -215,7 +222,14 @@ impl Board {
 
     #[wasm_bindgen]
     pub fn save_snapshot(&self) -> Result<Vec<u8>, String> {
-        bincode::serialize(&self).map_err(|e| format!("Fail to convert state into bytes: {e}"))
+        let snapshot = SnapshotSe {
+            active: &self.active,
+            options: &self.options,
+            state: &self.state,
+            ratio: &self.ratio,
+            sig_producer: &self.sig_producer,
+        };
+        bincode::serialize(&snapshot).map_err(|e| format!("Fail to convert state into bytes: {e}"))
     }
 
     #[wasm_bindgen]
@@ -224,13 +238,13 @@ impl Board {
         snapshot: Vec<u8>,
         selcb: js_sys::Function,
     ) -> Result<(), String> {
-        let board: Board = bincode::deserialize(&snapshot)
+        let snapshot: SnapshotDe = bincode::deserialize(&snapshot)
             .map_err(|e| format!("Fail to convert state into bytes: {e}"))?;
-        self.active = board.active;
-        self.state = board.state;
-        self.options = board.options;
-        self.ratio = board.ratio;
-        self.sig_producer = board.sig_producer;
+        self.active = snapshot.active;
+        self.state = snapshot.state;
+        self.options = snapshot.options;
+        self.ratio = snapshot.ratio;
+        self.sig_producer = snapshot.sig_producer;
         self.state.selection.set_selcb(selcb);
         Ok(())
     }

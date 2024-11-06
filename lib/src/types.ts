@@ -1,10 +1,24 @@
 import { DEVICE_PIXEL_RATIO } from "./dom";
+import { IPosition } from "./position";
 
 export interface ILocation {
     id: number;
     sig: Signature;
 }
 
+export interface Match {
+    id: number;
+    holder: number | undefined;
+    owner: number;
+}
+
+export interface Matches {
+    ids: number[];
+    extended: Match[];
+    filter: string | undefined;
+    currentIndex: number;
+    currentId: number | undefined;
+}
 export interface State {
     composition: number | undefined;
     grouped: [number, number[]][];
@@ -15,6 +29,9 @@ export interface State {
 export interface Snapshot {
     wasm: Uint8Array;
     state: State;
+    position: IPosition;
+    history: Map<number, IPosition>;
+    matches: Matches;
 }
 //                         [ID    , Type, [x     , y     , x1    , y1    ]]
 export type ElementCoors = [string, string, [number, number, number, number]];

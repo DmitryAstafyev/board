@@ -187,7 +187,6 @@ function real() {
                 container.innerHTML = "";
                 const snapshot = board.getSnapshot();
                 board = new Board(`div#container`, options, snapshot);
-                board.render();
             });
             board.bind(root);
             board.render();

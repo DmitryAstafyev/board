@@ -116,11 +116,7 @@ export interface SelectionEvent {
     ports: number[];
     connections: ConnectionInfo[];
 }
-export interface Match {
-    id: number;
-    holder: number | undefined;
-    owner: number;
-}
+
 export interface ContextMenuEvent {
     port: number | undefined;
     component: number | undefined;
@@ -185,13 +181,7 @@ export class Board extends Subscriber {
         root: undefined,
         history: [],
     };
-    protected _matches: {
-        ids: number[];
-        extended: Match[];
-        filter: string | undefined;
-        currentIndex: number;
-        currentId: number | undefined;
-    } = {
+    protected _matches: Types.Matches = {
         ids: [],
         extended: [],
         filter: undefined,
@@ -251,6 +241,9 @@ export class Board extends Subscriber {
                 this.onSelectionCb.bind(this)
             );
             this.data = snapshot.state;
+            this._matches = snapshot.matches;
+            this.position = new Position(snapshot.position);
+            this.history = snapshot.history;
         }
         this.board.attach(this.id);
         this.onMouseDown = this.onMouseDown.bind(this);
@@ -302,6 +295,9 @@ export class Board extends Subscriber {
         this.register(this.scroll.scroll.subscribe(this.onScroll));
         this.resize = new ResizeObserver(this.onResize);
         this.resize.observe(this.parent);
+        if (snapshot !== undefined) {
+            this.updateSize();
+        }
     }
 
     protected onSelectionCb(
@@ -768,6 +764,9 @@ export class Board extends Subscriber {
     public getSnapshot(): Types.Snapshot {
         return {
             state: this.data,
+            matches: this._matches,
+            history: this.history,
+            position: this.position,
             wasm: this.board.save_snapshot(),
         };
     }
@@ -936,7 +935,7 @@ export class Board extends Subscriber {
     public matches(): {
         set(filter: string | undefined): void;
         get(): number[];
-        extended(): Match[];
+        extended(): Types.Match[];
         next(): number | undefined;
         prev(): number | undefined;
         drop(): void;
@@ -964,7 +963,7 @@ export class Board extends Subscriber {
             get: (): number[] => {
                 return this.board.get_matches();
             },
-            extended: (): Match[] => {
+            extended: (): Types.Match[] => {
                 return (
                     this.board.get_extended_matches() as [
                         number,
