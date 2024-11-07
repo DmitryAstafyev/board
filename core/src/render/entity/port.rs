@@ -356,7 +356,7 @@ impl Render<Port> {
                                 0,
                                 0,
                                 options.font.to_owned(),
-                                label,
+                                (String::from("rgb(0,0,0)"), label),
                                 None,
                                 badge,
                                 None,
@@ -430,28 +430,44 @@ impl Render<Port> {
         state: &State,
         root: usize,
     ) -> Result<(), E> {
+        fn set_label_color<S: AsRef<str>>(view: &mut View, color: S) {
+            view.elements.iter_mut().for_each(|el| {
+                if let Form::Label(_, lb) = &mut el.form {
+                    lb.label = (color.as_ref().to_owned(), lb.label.1.to_owned());
+                }
+            });
+        }
         let connected = *self.entity.connected.get(&root).unwrap_or(&0);
         if state.is_hovered(&self.entity.sig.id) {
             self.view.container.style = (&options.scheme.hovered_rect).into();
+            set_label_color(&mut self.view, &options.scheme.hovered_rect.stroke);
         } else if !self.origin().contains.is_empty() && connected > 0 {
             self.view.container.style = (&options.scheme.port_grouped_rect).into();
+            set_label_color(&mut self.view, &options.scheme.port_grouped_rect.stroke);
         } else if connected == 0 {
             self.view.container.style = (&options.scheme.port_unlinked_rect).into();
+            set_label_color(&mut self.view, &options.scheme.port_unlinked_rect.stroke);
         } else if state.is_port_linked(&self.entity) {
             self.view.container.style = (&options.scheme.port_linked_rect).into();
+            set_label_color(&mut self.view, &options.scheme.port_linked_rect.stroke);
         } else {
             self.view.container.style = (&options.scheme.port_rect).into();
+            set_label_color(&mut self.view, &options.scheme.port_rect.stroke);
         }
         if state.is_port_selected(&self.entity.sig.id) {
             self.view.container.style = (&options.scheme.selected_rect).into();
+            set_label_color(&mut self.view, &options.scheme.selected_rect.stroke);
         } else if state.is_port_highlighted(&self.entity.sig.id) {
             self.view.container.style = (&options.scheme.port_highlighted_rect).into();
+            set_label_color(&mut self.view, &options.scheme.port_highlighted_rect.stroke);
         }
         if state.is_match(&self.entity.sig.id) {
             self.view.container.style = (&options.scheme.matched_rect).into();
+            set_label_color(&mut self.view, &options.scheme.matched_rect.stroke);
         }
         if state.is_highlighted(&self.entity.sig.id) {
             self.view.container.style = (&options.scheme.highlighted_rect).into();
+            set_label_color(&mut self.view, &options.scheme.highlighted_rect.stroke);
         }
         self.view.render(context, relative, options);
         Ok(())

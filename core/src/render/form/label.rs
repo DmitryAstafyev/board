@@ -33,7 +33,7 @@ pub struct Label {
     pub w: i32,
     pub h: i32,
     pub font: String,
-    pub label: String,
+    pub label: (String, String),
     pub subtitle: Option<String>,
     pub badge: Option<(String, String, String)>,
     pub subbadge: Option<(String, String, String)>,
@@ -52,7 +52,7 @@ impl Label {
         w: i32,
         h: i32,
         font: String,
-        label: String,
+        label: (String, String),
         subtitle: Option<String>,
         // value, bk_color, fg_color
         badge: Option<(String, String, String)>,
@@ -120,7 +120,7 @@ impl Label {
             (self.h as f64 * if self.subtitle.is_some() { 0.55 } else { 0.7 }).round(),
             self.font
         ));
-        self.w = if let Ok(metric) = context.measure_text(&self.label) {
+        self.w = if let Ok(metric) = context.measure_text(&self.label.1) {
             metric.width() as i32
         } else {
             self.params.min_w
@@ -144,10 +144,10 @@ impl Label {
         let y = relative.y(self.y) as f64;
         context.fill_rect(x, y, self.w as f64, self.h as f64);
         context.stroke_rect(x, y, self.w as f64, self.h as f64);
-        context.set_fill_style(&JsValue::from_str(&options.scheme.label.fill));
+        context.set_fill_style(&JsValue::from_str(&self.label.0));
         if let Some(subtitle) = self.subtitle.as_ref() {
             let _ = context.fill_text(
-                &self.label,
+                &self.label.1,
                 x + text_hor_padding,
                 y + text_ver_padding * 0.6,
             );
@@ -159,7 +159,7 @@ impl Label {
             context.set_fill_style(&JsValue::from_str(&options.scheme.label_subtitle.fill));
             let _ = context.fill_text(subtitle, x + text_hor_padding, y + self.h as f64 * 0.6);
         } else {
-            let _ = context.fill_text(&self.label, x + text_hor_padding, y + text_ver_padding);
+            let _ = context.fill_text(&self.label.1, x + text_hor_padding, y + text_ver_padding);
         }
         if let (Some((badge, bk_c, fg_c)), true) = (&self.badge, self.subbadge.is_none()) {
             context.set_font(&format!(
