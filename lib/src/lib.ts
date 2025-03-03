@@ -215,6 +215,7 @@ export class Board extends Subscriber {
                 }`
             );
         }
+        this.size.ratio = options.ratio;
         this.parent = node;
         this.hover = {
             component: new Hover(),

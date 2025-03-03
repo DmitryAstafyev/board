@@ -31,7 +31,7 @@ function getLabeledPortsOptions() {
             port_label_max_len: 16,
             comp_label_max_len: 12,
         },
-        ratio: board_1.DEVICE_PIXEL_RATIO,
+        ratio: 4,
         font: "Roboto, sans-serif",
         scheme: (0, board_1.getDefaultsColorScheme)(),
     };
